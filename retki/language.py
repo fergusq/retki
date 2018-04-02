@@ -85,6 +85,8 @@ class RObject(Bits):
 		self.name_tokens = name_tokens
 		if name:
 			self.data["nimi koodissa"] = CLASSES["merkkijono"].newInstance().setExtra("str", name)
+	def __repr__(self):
+		return self.asString()
 	def toPython(self):
 		var = f'OBJECTS[{repr(self.id)}]'
 		return (
@@ -104,7 +106,7 @@ class RObject(Bits):
 	def get(self, field_name):
 		if field_name not in self.data:
 			for clazz in self.rclass.superclasses():
-				if field_name in clazz.fields and clazz.fields[field_name]:
+				if field_name in clazz.fields and clazz.fields[field_name].default_value:
 					self.data[field_name] = clazz.fields[field_name].default_value
 					break
 			else:
@@ -136,15 +138,32 @@ class RObject(Bits):
 			return
 		if val in self.data[field_name]:
 			self.data[field_name].remove(val)
+	def containsSet(self, field_name, val):
+		if field_name not in self.data:
+			return False
+		return val in self.data[field_name]
 	def forSet(self, field_name, var_name, pattern, f):
 		if field_name not in self.data:
-			return
+			return []
+		pushScope()
+		ans = []
+		for val in self.data[field_name]:
+			if pattern.matches(val):
+				putVar(var_name, val)
+				ans.append(f())
+		popScope()
+		return ans
+	def onceSet(self, field_name, var_name, pattern, f):
+		if field_name not in self.data:
+			return False
 		pushScope()
 		for val in self.data[field_name]:
 			if pattern.matches(val):
 				putVar(var_name, val)
-				f()
+				if f():
+					return True
 		popScope()
+		return False
 	def setExtra(self, name, data):
 		self.extra[name] = data
 		return self
@@ -310,23 +329,25 @@ class RScope(Bits):
 GLOBAL_SCOPE = RScope()
 SCOPE = []
 STACK = []
+STACK_NAMES = []
 
 def pushScope():
 	SCOPE.append(RScope())
 def popScope():
 	SCOPE.pop()
-def pushStackFrame():
+def pushStackFrame(name):
 	STACK.append(RScope())
+	STACK_NAMES.append(name)
 def popStackFrame():
 	STACK.pop()
+	STACK_NAMES.pop()
 def visibleScopes():
 	return [GLOBAL_SCOPE]+SCOPE+STACK[-1:]
 def getVar(name):
 	for scope in reversed(visibleScopes()):
 		if name in scope.variables:
 			return scope.variables[name]
-	sys.stderr.write("Muuttujaa ei löytynyt: " + name + "(" + repr(visibleScopes()) + ")\n")
-	return None
+	raise Exception("Muuttujaa ei löytynyt: " + name + "(" + repr(visibleScopes()) + ")\n")
 def setVar(name, val):
 	scopes = visibleScopes()
 	for scope in reversed(scopes):
@@ -398,7 +419,7 @@ class RListener:
 			')'
 		])
 	def run(self, args):
-		pushStackFrame()
+		pushStackFrame(self.action.name)
 		for i, ((c, _, _), a) in enumerate(zip(self.params, args)):
 			putVar(f"_{i}", a)
 		for cmd in self.body:

@@ -113,6 +113,11 @@ GRAMMAR.patterns["STR-CONTENT"] = [
 	StringContentPattern()
 ]
 
+# Apufunktio
+
+def orTrue(code):
+	return "(" + code + " or True)"
+
 # Luokat
 
 CLASSES = {}
@@ -190,7 +195,7 @@ def definePolyparamField(field_id, owner, vtype, to_register, pattern, to_get, g
 	
 	pgl(".COND ::= .EXPR-%d{omanto} %s on .EXPR-%d{nimento} -> $1.%s==$2" % (
 		owner.id, pattern({"yksikkö", "nimento"}), vtype.id, get_str_output
-	), FuncOutput(lambda *p: (f'({to_get(*p[:-1])} == {p[-1]})', to_set(*p))))
+	), FuncOutput(lambda *p: (f'({to_get(*p[:-1])} == {p[-1]})', orTrue(to_set(*p)))))
 
 def defineField(owner, name, vtype, case="nimento"):
 	name_str = tokensToString(name, {"yksikkö", case})
@@ -270,14 +275,22 @@ def defineListField(owner, name, vtype, case="nimento"):
 		pgl(".CMD ::= toista jokaiselle .PATTERN-%d{ulkotulento} %s .EXPR-%d{omanto} %s : -> for each $1 in $2.%s:" % (
 			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
 		), FuncOutput(lambda *p: ForParser(name_str, *p)))
+		
+		pgl(".COND-STMT ::= jokaiselle .PATTERN-%d{ulkotulento} %s .EXPR-%d{omanto} %s pätee : -> for each $1 in $2.%s:" % (
+			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
+		), FuncOutput(lambda *p: ForCondParser(name_str, "all", "forSet", *p)))
+		
+		pgl(".COND-STMT ::= jollekin .PATTERN-%d{ulkotulento} %s .EXPR-%d{omanto} %s pätee : -> for each $1 in $2.%s:" % (
+			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
+		), FuncOutput(lambda *p: ForCondParser(name_str, None, "onceSet", *p)))
 	
 	pgl(".COND ::= .EXPR-%d{omanto} %s sisältää .EXPR-%d{omanto} -> $1.%s.contains($2)" % (
 		owner.id, pattern({"yksikkö", "nimento"}), vtype.id, name_str
-	), FuncOutput(lambda obj, val: (f'({val} in {obj}.data[{repr(name_str)}])', to_append(val, obj))))
+	), FuncOutput(lambda obj, val: (f'{obj}.containsSet({repr(name_str)}, {val})', orTrue(to_append(val, obj)))))
 	
 	pgl(".COND ::= .EXPR-%d{omanto} %s ei sisällä .EXPR-%d{osanto} -> !$1.%s.contains($2)" % (
 		owner.id, pattern({"yksikkö", "nimento"}), vtype.id, name_str
-	), FuncOutput(lambda obj, val: (f'({val} not in {obj}.data[{repr(name_str)}])', to_remove(val, obj))))
+	), FuncOutput(lambda obj, val: (f'(not {obj}.containsSet({repr(name_str)}, {val}))', orTrue(to_remove(val, obj)))))
 
 # Adjektiivit
 
@@ -322,7 +335,7 @@ def defineBit(owner, *names):
 		
 		pgl(".COND ::= .EXPR-%d{nimento} on %s -> $1.%s == True" % (
 			owner.id, name_code_nominative, name_str
-		), FuncOutput(lambda obj: (f'{repr(name_str)} in {obj}.bits', f'{obj}.bitsOff({repr(name_strs)}).bitOn({repr(name_str)})')))
+		), FuncOutput(lambda obj: (f'{repr(name_str)} in {obj}.bits', orTrue(f'{obj}.bitsOff({repr(name_strs)}).bitOn({repr(name_str)})'))))
 		
 	for name, name_str, name_code in zip(names, name_strs, name_codes):
 		addBitPhrases(name, name_str, name_code)
@@ -335,12 +348,75 @@ pgl(".DEF ::= .ENUM-DEF -> $1", identity)
 
 # Ehdot
 
-pgl(".COND ::= .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y: (f'({x[0]} and {y[0]})', f'({x[1]},{y[1]})')))
-pgl(".COND ::= .COND , .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y, z: (f'({x[0]} and {y[0]} and {z[0]})', f'({x[1]},{y[1]},{z[1]})')))
+pgl(".COND ::= .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y: (f'({x[0]} and {y[0]})', orTrue(f'({x[1]},{y[1]})'))))
+pgl(".COND ::= .COND , .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y, z: (f'({x[0]} and {y[0]} and {z[0]})', orTrue(f'({x[1]},{y[1]},{z[1]})'))))
 
-def defineCondition(grammar, is_adv, cases, nameds, first_named, owner, *args):
+pgl(".COND-STMT ::= .COND -> $1", identity)
+
+pgl(".COND-STMT ::= kaikki seuraavista : -> every:", FuncOutput(lambda: CondReductionParser("and", lambda modifys: orTrue("(" + ", ".join(modifys) + ")"))))
+pgl(".COND-STMT ::= jokin seuraavista : -> some:", FuncOutput(lambda: CondReductionParser("or", lambda modifys: "(" + " or ".join(modifys) + ")")))
+
+class CondReductionParser:
+	def __init__(self, operator, to_modify):
+		self.operator = operator
+		self.to_modify = to_modify
+	def parse(self, file, grammar):
+		checks, modifys = parseCondBlock(file, grammar)
+		return "(" + f" {self.operator} ".join(checks) + ")", self.to_modify(modifys)
+
+class ForCondParser:
+	def __init__(self, field_name, reduce, loop, *args):
+		self.field_name = field_name
+		self.reduce = reduce
+		self.loop = loop
+		self.args = args
+	def parse(self, file, grammar):
+		grammar = grammar.copy()
+		
+		param_pattern = self.args[0]
+		param_name = None if len(self.args) == 2 else self.args[1]
+		obj = self.args[-1]
+		
+		addParamPhrases(grammar, "_val", param_pattern.type(), param_name)
+		
+		checks, modifys = parseCondBlock(file, grammar)
+		
+		ans = []
+		for block, join_op, func in [(checks, " and ", self.reduce), (modifys, ", ", None)]:
+			block_str = "lambda: (" + join_op.join(block) + ")"
+			target_code = '%s.%s(%s, %s, %s, %s)' % (obj, self.loop, repr(self.field_name), repr("_val"), param_pattern.toPython(), block_str)
+			if func:
+				ans.append(func+"("+target_code+")")
+			else:
+				ans.append(target_code)
+		return tuple(ans)
+
+# Ehtosäännön vartalo
+
+def parseCondBlock(file, grammar):
+	# parsitaan vartalo, luodaan check- ja modify -koodit ja yhdistetään ne tupleiksi
+	checks, modifys = [], []
+	while True:
+		cond_code = file.readline()
+		if not cond_code.strip():
+			break
+		cond_tokens = tokenize(cond_code)
+		alts = grammar.matchAll(cond_tokens, "COND-STMT", set())
+		if len(alts) != 1:
+			sys.stderr.write("Monitulkintainen ehtolause: `" + cond_code.strip() + "'. Vaihtoehdot: " + repr(alts) + "\n")
+			return [], []
+		if alts[0][1][-1] == ":":
+			check, modify = alts[0][0]().parse(file, grammar)
+		else:
+			check, modify = alts[0][0]()
+		checks.append(check)
+		modifys.append(modify)
+	return checks, modifys
+
+# Käyttäjän määrittelemät ehtosäännöt
+
+def defineCondition(grammar, file, is_adv, cases, nameds, first_named, owner, *args):
 	args = list(args)
-	cond_codes = args[-1]
 	if first_named:
 		first_name = args[0]
 		del args[0]
@@ -365,18 +441,9 @@ def defineCondition(grammar, is_adv, cases, nameds, first_named, owner, *args):
 	for case, (vtype, _, name), tmp_var in zip(cases, params, tmp_vars[1:]):
 		addParamPhrases(grammar, tmp_var, vtype, name)
 	
-	# luodaan check- ja modify -koodit ja yhdistetään ne tupleiksi
-	checks, modifys = [], []
-	for cond_code in cond_codes:
-		alts = grammar.matchAll(cond_code, "COND", set())
-		if len(alts) != 1:
-			sys.stderr.write("Monitulkintainen ehtolause: " + tokensToString(cond_code) + ". Vaihtoehdot: " + repr(alts) + "\n")
-			return
-		check, modify = alts[0][0]()
-		checks.append(check)
-		modifys.append(modify)
+	checks, modifys = parseCondBlock(file, grammar)
 	
-	check = "(" + ", ".join(checks) + ")"
+	check = "(" + " and ".join(checks) + ")"
 	modify = "(" + ", ".join(modifys) + ")"
 	
 	name_str = " ".join([tokensToString(pre)] + [
@@ -387,15 +454,18 @@ def defineCondition(grammar, is_adv, cases, nameds, first_named, owner, *args):
 		".EXPR-%d{%s} %s" % (vtype.id, case, tokensToCode(post)) for case, (vtype, post, _) in zip(cases, params)
 	])
 	
-	make_tuple = lambda content, p: ", ".join([
-		"pushStackFrame()",
-	] + [f"putVar({repr(tmp_var)}, {a})" for tmp_var, a in zip(tmp_vars, p)] + [
+	make_tuple = lambda content, p: "(lambda " + ",".join(tmp_vars) + ": (" + ", ".join([
+		f"pushStackFrame({repr(name_str)})",
+	] + [f"putVar({repr(tmp_var)}, {tmp_var})" for tmp_var in tmp_vars] + [
 		content,
 		"popStackFrame()",
-	])
+	]) + "))(" + ", ".join(p) + ")"
+	
+	pgl(".CMD ::= .EXPR-%d{nimento} on nyt %s . -> $1~%s = True" % (owner.id, pattern, name_str),
+		FuncOutput(lambda *p: "(" + make_tuple(modify, p) + ")"))
 	
 	pgl(".COND ::= .EXPR-%d{nimento} on %s -> $1~%s" % (owner.id, pattern, name_str),
-		FuncOutput(lambda *p: ("(" + make_tuple(check, p) + ")[-2]", "(" + make_tuple(modify, p) + ")")))
+		FuncOutput(lambda *p: ("(" + make_tuple(check, p) + ")[-2]", orTrue("(" + make_tuple(modify, p) + ")"))))
 	
 	# adjektiivisuus päätellään viimeisen sanan perusteella
 	if len(pre) == 0 and (len(params) == 0 or len(params[-1][1]) == 0):
@@ -440,13 +510,7 @@ class ConditionParser:
 	def __init__(self, *p):
 		self.args = p
 	def parse(self, file, grammar):
-		lines = []
-		while True:
-			line = file.readline()
-			if not line.strip():
-				break
-			lines.append(tokenize(line))
-		return defineCondition(grammar, *self.args, lines)
+		return defineCondition(grammar, file, *self.args)
 
 def addConditionDefPatterns(cases):
 	for first_named, *nameds in itertools.product(*[[False, True]]*(len(cases)+1)):
@@ -485,7 +549,7 @@ def defineVariable(name, class_pattern):
 	
 	pgl(".COND ::= %s on .EXPR-%d{nimento} -> %s==$2" % (
 		pattern({"yksikkö", "nimento"}), vtype.id, name_str
-	), FuncOutput(lambda x: (f'{to_get()}.equals({x})', to_set(x))))
+	), FuncOutput(lambda x: (f'{to_get()}.equals({x})', orTrue(to_set(x)))))
 
 pgl(".VARIABLE-DEF ::= .* on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
 pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
@@ -670,6 +734,17 @@ class ForParser:
 		
 		return '%s.forSet(%s, %s, %s, %s)' % (obj, repr(self.field_name), repr("_val"), param_pattern.toPython(), block_str)
 
+# If-lause
+
+class IfParser:
+	def __init__(self, condition):
+		self.condition = condition
+	def parse(self, file, grammar):
+		self.block = parseBlock(file, grammar)
+		return "(%s and %s)" % (self.condition, "(" + ", ".join(self.block) + ")")
+
+pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
+
 # Tulostaminen
 
 pgl(".CMD ::= sano .EXPR-%d{nimento} . -> print($1)" % (asia.id,), FuncOutput(lambda x: f'say({x}.asString())'))
@@ -827,7 +902,10 @@ def interactive():
 				print(string)
 			continue
 		elif line.startswith("/eval"):
-			print(eval(line[5:].strip()))
+			try:
+				print(eval(line[5:].strip()))
+			except:
+				traceback.print_exc()
 			continue
 		elif line.startswith("/lataa"):
 			try:
@@ -870,12 +948,18 @@ def interactive():
 					eval(string)
 			except:
 				traceback.print_exc()
+				for name in STACK_NAMES:
+					print(name)
+				del STACK_NAMES[:]
 		else:
 			print("Löydetty", len(interpretations), "tulkintaa:")
 			for _, interpretation in interpretations:
 				print(interpretation)
 		if not mode[0] == phrase_type == "PLAYER-CMD":
 			printStatistics()
+		else:
+			# tulosta rivinvaihto, sillä peli ei ole välttämättä tulostanut sellaista
+			print()
 
 def main():
 	parser = argparse.ArgumentParser(description='Finnish Interactive Fiction language inspired by Inform 7')
