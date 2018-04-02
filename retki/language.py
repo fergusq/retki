@@ -88,18 +88,29 @@ class RObject(Bits):
 	def __repr__(self):
 		return self.asString()
 	def toPython(self):
-		var = f'OBJECTS[{repr(self.id)}]'
+		var = 'OBJECTS[' + repr(self.id) + ']'
 		return (
-			f'{var} = RObject(CLASSES[{repr(self.rclass.name)}], {repr(self.name)}, {repr(self.bits)}, {repr(self.id)}, {toPython(self.extra)})'
-			+ (";GRAMMAR.parseGrammarLine('.EXPR-" + str(self.rclass.id) + " ::= " + nameToCode(self.name_tokens, bits={"$"}, rbits={"nimento", "yksikkö"})
-				+ "', FuncOutput(lambda: " + var + "))" if self.name_tokens else ""),
+			'%s = RObject(CLASSES[%s], %s, %s, %s, %s)' % (var, repr(self.rclass.name), repr(self.name), repr(self.bits), repr(self.id), toPython(self.extra))
+			# parserisääntö, jos oliolla on nimi
+			+ (";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: %s))" % (
+				self.rclass.id,
+				nameToCode(self.name_tokens, bits={"$"}, rbits={"nimento", "yksikkö"}),
+				var
+			) if self.name_tokens else ""),
 			";".join([
-				f'{var}.data[{repr(key)}] = OBJECTS[{repr(self.data[key].id)}]' for key in self.data if isinstance(self.data[key], RObject)
+				# olioviittauskentät
+				'%s.data[%s] = OBJECTS[%d]' % (var, repr(key), self.data[key].id) for key in self.data if isinstance(self.data[key], RObject)
 			] + [
-				f'{var}.data[{repr(key)}] = {{ {", ".join(["OBJECTS[" + repr(keykey.id) + "]: OBJECTS[" + str(self.data[key][keykey].id) + "]" for keykey in self.data[key]])} }}'
+				# karttakentät
+				'%s.data[%s] = {%s}' % (
+					var,
+					repr(key),
+					", ".join(["OBJECTS[" + repr(keykey.id) + "]: OBJECTS[" + str(self.data[key][keykey].id) + "]" for keykey in self.data[key]])
+				)
 				for key in self.data if isinstance(self.data[key], dict)
 			] + [
-				f'{var}.data[{repr(key)}] = {{ {", ".join(["OBJECTS[" + str(val.id) + "]" for val in self.data[key]])} }}'
+				# joukkokentät
+				'%s.data[%s] = {%s}' % (var, repr(key), ", ".join(["OBJECTS[" + str(val.id) + "]" for val in self.data[key]]))
 				for key in self.data if isinstance(self.data[key], set)
 			])
 		)
@@ -226,11 +237,11 @@ class RClass(Bits):
 		if superclass:
 			self.superclass.direct_subclasses.append(self)
 	def toPython(self):
-		sc = "None" if self.superclass is None else f"CLASSES[{repr(self.superclass.name)}]"
-		grammar = "" if self.superclass is None else f'GRAMMAR.parseGrammarLine(".EXPR-{self.superclass.id} ::= .EXPR-{self.id}{{$}}", identity)'
+		sc = "None" if self.superclass is None else "CLASSES[" + repr(self.superclass.name) + "]"
+		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
 		return (
-			f'RClass({repr(self.name)}, {sc}, {repr(self.name_tokens)}, {repr(self.id)}, {repr(self.bit_groups)}, {repr(self.bits)});{grammar}',
-			";".join(f'CLASSES[{repr(self.name)}].fields[{repr(field)}] = {self.fields[field].toPythonExpr()}' for field in self.fields)
+			'RClass(%s, %s, %s, %d, %s, %s);%s' % (repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), grammar),
+			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
 		)
 	def addField(self, name, field):
 		self.fields[name] = field
@@ -265,8 +276,8 @@ class RField:
 		self.is_map = is_map
 		self.default_value = defa
 	def toPythonExpr(self):
-		defa = "None" if not self.default_value else f"OBJECTS[{repr(self.default_value.id)}]"
-		return f'RField({repr(self.id)}, {repr(self.name)}, CLASSES[{repr(self.type.name)}], {defa}, {repr(self.is_map)})'
+		defa = "None" if not self.default_value else "OBJECTS[" + repr(self.default_value.id) + "]"
+		return 'RField(%d, %s, CLASSES[%s], %s, %s)' % (self.id, repr(self.name), repr(self.type.name), defa, repr(self.is_map))
 	def setDefaultValue(self, defa):
 		self.default_value = defa
 	def copy(self):
@@ -375,7 +386,7 @@ class RAction:
 		return ";".join([
 			"RAction(" + repr(self.name) + ", " + repr(self.id) + ")"
 		] + [
-			f"GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= {pattern}', FuncOutput(lambda *x: ACTIONS[{repr(self.id)}].run(x)))" for pattern in self.commands
+			"GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', FuncOutput(lambda *x: ACTIONS[%d].run(x)))" % (pattern, self.id) for pattern in self.commands
 		])
 	def addPlayerCommand(self, pattern):
 		self.commands.append(pattern)
@@ -421,7 +432,7 @@ class RListener:
 	def run(self, args):
 		pushStackFrame(self.action.name)
 		for i, ((c, _, _), a) in enumerate(zip(self.params, args)):
-			putVar(f"_{i}", a)
+			putVar("_" + str(i), a)
 		for cmd in self.body:
 			if isinstance(cmd, str):
 				eval(cmd)
