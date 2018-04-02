@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from suomilog.finnish import inflect
+
 def nameToBaseform(tokens, bits, rbits):
 	ans = []
 	found = False
@@ -34,6 +36,9 @@ def nameToBaseform(tokens, bits, rbits):
 
 def tokensToString(tokens, rbits={"nimento", "yksikkö"}):
 	return " ".join([text for text, bits in nameToBaseform(tokens, {}, rbits)])
+
+def tokensToInflectedString(tokens, case, rbits={"nimento", "yksikkö"}):
+	return " ".join([inflect(text, case, "monikko" in rbits) for text, _ in nameToBaseform(tokens, {}, rbits)])
 
 def nameToCode(name, bits=None, rbits={"nimento", "yksikkö"}):
 	return " ".join([token + ("{" + ",".join(tbits) + "}" if tbits else "") for token, tbits in nameToBaseform(name, bits, rbits)])

@@ -77,12 +77,14 @@ class StringContentPattern:
 		string = ""
 		subs = []
 		current_subs = None
+		capitalizeds = []
 		for token in tokens:
 			if current_subs is not None:
 				if token.token == "]":
 					string += " %s"
-					alts = grammar.matchAll(current_subs, "EXPR-"+str(merkkijono.id), set())
+					alts = grammar.matchAll(current_subs, "STR-EXPR", set())
 					subs.append(alts)
+					capitalizeds.append(current_subs[0].token.capitalize() == current_subs[0].token if current_subs else False)
 					current_subs = None
 				else:
 					current_subs.append(token)
@@ -97,9 +99,10 @@ class StringContentPattern:
 				string += " " + token.token
 		string = string.strip()
 		ans = []
-		for alternative in itertools.product(*subs):
+		for alternative, capitalized in zip(itertools.product(*subs), capitalizeds or [False]):
 			ans.append([
-				lambda: repr(string) + " % (" + ", ".join([p[0]() + '.extra["str"]' for p in alternative]) + ("," if len(alternative) == 1 else "") + ")",
+				lambda: "(" + repr(string) + " % (" + ", ".join([p[0]() for p in alternative])
+					+ ("," if len(alternative) == 1 else "") + "))" + (".capitalize()" if capitalized else ""),
 				string % tuple([p[1] for p in alternative])
 			])
 		return ans
@@ -635,11 +638,17 @@ pgl(".DEF ::= .ACTION-DEF -> $1", identity)
 asia = defineClass(tokenize("asia"), None)
 
 merkkijono = defineClass(tokenize("merkkijono"), asia)
-pgl('.EXPR-%d ::= " .STR-CONTENT " -> "$1"' % (asia.id,), FuncOutput(lambda s: f'createStringObj({s})'))
-pgl('.EXPR-%d ::= " .STR-CONTENT " -> "$1"' % (merkkijono.id,), FuncOutput(lambda s: f'createStringObj({s})'))
-pgl('.EXPR-%d ::= rivinvaihto{$} -> "\\n"' % (merkkijono.id,), FuncOutput(lambda: 'createStringObj("\\n")'))
-pgl('.EXPR-%d ::= .EXPR-%d{$} isolla alkukirjaimella -> capitalize($1)' % (merkkijono.id, merkkijono.id),
+for clazz in [asia, merkkijono]:
+	pgl('.EXPR-%d ::= " .STR-CONTENT " -> "$1"' % (clazz.id,), FuncOutput(lambda s: f'createStringObj({s})'))
+	pgl('.EXPR-%d ::= rivinvaihto{$} -> "\\n"' % (clazz.id,), FuncOutput(lambda: 'createStringObj("\\n")'))
+	pgl('.EXPR-%d ::= .EXPR-%d{$} isolla alkukirjaimella -> capitalize($1)' % (clazz.id, merkkijono.id),
 	FuncOutput(lambda x: f'createStringObj({x}.extra["str"].capitalize())'))
+
+def addStrExprPattern(case):
+	pgl('.STR-EXPR ::= .EXPR-%d{%s} -> $1:%s' % (asia.id,case,case), FuncOutput(lambda s: f'{s}.asString(case={repr(case)})'))
+
+for case in CASES:
+	addStrExprPattern(case)
 
 # For-silmikka
 

@@ -62,16 +62,16 @@ Asian kuvailemisen aikana:
 	Sano sen kuvaus.
 
 Huoneen kuvailemisen jälkeen:
-	Toista jokaiselle esineelle (E) sen esinejoukossa:
-		Sano "Täällä on [E:n nimi koodissa].".
+	Toista jokaiselle esineelle (e) sen esinejoukossa:
+		Sano "Näet täällä [e:n].".
 
 
 Suljetun huoneen kuvailemisen jälkeen:
 	Sano "Et voi mennä sinne.".
 
 Tukijan kuvailemisen jälkeen:
-	Toista jokaiselle esineelle (E) sen tuettujen joukossa:
-		Sano "Sen päällä on [E:n nimi koodissa isolla alkukirjaimella].".
+	Toista jokaiselle esineelle (e) sen tuettujen joukossa:
+		Sano "Sen päällä on [e].".
 
 
 > Esitteleminen
@@ -80,7 +80,7 @@ Tukijan kuvailemisen jälkeen:
 Esittelemisen komento on "esittele [huone]".
 
 Huoneen esittelemisen aikana:
-	Sano "[sen nimi koodissa isolla alkukirjaimella][rivinvaihto][rivinvaihto]".
+	Sano "[Sen nimi koodissa][rivinvaihto][rivinvaihto]".
 	Kuvaile sitä.
 
 Pelin alkamisen jälkeen:
@@ -168,7 +168,7 @@ Piha on suljettu huone.
 Pihan kuvaus on "Näet oven läpi talon pihan.".
 
 Eteinen on huone pihasta pohjoiseen.
-Eteisen kuvaus on "Eteisessä on matto, mutta ei juuri mitään muuta kiinnostavaa.".
+Eteisen kuvaus on "Eteisessä ei ole juuri mitään mitään kiinnostavaa.".
 
 Ovi on kiinteä esine eteisessä.
 Oven kuvaus on "Eteisen ovi on lukossa.".
@@ -177,7 +177,7 @@ Matto on esine eteisessä.
 Maton kuvaus on "Räsymatto on hieman likainen.".
 
 Olohuone on huone eteisestä pohjoiseen.
-Olohuoneen kuvaus on "Olohuoneessa on pieni sohva ja se tuntuu ahtaalta.".
+Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
 
 Sohva on kiinteä esine olohuoneessa.
 Sohvan kuvaus on "Vanha punainen sohva.".

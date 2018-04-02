@@ -148,7 +148,17 @@ class RObject(Bits):
 	def setExtra(self, name, data):
 		self.extra[name] = data
 		return self
-	def asString(self):
+	def asString(self, case="nimento"):
+		if case != "nimento":
+			if self.name_tokens:
+				name_tokens = self.name_tokens
+			elif self.name:
+				name_tokens = tokenize(self.name)
+			elif "str" in self.extra:
+				name_tokens = tokenize(self.extra["str"])
+			else:
+				name_tokens = self.rclass.name_tokens or tokenize(self.rclass.name)
+			return tokensToInflectedString(name_tokens, case)
 		if self.name:
 			return self.name
 		if "str" in self.extra:
