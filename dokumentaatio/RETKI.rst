@@ -226,6 +226,8 @@ Ehtomääritys
 Ehto on funktio, joka käyttäytyy kuin bitti.
 Ehto määritellään joukkona ehtolauseita, joiden on kaikkien oltava totta.
 
+::
+
 	Määritelmä. Kun esine (E) on "näkyvillä":
 		jokin seuraavista:
 			E on pelaajan sijainnissa
