@@ -30,10 +30,22 @@ class Bits:
 		if bit in self.bits:
 			self.bits.remove(bit)
 		return self
+	def bitsOn(self, bits):
+		for bit in bits:
+			self.bitOn(bit)
+		return self
 	def bitsOff(self, bits):
 		for bit in bits:
 			self.bitOff(bit)
 		return self
+
+# Evaluominen
+
+def evalOrCall(f, p):
+	if isinstance(f, str):
+		return eval(f)(*p)
+	else:
+		return f(*p)
 
 # Ulostulo
 
@@ -297,13 +309,18 @@ class RField:
 		return RField(self.id, self.name, self.type, None, self.is_map)
 
 class RPattern:
-	def __init__(self, rclass=None, bitsOn=None, bitsOff=None, conditions=None):
+	def __init__(self, rclass=None, bitsOn=None, bitsOff=None, conditions=None, obj=None):
 		self.rclass = rclass
 		self.conditions = conditions or []
 		self.my_bitsOn = bitsOn or set()
 		self.my_bitsOff = bitsOff or set()
-	def toPython(self):	
-		return "RPattern(CLASSES[" + repr(self.rclass.name) + "], " + repr(self.my_bitsOn) + "," + repr(self.my_bitsOff) + "," + toPython(self.conditions) + ")"
+		self.obj = obj
+	def toPython(self):
+		clazz = "None" if not self.rclass else "CLASSES[" + repr(self.rclass.name) + "]"
+		obj = "None" if not self.obj else "OBJECTS[" + repr(self.obj.id) + "]"
+		return ("RPattern(" + clazz + ", "
+			+ repr(self.my_bitsOn) + ", " + repr(self.my_bitsOff)
+			+ ", " + toPython(self.conditions) + ", " + obj + ")")
 	def addCondition(self, cond):
 		self.conditions.append(cond)
 		return self
@@ -319,11 +336,19 @@ class RPattern:
 		return self
 	def newInstance(self, name):
 		name_str = tokensToString(name)
-		obj = self.rclass.newInstance(name=name_str, name_tokens=name, bitsOn=self.my_bitsOn, bitsOff=self.my_bitsOff)
+		if self.obj:
+			obj = self.obj
+			obj.bitsOff(self.my_bitsOff)
+			obj.bitsOn(self.my_bitsOn)
+		else:
+			obj = self.rclass.newInstance(name=name_str, name_tokens=name, bitsOn=self.my_bitsOn, bitsOff=self.my_bitsOff)
 		for cond in self.conditions:
 			cond.doModify(obj)
 		return obj
 	def matches(self, obj):
+		if self.obj:
+			if not obj == self.obj:
+				return False
 		if self.rclass:
 			if obj.rclass not in self.rclass.subclasses():
 				return False
@@ -332,7 +357,7 @@ class RPattern:
 				return False
 		return obj.bits >= self.my_bitsOn and not (obj.bits&self.my_bitsOff)
 	def type(self):
-		return self.rclass or CLASSES["asia"]
+		return self.rclass or (self.obj and self.obj.rclass) or CLASSES["asia"]
 
 class RCondition:
 	def __init__(self, var, check, modify):
@@ -351,6 +376,9 @@ class RCondition:
 			return eval(self.modify, globals(), {self.var: x})
 		else:
 			return self.modify()
+
+CHECKS = {}
+MODIFYS = {}
 
 # Näkyvyysalueet ja muuttujat
 
@@ -501,11 +529,20 @@ def say(text):
 	print(text,end="")
 	prev_was_newline = text[-1] == "\n"
 
+# Pelin lopettaminen
+
+game_running = False
+
+def endGame():
+	global game_running
+	game_running = False
+
 # Pelin komentotulkki
 
 def playGame(grammar):
-	global prev_was_newline
-	while True:
+	global prev_was_newline, game_running
+	game_running = True
+	while game_running:
 		if not prev_was_newline:
 			print()
 			prev_was_newline = True

@@ -144,8 +144,8 @@ def defineClass(name, superclass):
 		if clazz is not rclass:
 			for _, group_strs, group_codes in clazz.bit_groups:
 				for group_str, group_code in zip(group_strs, group_codes):
-					addBitPatternPhrase(rclass, rclass, group_str, group_code, set(group_strs))
-					addBitClassPatternPhrase(rclass, group_str, group_code, set(group_strs))
+					addBitPatternPhrase(rclass, rclass, group_code, group_str, set(group_strs))
+					addBitClassPatternPhrase(rclass, group_code, group_str, set(group_strs))
 			for attributePhraseAdder in clazz.attributePhraseAdders:
 				attributePhraseAdder(rclass, rclass)
 	pgl(".CLASS ::= %s -> %s" % (name_code, name_str), FuncOutput(lambda: rclass))
@@ -364,8 +364,8 @@ class CondReductionParser:
 	def __init__(self, operator, to_modify):
 		self.operator = operator
 		self.to_modify = to_modify
-	def parse(self, file, grammar):
-		checks, modifys = parseCondBlock(file, grammar)
+	def parse(self, file, grammar, report=False):
+		checks, modifys = parseCondBlock(file, grammar, report=report)
 		return "(" + (" " + self.operator + " ").join(checks) + ")", self.to_modify(modifys)
 
 class ForCondParser:
@@ -374,7 +374,7 @@ class ForCondParser:
 		self.reduce = reduce
 		self.loop = loop
 		self.args = args
-	def parse(self, file, grammar):
+	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		
 		param_pattern = self.args[0]
@@ -383,7 +383,7 @@ class ForCondParser:
 		
 		addParamPhrases(grammar, "_val", param_pattern.type(), param_name)
 		
-		checks, modifys = parseCondBlock(file, grammar)
+		checks, modifys = parseCondBlock(file, grammar, report=report)
 		
 		ans = []
 		for block, join_op, func in [(checks, " and ", self.reduce), (modifys, ", ", None)]:
@@ -397,12 +397,14 @@ class ForCondParser:
 
 # Ehtosäännön vartalo
 
-def parseCondBlock(file, grammar):
-	return zip(*parseBlock(file, grammar, category="COND-STMT"))
+def parseCondBlock(file, grammar, report=False):
+	return zip(*parseBlock(file, grammar, category="COND-STMT", report=report))
 
 # Käyttäjän määrittelemät ehtosäännöt
 
-def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owner, *args):
+def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owner, *args, report=False):
+	
+	# parsitaan argumentit
 	args = list(args)
 	if first_named:
 		first_name = args[0]
@@ -421,42 +423,54 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 		i += 3 if nameds[j] else 2
 		j += 1
 	
-	tmp_vars = ["_" + str(i) for i in range(len(params)+1)]
-	
-	grammar = grammar.copy()
-	addParamPhrases(grammar, tmp_vars[0], owner, first_name)
-	for case, (vtype, _, name), tmp_var in zip(cases, params, tmp_vars[1:]):
-		addParamPhrases(grammar, tmp_var, vtype, name)
-	
-	checks, modifys = parseCondBlock(file, grammar)
-	
-	check = "(" + " and ".join(checks) + ")"
-	modify = "(" + ", ".join(modifys) + ")"
+	# luodaan nimi ja patterni
+	increaseCounter()
 	
 	name_str = " ".join([tokensToString(pre)] + [
 		"- %s" % (tokensToString(post),) for _, post, _ in params
-	])
+	]) + "/" + str(getCounter())
 	
 	pattern = " ".join([tokensToCode(pre)] + [
 		".EXPR-%d{%s} %s" % (vtype.id, case, tokensToCode(post)) for case, (vtype, post, _) in zip(cases, params)
 	])
 	
-	make_tuple = lambda content, p: "(lambda " + ",".join(tmp_vars) + ": (" + ", ".join([
-		"pushStackFrame(" + repr(name_str) + ")",
-	] + ["putVar(" + repr(tmp_var) + ", " + tmp_var + ")" for tmp_var in tmp_vars] + [
-		content,
-		"popStackFrame()",
-	]) + "))(" + ", ".join(p) + ")"
+	# make_call-funktiolla voi tehdä koodin, joka kutsuu ehtolausetta
+	make_call = lambda var, p: "evalOrCall(%s[%s], [%s])" % (var, repr(name_str), ", ".join(p))
 	
+	# tehdään ehtokomento ja muuttamiskomento
 	pre = "nyt" if custom_verb else ""
 	verb = "" if custom_verb else "on"
 	post = "" if custom_verb else "nyt"
 	
 	pgl(".CMD ::= %s .EXPR-%d{nimento} %s %s %s . -> $1~%s = True" % (pre, owner.id, verb, post, pattern, name_str),
-		FuncOutput(lambda *p: "(" + make_tuple(modify, p) + ")"))
+		FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
 	
 	pgl(".COND ::= .EXPR-%d{nimento} %s %s -> $1~%s" % (owner.id, verb, pattern, name_str),
-		FuncOutput(lambda *p: ("(" + make_tuple(check, p) + ")[-2]", orTrue("(" + make_tuple(modify, p) + ")"))))
+		FuncOutput(lambda *p: ("(" + make_call("CHECKS", p) + ")[-2]", orTrue("(" + make_call("MODIFYS", p) + ")"))))
+	
+	tmp_vars = ["_" + str(i) for i in range(len(params)+1)]
+	
+	# parsitaan vartalo
+	grammar = grammar.copy()
+	addParamPhrases(grammar, tmp_vars[0], owner, first_name)
+	for case, (vtype, _, name), tmp_var in zip(cases, params, tmp_vars[1:]):
+		addParamPhrases(grammar, tmp_var, vtype, name)
+	
+	checks, modifys = parseCondBlock(file, grammar, report=report)
+	
+	check = "(" + " and ".join(checks) + ")"
+	modify = "(" + ", ".join(modifys) + ")"
+	
+	# luodaan ehto- ja muuttamisfunktiot
+	make_lambda = lambda content: "(lambda " + ",".join(tmp_vars) + ": (" + ", ".join([
+		"pushStackFrame(" + repr(name_str) + ")",
+	] + ["putVar(" + repr(tmp_var) + ", " + tmp_var + ")" for tmp_var in tmp_vars] + [
+		content,
+		"popStackFrame()",
+	]) + "))"
+	
+	CHECKS[name_str] = make_lambda(check)
+	MODIFYS[name_str] = make_lambda(modify)
 	
 	# ohjelma ei osaa päätellä käyttäjän antaman verbin partisiippimuotoa
 	if custom_verb:
@@ -471,7 +485,7 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 	
 	# adjektiivisen ja adverbiaalisen fraasin yhteinen funktio
 	func = lambda *p: p[-1].addCondition(RCondition(
-		"_obj", "(" + make_tuple(check, ("_obj",)+p[:-1]) + ")[-2]", "(" + make_tuple(modify, ("_obj",)+p[:-1]) + ")"
+		"_obj", "(" + make_call("CHECKS", ("_obj",)+p[:-1]) + ")[-2]", "(" + make_call("MODIFYS", ("_obj",)+p[:-1]) + ")"
 	))
 	
 	# yhteinen output-merkkijonon osa
@@ -489,7 +503,7 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 				pgl(".CLASS-PATTERN-%d ::= %s oleva{$} .CLASS-PATTERN-%d{$} -> %s" % (clazz.id, pattern, clazz.id, output_str), FuncOutput(func))
 				pgl(".CLASS-PATTERN-WITH-ADV-%d ::= .CLASS-PATTERN-%d %s -> %s" % (clazz.id, clazz.id, pattern, output_str),
 					FuncOutput(lambda *p: p[0].addCondition(RCondition(
-						"_obj", "(" + make_tuple(check, ("_obj",)+p[1:]) + ")[-2]", "(" + make_tuple(modify, ("_obj",)+p[1:]) + ")"
+						"_obj", "(" + make_call("CHECKS", ("_obj",)+p[1:]) + ")[-2]", "(" + make_call("MODIFYS", ("_obj",)+p[1:]) + ")"
 					))))
 	
 	if owner.superclass:
@@ -504,8 +518,8 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 class ConditionParser:
 	def __init__(self, *p):
 		self.args = p
-	def parse(self, file, grammar):
-		return defineCondition(grammar, file, *self.args)
+	def parse(self, file, grammar, report=False):
+		return defineCondition(grammar, file, *self.args, report=report)
 
 def addConditionDefPatterns(cases):
 	for first_named, *nameds in itertools.product(*[[False, True]]*(len(cases)+1)):
@@ -552,6 +566,10 @@ def defineVariable(name, class_pattern):
 	pgl(".CMD ::= tulkitse \" .* \" %s . -> $1 = %s" % (
 		pattern({"yksikkö", "olento"}), name_str
 	), FuncOutput(lambda alias: obj.addVariableAlias(alias)))
+	
+	for clazz in vtype.superclasses():
+		pgl(".PATTERN-%d ::= %s -> %s" % (clazz.id, pattern({"$"}), name_str),
+			FuncOutput(lambda: RPattern(obj=obj)))
 
 pgl(".VARIABLE-DEF ::= .* on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
 pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
@@ -576,12 +594,12 @@ class ListenerParser:
 	def __init__(self, args):
 		self.args = args
 		self.params = self.args[1]
-	def parse(self, file, grammar):
+	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		for i, (c, p, n) in enumerate(self.params):
 			addParamPhrases(grammar, "_" + str(i), p.type(), n)
 		grammar.parseGrammarLine(".CMD ::= keskeytä toiminto . -> stop", FuncOutput(lambda: 'SCOPE[-1].bitOn("stop action")')) # suoritetaan isäntäscopessa
-		body = parseBlock(file, grammar)
+		body = parseBlock(file, grammar, report=report)
 		return RListener(*self.args, body)
 
 def defineAction(name, params, pre, post):
@@ -722,7 +740,7 @@ class ForParser:
 	def __init__(self, field_name, *args):
 		self.field_name = field_name
 		self.args = args
-	def parse(self, file, grammar):
+	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		
 		param_pattern = self.args[0]
@@ -731,7 +749,7 @@ class ForParser:
 		
 		addParamPhrases(grammar, "_val", param_pattern.type(), param_name)
 		
-		block = parseBlock(file, grammar)
+		block = parseBlock(file, grammar, report=report)
 		block_str = "lambda: (" + ", ".join(block) + ")"
 		
 		return '%s.forSet(%s, %s, %s, %s)' % (obj, repr(self.field_name), repr("_val"), param_pattern.toPython(), block_str)
@@ -741,9 +759,9 @@ class ForParser:
 class IfParser:
 	def __init__(self, condition):
 		self.condition = condition
-	def parse(self, file, grammar):
-		self.block = parseBlock(file, grammar)
-		return "(%s and %s)" % (self.condition, "(" + ", ".join(self.block) + ")")
+	def parse(self, file, grammar, report=False):
+		self.block = parseBlock(file, grammar, report=report)
+		return "(%s and %s)" % (self.condition[0], "(" + ", ".join(self.block) + ")")
 
 pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
 
@@ -751,9 +769,13 @@ pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
 
 pgl(".CMD ::= sano .EXPR-%d{nimento} . -> print($1)" % (asia.id,), FuncOutput(lambda x: 'say(' + x + '.asString())'))
 
+# Pelin lopettaminen
+
+pgl(".CMD ::= lopeta peli . -> end game", FuncOutput(lambda: 'endGame()'))
+
 # Komentojen jäsentäminen
 
-def parseBlock(reader, grammar, category="CMD"):
+def parseBlock(reader, grammar, category="CMD", report=False):
 	line = reader.nextline()
 	if line != "<indent>\0":
 		sys.stderr.write("Odotettiin sisennystä rivillä %d.\n" % (reader.linenum))
@@ -769,7 +791,7 @@ def parseBlock(reader, grammar, category="CMD"):
 			reader.skipToDedent()
 			break
 		if alternatives[0][1][-1] == ":":
-			ans.append(alternatives[0][0]().parse(reader, grammar))
+			ans.append(alternatives[0][0]().parse(reader, grammar, report=report))
 		else:
 			ans.append(alternatives[0][0]())
 	return ans
@@ -836,11 +858,12 @@ def loadFile(file, report=True):
 		if len(a) == 1:
 			t = a[0][0]()
 			if a[0][1][-1] == ":":
-				t.parse(reader, GRAMMAR)
+				t.parse(reader, GRAMMAR, report=True)
 		else:
-			sys.stderr.write("Virhe jäsennettäessä tiedoston riviä %d: `%s'." % (reader.linenum, line))
+			sys.stderr.write("Virhe jäsennettäessä tiedoston riviä %d: `%s'.\n" % (reader.linenum, line))
 	if report:
 		print("\rLadataan tiedostoa", file.name, "(100.00 %)")
+
 # Standardikirjasto
 
 def loadStandardLibrary():
@@ -870,6 +893,9 @@ def compileAll(file=sys.stdout):
 		print(ACTIONS[key].toPython(), file=file)
 	for listener in ACTION_LISTENERS:
 		print(listener.toPython(), file=file)
+	for var, dicti in [("CHECKS", CHECKS), ("MODIFYS", MODIFYS)]:
+		for key in dicti:
+			print('%s[%s] = %s' % (var, repr(key), dicti[key]), file=file)
 	print("playGame(GRAMMAR)", file=file)
 
 # Pääohjelma
