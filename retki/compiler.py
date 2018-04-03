@@ -398,24 +398,7 @@ class ForCondParser:
 # Ehtosäännön vartalo
 
 def parseCondBlock(file, grammar):
-	# parsitaan vartalo, luodaan check- ja modify -koodit ja yhdistetään ne tupleiksi
-	checks, modifys = [], []
-	while True:
-		cond_code = file.readline()
-		if not cond_code.strip():
-			break
-		cond_tokens = tokenize(cond_code)
-		alts = grammar.matchAll(cond_tokens, "COND-STMT", set())
-		if len(alts) != 1:
-			sys.stderr.write("Monitulkintainen ehtolause: `" + cond_code.strip() + "'. Vaihtoehdot: " + repr(alts) + "\n")
-			return [], []
-		if alts[0][1][-1] == ":":
-			check, modify = alts[0][0]().parse(file, grammar)
-		else:
-			check, modify = alts[0][0]()
-		checks.append(check)
-		modifys.append(modify)
-	return checks, modifys
+	return zip(*parseBlock(file, grammar, category="COND-STMT"))
 
 # Käyttäjän määrittelemät ehtosäännöt
 
@@ -770,38 +753,94 @@ pgl(".CMD ::= sano .EXPR-%d{nimento} . -> print($1)" % (asia.id,), FuncOutput(la
 
 # Komentojen jäsentäminen
 
-def parseBlock(file, grammar):
+def parseBlock(reader, grammar, category="CMD"):
+	line = reader.nextline()
+	if line != "<indent>\0":
+		sys.stderr.write("Odotettiin sisennystä rivillä %d.\n" % (reader.linenum))
+		return []
 	ans = []
 	while True:
-		line = file.readline()
-		if not line.strip():
+		line = reader.nextline()
+		if line is None or line == "<dedent>\0":
 			break
-		alternatives = grammar.matchAll(tokenize(line.strip()), "CMD", set())
+		alternatives = grammar.matchAll(tokenize(line), category, set())
 		if len(alternatives) != 1:
-			sys.stderr.write("Virhe jäsennettäessä riviä `" + line.strip() + "'. Vaihtoehdot: " + ", ".join([a[1] for a in alternatives]) + "\n")
+			sys.stderr.write("Virhe jäsennettäessä riviä %d: `%s' (%d vaihtoehtoa).\n" % (reader.linenum, line, len(alternatives)))
+			reader.skipToDedent()
 			break
 		if alternatives[0][1][-1] == ":":
-			ans.append(alternatives[0][0]().parse(file, grammar))
+			ans.append(alternatives[0][0]().parse(reader, grammar))
 		else:
 			ans.append(alternatives[0][0]())
 	return ans
 
 # Tiedoston lataaminen
 
-def loadFile(file):
+def takeWhitespace(string):
+	ans = ""
+	while string[0] in " \t":
+		ans += string[0]
+		string = string[1:]
+	return ans
+
+class FileReader:
+	def __init__(self, file):
+		self.lines = []
+		self.i = 0
+		stack = [""]
+		linenum = 0
+		while True:
+			linenum += 1
+			line = file.readline()
+			if not line:
+				break
+			if not line.strip() or line.strip()[0] == ">":
+				continue
+			indent = takeWhitespace(line)
+			if len(indent) > len(stack[-1]):
+				stack.append(indent)
+				self.lines.append((linenum, "<indent>\0"))
+			while len(indent) < len(stack[-1]):
+				stack.pop()
+				self.lines.append((linenum, "<dedent>\0"))
+			if indent != stack[-1]:
+				sys.stderr.write("Virheellinen sisennys rivillä %d.\n" % (linenum,))
+			self.lines.append((linenum, line.strip()))
+		self.maxlines = linenum
+	def nextline(self):
+		if self.i == len(self.lines):
+			return None
+		linenum, line = self.lines[self.i]
+		self.linenum = linenum
+		self.i += 1
+		return line
+	def skipToDedent(self):
+		while True:
+			line = self.nextline()
+			if line is None or line == "<dedent>\0":
+				break
+
+def loadFile(file, report=True):
+	reader = FileReader(file)
 	while True:
-		line = file.readline()
-		if not line:
+		line = reader.nextline()
+		if report:
+			print("\rLadataan tiedostoa", file.name, "(%.2f %%)" % (reader.linenum / reader.maxlines * 100), end="")
+		if line is None:
 			break
-		if not line.strip() or line[0] == ">":
+		if line == "<indent>":
+			sys.stderr.write("Odottamaton sisennys rivillä %d.\n" % (reader.linenum))
+			reader.skipToDedent()
 			continue
-		a = GRAMMAR.matchAll(tokenize(line.strip()), "DEF", set())
+		a = GRAMMAR.matchAll(tokenize(line), "DEF", set())
 		if len(a) == 1:
 			t = a[0][0]()
 			if a[0][1][-1] == ":":
-				t.parse(file, GRAMMAR)
+				t.parse(reader, GRAMMAR)
 		else:
-			print("Virhe jäsennettäessä tiedoston riviä `" + line.strip() + "'.")
+			sys.stderr.write("Virhe jäsennettäessä tiedoston riviä %d: `%s'." % (reader.linenum, line))
+	if report:
+		print("\rLadataan tiedostoa", file.name, "(100.00 %)")
 # Standardikirjasto
 
 def loadStandardLibrary():
