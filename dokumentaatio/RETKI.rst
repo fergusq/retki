@@ -123,6 +123,67 @@ Kieltä käytetään pelien tapahtumapaikkojen ja hahmojen kuvailuun, mihin luon
 Retki on ohjelmointikieli, jonka syntaksi pyrkii noudattamaan suomen kirjakielen sääntöjä.
 Useat sen rakenteet on lainattu Inform 7 -kielestä, joskaan ei kaikkia.
 
+Retkellä on periaatteessa mahdollista kirjoittaa minkä tahansa laisia ohjelmia, mutta se on esikuvansa tavoin suunniteltu tekstiseikkailuja varten.
+
+-----------------------
+ Asentaminen ja käyttö
+-----------------------
+
+Riippuvuudet
+============
+
+Voikko
+------
+
+Retki tarvitsee libvoikko-kirjaston suomenkielen morfologiaa varten.
+Se löytyy useimmista Linux-jakeluista nimellä ``libvoikko``.
+
+Jotta Voikko toimisi oikein, on asennettava myös suomen kielen morfologinen sanakirja.
+
+* Voikon versiota 3.8 varten lataa `tämä <sanakirja1>`_ versio sanakirjasta.
+
+* Voikon versiota 4 varten lataa `tämä <sanakirja2>`_ versio sanakirjasta.
+
+.. _sanakirja1 http://www.puimula.org/htp/testing/voikko-snapshot/dict-morpho.zip
+.. _sanakirja2 https://www.puimula.org/htp/testing/voikko-snapshot-v5/dict-morpho.zip
+
+Python 3
+--------
+
+Retki tarvitse Python 3.5:n.
+
+Paketit
+-------
+
+Asentaminen on helpointa pip-ohjelman avulla, mutta jos sitä ei ole,
+on asennettava Python-kirjastot voikko_ ja suomilog_.
+
+.. _voikko https://github.com/fergusq/voikko
+.. _suomilog https://github.com/fergusq/suomilog
+
+Asentaminen
+===========
+
+Retki-kääntäjä on saatavilla PyPi:ssä::
+
+	pip3 install retki
+
+Käyttäminen
+===========
+
+Retkeä voi käyttää joko interaktiivisessa tilassa tai kääntäjätilassa.
+
+Esimerkkipelin kääntäminen ja ajaminen::
+
+	retki examples/lyhyt-peli.txt -o peli.py
+	python3 peli.py
+
+Interaktiivinen tila
+--------------------
+
+Interaktiivisessa tilassa on mahdollista testata ohjelmaa tutkimalla muuttujien arvoja,
+määrittelemällä uusia olioita suorituksen aikana ja pelaamalla samalla työn alla olevaa peliä.
+
 -------------
  Retki-kieli
 -------------
