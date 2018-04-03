@@ -86,10 +86,14 @@ Määritelmä. Kun esine (E) on "näkyvillä":
 	jokin seuraavista:
 		E on pelaajan sijainnissa
 		pelaajan esineluettelo sisältää E:n
+		jollekin sisältäjälle (S) pelaajan esineluettelossa pätee:
+			E on S:n varassa
 
 Määritelmä. Kun esine (E) on "piilossa":
 	E ei ole pelaajan sijainnissa
 	pelaajan esineluettelo ei sisällä E:tä
+	jokaiselle sisältäjälle (S) pelaajan esineluettelossa pätee:
+		E ei ole S:n varassa
 
 > Kuvaileminen
 
