@@ -41,6 +41,9 @@ Määritelmä. Kun esine (E) on "[huoneella (H)]":
 Määritelmä. Kun esine (E) on "[tukijan (T)] päällä":
 	T:n tuettujen joukko sisältää E:n
 
+Määritelmä. Kun esine (E) on "[tukijalla (T)]":
+	T:n tuettujen joukko sisältää E:n
+
 > Ihminen, pelaaja
 
 Ihminen on käsite.
@@ -50,10 +53,14 @@ Ihmisellä on esineluetteloksi kutsuttu joukko esineitä.
 Pelaaja on ihminen.
 
 Määritelmä. Kun esine (E) on "näkyvillä":
-	E on pelaajan sijainnissa
+	jokin seuraavista:
+		E on pelaajan sijainnissa
+		pelaajan esineluettelo sisältää E:n
+
 
 Määritelmä. Kun esine (E) on "piilossa":
 	pelaajan sijainnin esinejoukko ei sisällä E:tä
+	pelaajan esineluettelo ei sisällä E:tä
 	jokaiselle tukijalle (T) pelaajan sijainnin esinejoukossa pätee:
 		T:n tuettujen joukko ei sisällä E:tä
 
@@ -166,15 +173,15 @@ Esineen katsomisen aikana:
 [Esineen] ottaminen on toiminto.
 Tulkitse "ota [esine]" ottamisena.
 
-Ennen kiinteän esineen ottamista:
-	Sano "Et pystyisi liikuttamaan sitä.".
-	Keskeytä toiminto.
-
 Ennen piilossa olevan esineen ottamista:
 	Jos pelaajan esineluettelo ei sisällä sitä:
 		Sano "Et näe mitään [sitä].".
 		Keskeytä toiminto.
 
+
+Ennen kiinteän esineen ottamista:
+	Sano "Et pystyisi liikuttamaan sitä.".
+	Keskeytä toiminto.
 
 Tylsän esineen ottamisen sijasta:
 	Sano "Sinun ei tee mieli koskea mihinkään.".
@@ -182,6 +189,9 @@ Tylsän esineen ottamisen sijasta:
 Esineen ottamisen aikana:
 	Se on nyt piilossa.
 	Lisää se pelaajan esineluetteloon.
+
+Esineen ottamisen jälkeen:
+	Sano "Sinulla on nyt [se].".
 
 > Esineluettelon tulostaminen
 
@@ -198,6 +208,30 @@ Esineluettelon tulostamisen aikana:
 		Sano "- [e][rivinvaihto]".
 
 
+> Lukeminen
+
+Esine on joko kirjoitusta sisältämätön tai kirjoitusta sisältävä.
+Esine on yleensä kirjoitusta sisältämätön.
+
+Esineellä on kirjoitukseksi kutsuttu merkkijono.
+Esineen kirjoitus on yleensä "".
+
+[Esineen] lukeminen on toiminto.
+Tulkitse "lue [esine]" lukemisena.
+Tulkitse "lue [esinettä]" lukemisena.
+
+Ennen piilossa olevan esineen lukemista:
+	Sano "Et näe mitään [sitä].".
+	Keskeytä toiminto.
+
+Ennen kirjoitusta sisältämättömän esineen lukemista:
+	Sano "[Se] ei sisällä mitään kirjoitusta.".
+	Keskeytä toiminto.
+
+Kirjoitusta sisältävän esineen lukemisen aikana:
+	Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
+	Sano "[sen kirjoitus][rivinvaihto]".
+
 > Kartta
 
 Piha on suljettu huone.
@@ -207,7 +241,7 @@ Eteinen on huone pihasta pohjoiseen.
 Eteisen kuvaus on "Eteisessä ei ole juuri mitään mitään kiinnostavaa.".
 
 Ovi on kiinteä esine eteisessä.
-Oven kuvaus on "Eteisen ovi on lukossa.".
+Oven kuvaus on "Eteisen ovi on lukossa. Voit nähdä sen läpi pihalle.".
 
 Matto on esine eteisessä.
 Maton kuvaus on "Räsymatto on hieman likainen.".
@@ -217,6 +251,13 @@ Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
 
 Sohva on kiinteä esine olohuoneessa.
 Sohvan kuvaus on "Vanha punainen sohva.".
+
+Pöytä on kiinteä tukija olohuoneessa.
+Pöydän kuvaus on "Vanha puinen pöytä.".
+
+Kirje on kirjoitusta sisältävä esine pöydän päällä.
+Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä.".
+Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt eteinen.
