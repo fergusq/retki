@@ -22,27 +22,57 @@ Huoneella on esinejoukoksi kutsuttu joukko esineitä.
 Seinä on suljettu huone.
 Seinän kuvaus on "Melko tavallinen seinä.".
 
-> Tukija
+> Sisältäjä
 
-Tukija on esineen alakäsite.
-Tukijalla on tuettujen joukoksi kutsuttu joukko esineitä.
+Sisältäjä on esineen alakäsite.
+Sisältäjällä on sisältöjoukoksi kutsuttu joukko esineitä.
+Sisältäjä on joko tukeva tai ympäröivä.
+Sisältäjä on yleensä ympäröivä.
+
+> Sisältäminen
+
+Määritelmä. Kun esine (E) on "[sisältäjän (S)] varassa":
+	jokin seuraavista:
+		S:n sisältöjoukko sisältää E:n
+		jollekin sisältäjälle (T) S:n sisältöjoukossa pätee:
+			E on T:n varassa
+
+Määritelmä. Kun esine (E) "ei ole [sisältäjän (S)] varassa":
+	kaikki seuraavista:
+		S:n sisältöjoukko ei sisällä E:tä
+		jokaiselle sisältäjälle (T) S:n sisältöjoukossa pätee:
+			E ei ole T:n varassa
+
+Määritelmä. Kun esine (E) on "[sisältäjän (S)] sisällä":
+	S on ympäröivä
+	E on S:n varassa
+
+Määritelmä. Kun esine (E) on "[sisältäjässä (S)]":
+	E on S:n sisällä
+
+Määritelmä. Kun esine (E) on "[sisältäjän (S)] päällä":
+	S on tukeva
+	E on S:n varassa
+
+Määritelmä. Kun esine (E) on "[sisältäjällä (S)]":
+	E on S:n päällä
+
+> Huoneessa oleminen
 
 Määritelmä. Kun esine (E) on "[huoneessa (H)]":
 	jokin seuraavista:
 		H:n esinejoukko sisältää E:n
-		jollekin tukijalle (T) H:n esinejoukossa pätee:
-			T:n tuettujen joukko sisältää E:n
-
-
+		jollekin sisältäjälle (S) H:n esinejoukossa pätee:
+			E on S:n varassa
 
 Määritelmä. Kun esine (E) on "[huoneella (H)]":
 	E on H:ssa
 
-Määritelmä. Kun esine (E) on "[tukijan (T)] päällä":
-	T:n tuettujen joukko sisältää E:n
-
-Määritelmä. Kun esine (E) on "[tukijalla (T)]":
-	T:n tuettujen joukko sisältää E:n
+Määritelmä. Kun esine (E) "ei ole [huoneessa (H)]":
+	kaikki seuraavista:
+		H:n esinejoukko ei sisällä E:tä
+		jokaiselle sisältäjälle (S) H:n esinejoukossa pätee:
+			E ei ole S:n varassa
 
 > Ihminen, pelaaja
 
@@ -57,13 +87,9 @@ Määritelmä. Kun esine (E) on "näkyvillä":
 		E on pelaajan sijainnissa
 		pelaajan esineluettelo sisältää E:n
 
-
 Määritelmä. Kun esine (E) on "piilossa":
-	pelaajan sijainnin esinejoukko ei sisällä E:tä
+	E ei ole pelaajan sijainnissa
 	pelaajan esineluettelo ei sisällä E:tä
-	jokaiselle tukijalle (T) pelaajan sijainnin esinejoukossa pätee:
-		T:n tuettujen joukko ei sisällä E:tä
-
 
 > Kuvaileminen
 
@@ -86,10 +112,13 @@ Huoneen kuvailemisen jälkeen:
 Suljetun huoneen kuvailemisen jälkeen:
 	Sano "Et voi mennä sinne.".
 
-Tukijan kuvailemisen jälkeen:
-	Toista jokaiselle esineelle (e) sen tuettujen joukossa:
+Tukevan sisältäjän kuvailemisen jälkeen:
+	Toista jokaiselle esineelle (e) sen sisältöjoukossa:
 		Sano "Sen päällä on [e].".
 
+Ympäröivän sisältäjän kuvailemisen jälkeen:
+	Toista jokaiselle esineelle (e) sen sisältöjoukossa:
+		Sano "Sen sisällä on [e].".
 
 > Esitteleminen
 
@@ -118,9 +147,13 @@ Suunnalla on vastasuunnaksi kutsuttu suunta.
 
 Pohjoinen on suunta.
 Etelä on suunta.
+Länsi on suunta.
+Itä on suunta.
 
 Pohjoisen vastasuunta on etelä.
 Etelän vastasuunta on pohjoinen.
+Lännen vastasuunta on itä.
+Idän vastasuunta on länsi.
 
 Kutakin suuntaa kohden huoneella voi olla naapurihuoneeksi siinä suunnassa kutsuttu huone.
 Huoneen naapurihuone suunnassa on yleensä seinä.
@@ -136,6 +169,7 @@ Liikkumisen komento on "liiku [suuntaan]".
 Tulkitse "liiku [suuntaan]" liikkumisena.
 Tulkitse "mene [suuntaan]" liikkumisena.
 Tulkitse "[suuntaan]" liikkumisena.
+Tulkitse "[suunta]" liikkumisena.
 
 [Huoneeseen] siirtyminen on toiminto.
 Siirtymisen komento on "siirry [huoneeseen]".
@@ -178,7 +212,6 @@ Ennen piilossa olevan esineen ottamista:
 		Sano "Et näe mitään [sitä].".
 		Keskeytä toiminto.
 
-
 Ennen kiinteän esineen ottamista:
 	Sano "Et pystyisi liikuttamaan sitä.".
 	Keskeytä toiminto.
@@ -207,7 +240,6 @@ Esineluettelon tulostamisen aikana:
 	Toista jokaiselle esineelle (e) pelaajan esineluettelossa:
 		Sano "- [e][rivinvaihto]".
 
-
 > Lukeminen
 
 Esine on joko kirjoitusta sisältämätön tai kirjoitusta sisältävä.
@@ -232,6 +264,33 @@ Kirjoitusta sisältävän esineen lukemisen aikana:
 	Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
 	Sano "[sen kirjoitus][rivinvaihto]".
 
+> Avaaminen
+
+[Esineen] avautuminen on toiminto.
+Avautumisen komento on "[esine] avautuu nyt".
+
+Esine on joko avattava tai ei-avattava.
+Esineellä on avaimeksi kutsuttu esine.
+
+[Esineen] avaaminen on toiminto.
+Tulkitse "avaa [esine]" avaamisena.
+
+Ennen ei-avattavan esineen avaamista:
+	Sano "Ei [sitä] voi avata.".
+	Keskeytä toiminto.
+
+Ennen piilossa olevan esineen avaamista:
+	Sano "Et näe mitään [sitä].".
+	Keskeytä toiminto.
+
+Ennen esineen avaamista:
+	Jos pelaajan esineluettelo ei sisällä sen avainta:
+		Sano "Sinulla ei ole avainta.".
+		Keskeytä toiminto.
+
+Esineen avaamisen aikana:
+	Se avautuu nyt.
+
 > Kartta
 
 Piha on suljettu huone.
@@ -252,12 +311,32 @@ Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
 Sohva on kiinteä esine olohuoneessa.
 Sohvan kuvaus on "Vanha punainen sohva.".
 
-Pöytä on kiinteä tukija olohuoneessa.
+Pöytä on kiinteä tukeva sisältäjä olohuoneessa.
 Pöydän kuvaus on "Vanha puinen pöytä.".
 
 Kirje on kirjoitusta sisältävä esine pöydän päällä.
 Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä.".
 Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
+
+Ruokahuone on huone olohuoneesta länteen.
+Ruokahuoneen kuvaus on "Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois".
+
+Keittiö on huone ruokahuoneesta etelään.
+Keittiön kuvaus on "Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle.".
+
+Työtaso on kiinteä tukeva sisältäjä keittiössä.
+Työtason kuvaus on "Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan.".
+
+Kattila on sisältäjä työtasolla.
+Kattilan kuvaus on "Kattila on vanha, kuten kaikki muukin.".
+
+Avain on esine kattilassa.
+Avaimen kuvaus on "Tämähän voisi sopia ulko-oveen.".
+Oven avain on avain.
+
+Oven avautumisen jälkeen:
+	Sano "Onneksi olkoon, voitit pelin.".
+	Lopeta peli.
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt eteinen.
