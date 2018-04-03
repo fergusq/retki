@@ -24,6 +24,10 @@ from .tokenutils import *
 GRAMMAR = Grammar()
 pgl = GRAMMAR.parseGrammarLine
 
+def setGrammar(grammar):
+	global GRAMMAR
+	GRAMMAR = grammar
+
 # Villikortit
 
 class AnyPattern:
@@ -334,6 +338,11 @@ def defineBit(owner, *names):
 			owner.id, name_code_nominative, name_str
 		), FuncOutput(lambda obj: 'obj.bitsOff(%s).bitOn(%s)' % (repr(name_set-{name_str}), repr(name_str))))
 		
+		if len(name_set) == 1:
+			pgl(".CMD ::= .EXPR-%d{nimento} ei ole enää %s . -> $1.%s = False" % (
+				owner.id, name_code_nominative, name_str
+			), FuncOutput(lambda obj: 'obj.bitOff(%s)' % (repr(name_str),)))
+		
 		pgl(".COND ::= .EXPR-%d{nimento} on %s -> $1.%s == True" % (
 			owner.id, name_code_nominative, name_str
 		), FuncOutput(lambda obj: (
@@ -563,7 +572,7 @@ def defineVariable(name, class_pattern):
 		pattern({"yksikkö", "nimento"}), vtype.id, name_str
 	), FuncOutput(lambda x: ('%s.equals(%s)' % (to_get(), x), orTrue(to_set(x)))))
 	
-	pgl(".CMD ::= tulkitse \" .* \" %s . -> $1 = %s" % (
+	pgl(".ALIAS-DEF ::= tulkitse \" .* \" %s . -> $1 = %s" % (
 		pattern({"yksikkö", "olento"}), name_str
 	), FuncOutput(lambda alias: obj.addVariableAlias(alias)))
 	
@@ -573,6 +582,7 @@ def defineVariable(name, class_pattern):
 
 pgl(".VARIABLE-DEF ::= .* on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
 pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
+pgl(".DEF ::= .ALIAS-DEF -> $1", identity)
 
 # Apufunktio
 
@@ -864,12 +874,28 @@ def loadFile(file, report=True):
 	if report:
 		print("\rLadataan tiedostoa", file.name, "(100.00 %)")
 
+# Tiedoston tuominen
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+LOADED_FILES = []
+
+def importFile(filename):
+	# kokeillaan onko kyseessä viite retken mukana tulevaan kirjastoon
+	path = os.path.join(SCRIPT_DIR, filename + ".txt")
+	if os.path.isfile(path):
+		filename = path
+	
+	if filename in LOADED_FILES:
+		return
+	LOADED_FILES.append(filename)
+	
+	with open(filename, "r") as file:
+		loadFile(file)
+
 # Standardikirjasto
 
 def loadStandardLibrary():
-	my_path = os.path.dirname(os.path.realpath(__file__))
-	with open(os.path.join(my_path, "std.txt")) as f:
-		loadFile(f)
+	importFile("std")
 
 # Kääntäminen
 
@@ -993,8 +1019,7 @@ def interactive():
 			continue
 		elif line.startswith("/lataa"):
 			try:
-				with open(line[6:].strip()) as f:
-					loadFile(f)
+				importFile(line[6:].strip())
 			except:
 				traceback.print_exc()
 			printStatistics()
