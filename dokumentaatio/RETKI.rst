@@ -2,6 +2,8 @@
  Retki
 =======
 
+.. contents:: Sisällys
+
 --------------------
  Summary in English
 --------------------
@@ -351,6 +353,9 @@ Jälkeen-kuuntelijat ilmoittavat pelaajalle toiminnon lopputuloksesta.
 		Sano "Sinulla on nyt [se].".
 
 Kuuntelijan sisällä voi käyttää toimintojen yhteydessä määriteltyjä komentoja, sekä seuraavia:
+
+Komennot
+--------
 
 ============================================== ====================
 Komento                                        Selitys
