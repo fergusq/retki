@@ -83,20 +83,33 @@ class RObject(Bits):
 		self.extra = extra or {}
 		self.name = name
 		self.name_tokens = name_tokens
+		self.aliases = []
 		if name:
 			self.data["nimi koodissa"] = CLASSES["merkkijono"].newInstance().setExtra("str", name)
 	def __repr__(self):
 		return self.asString()
 	def toPython(self):
 		var = 'OBJECTS[' + repr(self.id) + ']'
-		return (
-			'%s = RObject(CLASSES[%s], %s, %s, %s, %s)' % (var, repr(self.rclass.name), repr(self.name), repr(self.bits), repr(self.id), toPython(self.extra))
-			# parserisääntö, jos oliolla on nimi
-			+ (";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: %s))" % (
+		
+		# muodostetaan parserisäännöt aliaksista ja
+		names = self.aliases.copy()
+		if self.name_tokens:
+			names.append(self.name_tokens)
+		
+		grammar = ""
+		for name in names:
+			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: %s))" % (
 				self.rclass.id,
-				nameToCode(self.name_tokens, bits={"$"}, rbits={"nimento", "yksikkö"}),
+				nameToCode(name, bits={"$"}, rbits={"nimento", "yksikkö"}),
 				var
-			) if self.name_tokens else ""),
+			)
+		
+		# ulostulo on tuple, jonka ensimmäinen arvo luo olion ja parserisäännöt, ja toinen arvo luo kentät
+		return (
+			# ensimmäinen arvo:
+			'%s = RObject(CLASSES[%s], %s, %s, %s, %s)' % (var, repr(self.rclass.name), repr(self.name), repr(self.bits), repr(self.id), toPython(self.extra))
+			+ grammar,
+			# toinen arvo:
 			";".join([
 				# olioviittauskentät
 				'%s.data[%s] = OBJECTS[%d]' % (var, repr(key), self.data[key].id) for key in self.data if isinstance(self.data[key], RObject)
@@ -245,8 +258,8 @@ class RClass(Bits):
 		)
 	def addField(self, name, field):
 		self.fields[name] = field
-	def newInstance(self, name=None, bits=set(), name_tokens=None):
-		return RObject(self, name, self.allBits()|bits, name_tokens=name_tokens)
+	def newInstance(self, name=None, bitsOn=set(), bitsOff=set(), name_tokens=None):
+		return RObject(self, name, (self.allBits()|bitsOn)-bitsOff, name_tokens=name_tokens)
 	def superclasses(self):
 		if self.superclass == None:
 			return [self]
@@ -283,19 +296,30 @@ class RField:
 	def copy(self):
 		return RField(self.id, self.name, self.type, None, self.is_map)
 
-class RPattern(Bits):
-	def __init__(self, rclass=None, bits=None, conditions=None):
-		Bits.__init__(self, bits)
+class RPattern:
+	def __init__(self, rclass=None, bitsOn=None, bitsOff=None, conditions=None):
 		self.rclass = rclass
 		self.conditions = conditions or []
+		self.my_bitsOn = bitsOn or set()
+		self.my_bitsOff = bitsOff or set()
 	def toPython(self):	
-		return "RPattern(CLASSES[" + repr(self.rclass.name) + "], " + repr(self.bits) + "," + toPython(self.conditions) + ")"
+		return "RPattern(CLASSES[" + repr(self.rclass.name) + "], " + repr(self.my_bitsOn) + "," + repr(self.my_bitsOff) + "," + toPython(self.conditions) + ")"
 	def addCondition(self, cond):
 		self.conditions.append(cond)
 		return self
+	def bitOn(self, bit):
+		self.my_bitsOn.add(bit)
+		return self
+	def bitOff(self, bit):
+		self.my_bitsOff.add(bit)
+		return self
+	def bitsOff(self, bits):
+		for bit in bits:
+			self.bitOff(bit)
+		return self
 	def newInstance(self, name):
 		name_str = tokensToString(name)
-		obj = self.rclass.newInstance(name=name_str, name_tokens=name, bits=self.bits)
+		obj = self.rclass.newInstance(name=name_str, name_tokens=name, bitsOn=self.my_bitsOn, bitsOff=self.my_bitsOff)
 		for cond in self.conditions:
 			cond.doModify(obj)
 		return obj
@@ -306,7 +330,7 @@ class RPattern(Bits):
 		for cond in self.conditions:
 			if not cond.doCheck(obj):
 				return False
-		return obj.bits >= self.bits
+		return obj.bits >= self.my_bitsOn and not (obj.bits&self.my_bitsOff)
 	def type(self):
 		return self.rclass or CLASSES["asia"]
 
@@ -337,6 +361,7 @@ class RScope(Bits):
 	def __repr__(self):
 		return "Scope(" + repr(self.variables) + ")"
 
+ALIASES = {}
 GLOBAL_SCOPE = RScope()
 SCOPE = []
 STACK = []
@@ -369,6 +394,10 @@ def setVar(name, val):
 		scopes[-1].variables[name] = val
 def putVar(name, val):
 	visibleScopes()[-1].variables[name] = val
+def addAlias(name, alias):
+	if name not in ALIASES:
+		ALIASES[name] = []
+	ALIASES[name].append(alias)
 
 # Toiminnot
 

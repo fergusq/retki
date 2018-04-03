@@ -144,8 +144,8 @@ def defineClass(name, superclass):
 		if clazz is not rclass:
 			for _, group_strs, group_codes in clazz.bit_groups:
 				for group_str, group_code in zip(group_strs, group_codes):
-					addBitPatternPhrase(rclass, rclass, group_str, group_code, group_strs)
-					addBitClassPatternPhrase(rclass, group_str, group_code, group_strs)
+					addBitPatternPhrase(rclass, rclass, group_str, group_code, set(group_strs))
+					addBitClassPatternPhrase(rclass, group_str, group_code, set(group_strs))
 			for attributePhraseAdder in clazz.attributePhraseAdders:
 				attributePhraseAdder(rclass, rclass)
 	pgl(".CLASS ::= %s -> %s" % (name_code, name_str), FuncOutput(lambda: rclass))
@@ -294,13 +294,13 @@ def defineListField(owner, name, vtype, case="nimento"):
 
 # Adjektiivit
 
-def addBitPatternPhrase(owner, clazz, name_code, name_str, name_strs):
+def addBitPatternPhrase(owner, clazz, name_code, name_str, name_set):
 	pgl(".PATTERN-%d ::= %s .PATTERN-%d{$} -> %s($1)" % (clazz.id, name_code, owner.id, name_str),
-		FuncOutput(lambda p: p.bitsOff(name_strs).bitOn(name_str)))
+		FuncOutput(lambda p: p.bitsOff(name_set-{name_str}).bitOn(name_str)))
 
-def addBitClassPatternPhrase(clazz, name_code, name_str, name_strs):
+def addBitClassPatternPhrase(clazz, name_code, name_str, name_set):
 	pgl(".CLASS-PATTERN-%d ::= %s .CLASS-PATTERN-%d{$} -> %s($1)" % (clazz.id, name_code, clazz.id, name_str),
-		FuncOutput(lambda p: p.bitsOff(name_strs).bitOn(name_str)))
+		FuncOutput(lambda p: p.bitsOff(name_set-{name_str}).bitOn(name_str)))
 
 def defineBit(owner, *names):
 	increaseCounter()
@@ -312,6 +312,7 @@ def defineBit(owner, *names):
 	for name in names:
 		name_strs.append(tokensToString(name, {"yksikkö", "nimento"}))
 		name_codes.append(nameToCode(name, rbits={"yksikkö", "nimento"}))
+	name_set = set(name_strs)
 	owner.bit_groups.append((names, name_strs, name_codes))
 	
 	def addBitPhrases(name, name_str, name_code):
@@ -322,22 +323,22 @@ def defineBit(owner, *names):
 		), FuncOutput(lambda c: c.bitOn(name_str)))
 
 		for clazz in owner.subclasses():
-			addBitPatternPhrase(clazz, clazz, name_code, name_str, name_strs)
-			addBitClassPatternPhrase(clazz, name_code, name_str, name_strs)
+			addBitPatternPhrase(clazz, clazz, name_code, name_str, name_set)
+			addBitClassPatternPhrase(clazz, name_code, name_str, name_set)
 		
 		if owner.superclass:
 			for clazz in owner.superclass.superclasses():
-				addBitPatternPhrase(owner, clazz, name_code, name_str, name_strs)
+				addBitPatternPhrase(owner, clazz, name_code, name_str, name_set)
 		
 		pgl(".CMD ::= .EXPR-%d{nimento} on nyt %s . -> $1.%s = True" % (
 			owner.id, name_code_nominative, name_str
-		), FuncOutput(lambda obj: 'obj.bitsOff(%s).bitOn(%s)' % (repr(name_strs), repr(name_str))))
+		), FuncOutput(lambda obj: 'obj.bitsOff(%s).bitOn(%s)' % (repr(name_set-{name_str}), repr(name_str))))
 		
 		pgl(".COND ::= .EXPR-%d{nimento} on %s -> $1.%s == True" % (
 			owner.id, name_code_nominative, name_str
 		), FuncOutput(lambda obj: (
 			'%s in %s.bits' % (repr(name_str), obj),
-			orTrue('%s.bitsOff(%s).bitOn(%s)' % (obj, repr(name_strs), repr(name_str)))
+			orTrue('%s.bitsOff(%s).bitOn(%s)' % (obj, repr(name_set-{name_str}), repr(name_str)))
 		)))
 		
 	for name, name_str, name_code in zip(names, name_strs, name_codes):
@@ -418,7 +419,7 @@ def parseCondBlock(file, grammar):
 
 # Käyttäjän määrittelemät ehtosäännöt
 
-def defineCondition(grammar, file, is_adv, cases, nameds, first_named, owner, *args):
+def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owner, *args):
 	args = list(args)
 	if first_named:
 		first_name = args[0]
@@ -464,18 +465,26 @@ def defineCondition(grammar, file, is_adv, cases, nameds, first_named, owner, *a
 		"popStackFrame()",
 	]) + "))(" + ", ".join(p) + ")"
 	
-	pgl(".CMD ::= .EXPR-%d{nimento} on nyt %s . -> $1~%s = True" % (owner.id, pattern, name_str),
+	pre = "nyt" if custom_verb else ""
+	verb = "" if custom_verb else "on"
+	post = "" if custom_verb else "nyt"
+	
+	pgl(".CMD ::= %s .EXPR-%d{nimento} %s %s %s . -> $1~%s = True" % (pre, owner.id, verb, post, pattern, name_str),
 		FuncOutput(lambda *p: "(" + make_tuple(modify, p) + ")"))
 	
-	pgl(".COND ::= .EXPR-%d{nimento} on %s -> $1~%s" % (owner.id, pattern, name_str),
+	pgl(".COND ::= .EXPR-%d{nimento} %s %s -> $1~%s" % (owner.id, verb, pattern, name_str),
 		FuncOutput(lambda *p: ("(" + make_tuple(check, p) + ")[-2]", orTrue("(" + make_tuple(modify, p) + ")"))))
+	
+	# ohjelma ei osaa päätellä käyttäjän antaman verbin partisiippimuotoa
+	if custom_verb:
+		return
 	
 	# adjektiivisuus päätellään viimeisen sanan perusteella
 	if len(pre) == 0 and (len(params) == 0 or len(params[-1][1]) == 0):
 		is_adjective = False
 	else:
 		last_token = pre[-1] if len(params) == 0 else params[-1][1][-1]
-		is_adjective = not is_adv and ("laatusana" in last_token.bits() or "nimisana_laatusana" in last_token.bits()) and "nimento" in last_token.bits()
+		is_adjective = ("laatusana" in last_token.bits() or "nimisana_laatusana" in last_token.bits()) and "nimento" in last_token.bits()
 	
 	# adjektiivisen ja adverbiaalisen fraasin yhteinen funktio
 	func = lambda *p: p[-1].addCondition(RCondition(
@@ -524,6 +533,8 @@ def addConditionDefPattern(cases, first_named, nameds):
 	pattern = " ".join(["[ .CLASS{%s} %s ] .**" % (case, "" if not named else "( .* )") for case, named in zip(cases,nameds)])
 	pgl(".COND-DEF ::= Määritelmä . Kun .CLASS{nimento} %s on \" .** %s \" : -> def $1~ $*:" % (fname, pattern),
 		FuncOutput(lambda *p: ConditionParser(False, cases, nameds, first_named, *p)))
+	pgl(".COND-DEF ::= Määritelmä . Kun .CLASS{nimento} %s \" .** %s \" : -> def $1~ $*:" % (fname, pattern),
+		FuncOutput(lambda *p: ConditionParser(True, cases, nameds, first_named, *p)))
 
 for i in [0,1,2]:
 	for cases in itertools.product(*[CASES]*i):
@@ -538,7 +549,8 @@ def defineVariable(name, class_pattern):
 	pattern = lambda bits: nameToCode(name, bits, rbits={"yksikkö", "nimento"})
 	
 	vtype = class_pattern.type()
-	GLOBAL_SCOPE.variables[name_str] = class_pattern.newInstance(name)
+	obj = class_pattern.newInstance(name)
+	GLOBAL_SCOPE.variables[name_str] = obj
 	
 	to_get = lambda: 'getVar(' + repr(name_str) + ')'
 	to_set = lambda x: 'setVar(' + repr(name_str) + ', ' + x + ')'
@@ -553,6 +565,10 @@ def defineVariable(name, class_pattern):
 	pgl(".COND ::= %s on .EXPR-%d{nimento} -> %s==$2" % (
 		pattern({"yksikkö", "nimento"}), vtype.id, name_str
 	), FuncOutput(lambda x: ('%s.equals(%s)' % (to_get(), x), orTrue(to_set(x)))))
+	
+	pgl(".CMD ::= tulkitse \" .* \" %s . -> $1 = %s" % (
+		pattern({"yksikkö", "olento"}), name_str
+	), FuncOutput(lambda alias: obj.addVariableAlias(alias)))
 
 pgl(".VARIABLE-DEF ::= .* on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
 pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
