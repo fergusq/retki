@@ -3,7 +3,7 @@
 =======
 
 .. contents:: Sisällys
-   :backlinks: top
+   :backlinks: none
 
 --------------------
  Summary in English
