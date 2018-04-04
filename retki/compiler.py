@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import readline, os, sys, argparse, traceback
+import readline, os, sys, argparse, traceback, time
 import itertools
 from suomilog.patternparser import ERROR_STACK, setDebug, PatternRef, Grammar
 from suomilog.finnish import tokenize, CASES
@@ -154,6 +154,12 @@ def defineClass(name, superclass):
 				attributePhraseAdder(rclass, rclass)
 	pgl(".CLASS ::= %s -> %s" % (name_code, name_str), FuncOutput(lambda: rclass))
 	
+	def addClassCasePhrase(case):
+		pgl(".CLASS-CASE-%d ::= %s -> $1:%s" % (rclass.id, nameToCode(name, bits={case}), case), FuncOutput(lambda: case))
+
+	for case in CASES:
+		addClassCasePhrase(case)
+	
 	def addMapFieldDefPattern(key_case, is_pre):
 		pgl(".MAP-FIELD-DEF ::= Kutakin %s kohden .CLASS{ulkoolento} voi olla %s se{%s} %s %s kutsuttu .CLASS{nimento} . -> $1.$2 : {$4}" % (
 			nameToCode(name, bits={"osanto", "yksikkö"}),
@@ -172,6 +178,12 @@ def defineClass(name, superclass):
 pgl(".CLASS-DEF ::= .* on käsite . -> class $1 : asia", FuncOutput(lambda x: defineClass(x, asia)))
 pgl(".CLASS-DEF ::= .* on .CLASS{omanto} alakäsite . -> class $1 : $2", FuncOutput(defineClass))
 pgl(".DEF ::= .CLASS-DEF -> $1", identity)
+
+def addClassCasePhrase(case):
+	pgl(".CLASS-CASE ::= .CLASS{%s} -> $1:%s" % (case, case), FuncOutput(lambda cl: (cl, case)))
+
+for case in CASES:
+	addClassCasePhrase(case)
 
 # Ominaisuudet
 
@@ -411,7 +423,7 @@ def parseCondBlock(file, grammar, report=False):
 
 # Käyttäjän määrittelemät ehtosäännöt
 
-def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owner, *args, report=False):
+def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *args, report=False):
 	
 	# parsitaan argumentit
 	args = list(args)
@@ -425,10 +437,11 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 	i = 1
 	j = 0
 	while i < len(args)-1:
+		#                      VTYPE,CASE, POST,      NAME
 		if nameds[j]:
-			params.append((args[i], args[i+2], args[i+1]))
+			params.append((*args[i],   args[i+2], args[i+1]))
 		else:
-			params.append((args[i], args[i+1], None))
+			params.append((*args[i],   args[i+1], None))
 		i += 3 if nameds[j] else 2
 		j += 1
 	
@@ -436,11 +449,11 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 	increaseCounter()
 	
 	name_str = " ".join([tokensToString(pre)] + [
-		"- %s" % (tokensToString(post),) for _, post, _ in params
+		"- %s" % (tokensToString(post),) for _, _, post, _ in params
 	]) + "/" + str(getCounter())
 	
 	pattern = " ".join([tokensToCode(pre)] + [
-		".EXPR-%d{%s} %s" % (vtype.id, case, tokensToCode(post)) for case, (vtype, post, _) in zip(cases, params)
+		".EXPR-%d{%s} %s" % (vtype.id, case, tokensToCode(post)) for vtype, case, post, _ in params
 	])
 	
 	# make_call-funktiolla voi tehdä koodin, joka kutsuu ehtolausetta
@@ -462,7 +475,7 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 	# parsitaan vartalo
 	grammar = grammar.copy()
 	addParamPhrases(grammar, tmp_vars[0], owner, first_name)
-	for case, (vtype, _, name), tmp_var in zip(cases, params, tmp_vars[1:]):
+	for (vtype, case, _, name), tmp_var in zip(params, tmp_vars[1:]):
 		addParamPhrases(grammar, tmp_var, vtype, name)
 	
 	checks, modifys = parseCondBlock(file, grammar, report=report)
@@ -486,10 +499,10 @@ def defineCondition(grammar, file, custom_verb, cases, nameds, first_named, owne
 		return
 	
 	# adjektiivisuus päätellään viimeisen sanan perusteella
-	if len(pre) == 0 and (len(params) == 0 or len(params[-1][1]) == 0):
+	if len(pre) == 0 and (len(params) == 0 or len(params[-1][2]) == 0):
 		is_adjective = False
 	else:
-		last_token = pre[-1] if len(params) == 0 else params[-1][1][-1]
+		last_token = pre[-1] if len(params) == 0 else params[-1][2][-1]
 		is_adjective = ("laatusana" in last_token.bits() or "nimisana_laatusana" in last_token.bits()) and "nimento" in last_token.bits()
 	
 	# adjektiivisen ja adverbiaalisen fraasin yhteinen funktio
@@ -530,21 +543,20 @@ class ConditionParser:
 	def parse(self, file, grammar, report=False):
 		return defineCondition(grammar, file, *self.args, report=report)
 
-def addConditionDefPatterns(cases):
-	for first_named, *nameds in itertools.product(*[[False, True]]*(len(cases)+1)):
-		addConditionDefPattern(cases, first_named, nameds)
+def addConditionDefPatterns(num_params):
+	for first_named, *nameds in itertools.product(*[[False, True]]*(num_params+1)):
+		addConditionDefPattern(num_params, first_named, nameds)
 
-def addConditionDefPattern(cases, first_named, nameds):
+def addConditionDefPattern(num_params, first_named, nameds):
 	fname = "" if not first_named else "( .* )"
-	pattern = " ".join(["[ .CLASS{%s} %s ] .**" % (case, "" if not named else "( .* )") for case, named in zip(cases,nameds)])
+	pattern = " ".join(["[ .CLASS-CASE %s ] .**" % ("" if not named else "( .* )",) for named in nameds])
 	pgl(".COND-DEF ::= Määritelmä . Kun .CLASS{nimento} %s on \" .** %s \" : -> def $1~ $*:" % (fname, pattern),
-		FuncOutput(lambda *p: ConditionParser(False, cases, nameds, first_named, *p)))
+		FuncOutput(lambda *p: ConditionParser(False, nameds, first_named, *p)))
 	pgl(".COND-DEF ::= Määritelmä . Kun .CLASS{nimento} %s \" .** %s \" : -> def $1~ $*:" % (fname, pattern),
-		FuncOutput(lambda *p: ConditionParser(True, cases, nameds, first_named, *p)))
+		FuncOutput(lambda *p: ConditionParser(True, nameds, first_named, *p)))
 
-for i in [0,1,2]:
-	for cases in itertools.product(*[CASES]*i):
-		addConditionDefPatterns(cases)
+for num_params in [0,1,2]:
+	addConditionDefPatterns(num_params)
 
 pgl(".DEF ::= .COND-DEF -> $1", identity)
 
@@ -649,12 +661,15 @@ def defineAction(name, params, pre, post):
 			addListenerDefPattern(p_pre, p_case, p_post, priority, is_special_case, is_general_case, nameds)
 	pgl(".DEF ::= .LISTENER-DEF-%d -> $1" % (action.id,), identity)
 	
-	def defineCommand(category, cmd_cases, pre, *posts):
+	def defineCommand(category, pre, *cases_posts):
+		cmd_params = []
+		for i in range(0, len(cases_posts), 2):
+			cmd_params.append((cases_posts[i], cases_posts[i+1]))
 		command_pattern = "%s %s" % (
 			tokensToCode(pre),
 			" ".join([
 				".EXPR-%d{%s,yksikkö} %s" % (a_class.id, cmd_case, tokensToCode(post))
-			for cmd_case, (_, a_class, _), post in zip(cmd_cases, params, posts)])
+			for (_, a_class, _), (cmd_case, post) in zip(params, cmd_params)])
 		)
 		pgl(".%s ::= %s . -> %s($1)" % (
 			category,
@@ -664,10 +679,12 @@ def defineAction(name, params, pre, post):
 		if category == "PLAYER-CMD":
 			action.addPlayerCommand(command_pattern)
 	
-	def addCommandDefPhrase(cmd_cases):
+	def addCommandDefPhrase():
 		cmd_pattern = " ".join([
-				"[ " + a_class.nameToCode({cmd_case, "yksikkö"}) + " ] .**"
-			for cmd_case, (_, a_class, _) in zip(cmd_cases, params)])
+			"[ .CLASS-CASE-%d ] .**" % (a_class.id,)
+		for _, a_class, _ in params])
+		
+		# Action patterneja ovat 1) pelkkä toiminnon nimi 2) toiminnon nimi + adpositiot 3) toiminnon nimi + adpositiot + parametrien tyypit
 		action_patterns = [
 			"%s %s{-minen,CASE} %s" % (
 				tokensToCode(pre), name.baseform("-minen"), tokensToCode(post),
@@ -695,35 +712,35 @@ def defineAction(name, params, pre, post):
 				action_pattern.replace("CASE", "omanto"),
 				cmd_pattern,
 				name.token
-			), FuncOutput(lambda *p: defineCommand("CMD", cmd_cases, *p)))
+			), FuncOutput(lambda *p: defineCommand("CMD", *p)))
 			pgl(".COMMAND-DEF-%d ::= tulkitse \" .** %s \" %s . -> def %s command" % (
 				action.id,
 				cmd_pattern,
 				action_pattern.replace("CASE", "olento"),
 				name.token
-			), FuncOutput(lambda *p: defineCommand("PLAYER-CMD", cmd_cases, *p)))
+			), FuncOutput(lambda *p: defineCommand("PLAYER-CMD", *p)))
 	
-	for cmd_cases in itertools.product(*[CASES]*len(params)):
-		addCommandDefPhrase(cmd_cases)
+	addCommandDefPhrase()
 	
 	pgl(".DEF ::= .COMMAND-DEF-%d -> $1" % (action.id,), identity)
 
-def addActionDefPattern(cases):
+def addActionDefPattern(num_params):
 	def transformArgs(args):
 		ans = []
 		i = -2
-		for case, i in zip(cases, range(0, len(cases)*2, 2)):
-			ans.append((args[i], args[i+1], case))
-		return args[i+3], ans, args[i+2], args[i+4]
+		for i in range(0, num_params*2, 2):
+			#           PRE      CLASS, CASE
+			ans.append((args[i], *args[i+1]))
+		#      NAME       PARAMS PRE        POST
+		return args[i+3], ans,   args[i+2], args[i+4]
 	pgl(".ACTION-DEF ::= %s .** ..{-minen,nimento} .** on toiminto . -> action $%d(%d)" % (
-		" ".join([".** [ .CLASS{%s,yksikkö} ]" % (case,) for case in cases]),
-		len(cases)*2+2,
-		len(cases)
+		" ".join([".** [ .CLASS-CASE ]"]*num_params),
+		num_params*2+2,
+		num_params
 	), FuncOutput(lambda *p: defineAction(*transformArgs(p))))
 
-for i in [0,1,2]:
-	for cases in itertools.product(*[CASES]*i):
-		addActionDefPattern(cases)
+for num_params in [0,1,2]:
+	addActionDefPattern(num_params)
 
 pgl(".DEF ::= .ACTION-DEF -> $1", identity)
 
@@ -818,7 +835,11 @@ def takeWhitespace(string):
 class FileReader:
 	def __init__(self, file):
 		self.lines = []
+		self.times = []
+		self.prev_time = 0
+		self.profiling = False
 		self.i = 0
+		
 		stack = [""]
 		linenum = 0
 		while True:
@@ -840,6 +861,13 @@ class FileReader:
 			self.lines.append((linenum, line.strip()))
 		self.maxlines = linenum
 	def nextline(self):
+		if self.profiling:
+			if self.i > 0:
+				t = time.time() - self.prev_time
+				self.times.append(t)
+			self.prev_time = time.time()
+		else:
+			self.times.append(0)
 		if self.i == len(self.lines):
 			return None
 		linenum, line = self.lines[self.i]
@@ -851,6 +879,11 @@ class FileReader:
 			line = self.nextline()
 			if line is None or line == "<dedent>\0":
 				break
+	def profile(self):
+		self.profiling = True
+	def printProfilingData(self):
+		for t, line in sorted(zip(self.times, self.lines)):
+			print("`" + line[1] + "'", t, "s")
 
 def loadFile(file, report=True):
 	reader = FileReader(file)
