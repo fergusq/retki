@@ -140,12 +140,12 @@ Se löytyy useimmista Linux-jakeluista nimellä ``libvoikko``.
 
 Jotta Voikko toimisi oikein, on asennettava myös suomen kielen morfologinen sanakirja.
 
-* Voikon versiota 3.8 varten lataa `tämä <sanakirja1>`_ versio sanakirjasta.
+* Voikon versiota 3.8 varten lataa `tämä <sanakirja1_>`_ versio sanakirjasta.
 
-* Voikon versiota 4 varten lataa `tämä <sanakirja2>`_ versio sanakirjasta.
+* Voikon versiota 4 varten lataa `tämä <sanakirja2_>`_ versio sanakirjasta.
 
-.. _sanakirja1 http://www.puimula.org/htp/testing/voikko-snapshot/dict-morpho.zip
-.. _sanakirja2 https://www.puimula.org/htp/testing/voikko-snapshot-v5/dict-morpho.zip
+.. _sanakirja1: http://www.puimula.org/htp/testing/voikko-snapshot/dict-morpho.zip
+.. _sanakirja2: https://www.puimula.org/htp/testing/voikko-snapshot-v5/dict-morpho.zip
 
 Python 3
 --------
@@ -158,8 +158,8 @@ Paketit
 Asentaminen on helpointa pip-ohjelman avulla, mutta jos sitä ei ole,
 on asennettava Python-kirjastot voikko_ ja suomilog_.
 
-.. _voikko https://github.com/fergusq/voikko
-.. _suomilog https://github.com/fergusq/suomilog
+.. _voikko: https://github.com/fergusq/voikko
+.. _suomilog: https://github.com/fergusq/suomilog
 
 Asentaminen
 ===========
