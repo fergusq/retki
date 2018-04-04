@@ -310,6 +310,9 @@ Ovi on yleensä kiinteä.
 [Ovesta] meneminen on toiminto.
 Tulkitse "mene [ovesta]" ovesta menemisenä.
 
+Ovesta menemisen sijasta:
+	Sano "Ovi on lukossa.".
+
 > Kartta
 
 Piha on suljettu huone.
@@ -338,7 +341,10 @@ Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä
 Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
 
 Ruokahuone on huone olohuoneesta länteen.
-Ruokahuoneen kuvaus on "Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois".
+Ruokahuoneen kuvaus on "Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois.".
+
+Takaovi on ovi ruokahuoneessa.
+Takaoven kuvaus on "Takaovi on tiukasti lukossa.".
 
 Keittiö on huone ruokahuoneesta etelään.
 Keittiön kuvaus on "Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle.".
@@ -353,7 +359,7 @@ Avain on esine kattilassa.
 Avaimen kuvaus on "Tämähän voisi sopia ulko-oveen.".
 Ulko-oven avain on avain.
 
-Oven avautumisen jälkeen:
+Ulko-oven avautumisen jälkeen:
 	Sano "Onneksi olkoon, voitit pelin.".
 	Lopeta peli.
 
