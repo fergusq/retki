@@ -295,7 +295,10 @@ class RClass(Bits):
 	def addSelectionRule(self, rule):
 		self.selection_rules.append(rule)
 	def newInstance(self, name=None, bitsOn=set(), bitsOff=set(), name_tokens=None):
-		return RObject(self, name, (self.allBits()|bitsOn)-bitsOff, name_tokens=name_tokens, srules=self.selection_rules[:])
+		srules = []
+		for clazz in self.superclasses():
+			srules += clazz.selection_rules
+		return RObject(self, name, (self.allBits()|bitsOn)-bitsOff, name_tokens=name_tokens, srules=srules)
 	def superclasses(self):
 		if self.superclass == None:
 			return [self]
