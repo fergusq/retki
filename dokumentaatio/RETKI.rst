@@ -234,9 +234,9 @@ Lähdekooditiedosto
 ==================
 
 Retki-kielinen lähdekooditiedosto on joukko määrityksiä ("definition").
-Retki tukee tällä hetkellä 14 eri määritystyyppiä [#määritykset]_.
+Retki tukee tällä hetkellä 15 eri määritystyyppiä [#määritykset]_.
 
-.. [#määritykset] Määrityksiä ovat luokkamääritys, bittikenttämääritys, bittikentän oletusarvomääritys, oliokenttämääritys, joukkokenttämääritys, kuvauskenttämääritys, kentän oletusarvomääritys, kentän arvon määritys, muuttujamääritys, ehtomääritys, toimintomääritys, kuuntelijamääritys, komentomääritys ja pelaajakomentomääritys.
+.. [#määritykset] Määrityksiä ovat luokkamääritys, bittikenttämääritys, bittikentän oletusarvomääritys, oliokenttämääritys, joukkokenttämääritys, kuvauskenttämääritys, kentän oletusarvomääritys, kentän arvon määritys, muuttujamääritys, ehtomääritys, toimintomääritys, kuuntelijamääritys, komentomääritys, pelaajakomentomääritys ja todennäköisyysmääritys.
 
 Luokkamääritykset
 =================
@@ -412,6 +412,51 @@ Pelaajakomentomääritys luo komennon, jolla pelaaja voi laukaista toiminnon pel
 Sekä komentomäärityksessä että pelaajakomentomäärityksessä tyyppien ja mahdollisten postpositioiden nimet voi tai voi olla merkitsemättä koodiin,
 mutta ne on pakko merkitä, jos kääntäjä ei pysty muuten päättelemään, mikä toiminto on kyseessä (esimerkiksi jos sekä "esineen ottaminen" että "ruoan ottaminen" ovat toimintoja).
 
+Todennäköisyysmääritys
+----------------------
+
+Todennäköisyysmäärityksellä voi määritellä todennäköisyyden sille, tarkoittaako pelaaja tiettyä esinettä (tai luokkaa) käyttäessään jotakin sanaa komennossaan.
+
+Tarkoitusmäärittelyn muoto on::
+
+	Tarkoittaako pelaaja (luokkaa/muuttujaa):
+		(todennäköisyys)
+	
+Todennäköisyys voi olla yksi seuraavista:
+
+====================== =====
+Lauseke                Arvo
+====================== =====
+varmasti               1000
+hyvin todennäköisesti  100
+todennäköisesti        10
+ehkä                   0
+tuskin                 -10
+epätodennäköistä       -10
+hyvin epätodennäköistä -100
+varmasti ei            -1000
+jos (ehto): muuten:    Ehdon mukaan joko seuraava sisennetty todennäköisyys tai muuten-lohkon jälkeen tuleva sisennetty todennäköisyys
+====================== =====
+
+Jos pelaajan syöttämä lause on monitulkintainen,
+jokaisen vaihtoehdon todennäköisyysarvot lasketaan (jos yhdellä vaihtoehdolla on monta todennäköisyyssääntöä, ne lasketaan yhteen)
+ja todennäköisin vaihtoehto valitaan.
+
+::
+
+	Tarkoittaako pelaaja esinettä:
+		Jos se on näkyvillä:
+			ehkä
+		Muuten:
+			hyvin epätodennäköistä
+
+	Muistikirja on esine.
+	Tarkoittaako pelaaja muistikirjaa:
+		varmasti
+
+Ylläoleva sääntö sanoo, että näkyvillä olevat esineet ovat todennäköisempiä kuin piilossa olevat, paitsi muistikirja, johon pelaaja viittaa aina, jos lause on monitulkintainen.
+Esimerkiksi ``ota esine`` viittaa aina muistikirjaan, kuten myös ``ota muistikirja``, mutta ``ota muki`` viittaa johonkin näkyvillä olevaan mukiin.
+
 Kuuntelijamääritys
 ==================
 
@@ -475,3 +520,78 @@ Sano (merkkijono).                             Tulostaa merkkijonon pelaajalle.
 Keskeytä toiminto.                             Keskeyttää nykyisen toiminnon suorittamisen.
 Lopeta peli.                                   Keskeyttää ohjelman suorituksen.
 ============================================== ====================
+
+Hahmot
+------
+
+Hahmo on tapa tunnistaa ja luoda tietyntyyppisiä olioita.
+Se koostuu luokan nimestä, biteistä ja ehdoista.
+
+::
+
+	valaistu käytävä
+	pöydän päällä oleva esine
+	kiinteä olohuoneessa oleva esine
+
+Hahmoa voi käyttää muuttujan luomiseen sekä kuuntelijan ja silmukan rajaamiseen koskemaan vain tiettyjä arvoja.
+
+Muuttujamäärittelyssä on myös mahdollista käyttää seuraavaa erikoissyntaksia ehtojen määrittämiseksi::
+
+	Muki on esine pöydän päällä.
+	Tuoli on kiinteä esine olohuoneessa.
+
+----------
+ Toteutus
+----------
+
+Retki on toteutettu Suomilog-kirjaston (ja sen käyttämän Voikko-kirjaston) avulla.
+Suomilog parsii kontekstivapaita kielioppeja, joihin on lisätty lisätietoa taivutusmuodoista.
+
+Retki-kääntäjä koostuu kielioppisäännöistä ja funktioista, jotka suoritetaan kun sääntö pätee.
+Eräs säännöistä on luokan määrittelyyn käytetty sääntö:
+
+.. code:: python
+   :number-lines:
+
+	pgl(".CLASS-DEF ::= .* on .CLASS{omanto} alakäsite . -> class $1 : $2", FuncOutput(defineClass))
+
+``pgl`` (parseGrammarLine) lisää uuden säännön kielioppiin.
+Tässä tapauksessa se lisää ``.CLASS-DEF``-nimisen säännön.
+``.*`` täsmää mihin tahansa ei-tyhjään merkkijonoon ja ``.CLASS{omanto}`` genetiivimuotoiseen luokan nimeen.
+Nuolen ``->`` jälkeen säännössä on merkkijonoesitys, joka luodaan jäsennetystä tekstistä debug-tarkoituksia varten.
+Viimeiseksi määritellään, että jäsentämisen jälkeen kutsutaan ``defineClass``-funktiota.
+
+``defineClass`` luo rekisteröi luokan ja lisää siihen liittyvät kielioppisäännöt kielioppiin.
+
+.. code:: python
+   :number-lines:
+
+	def defineClass(name, superclass):
+		name_str = tokensToString(name)
+		name_code = nameToCode(name)
+		
+		if name_str in CLASSES:
+			raise Exception("redefinition of class " + name_str)
+		
+		rclass = RClass(name_str, superclass, name)
+	
+		for clazz in reversed(superclass.superclasses()) if superclass else []:
+			for fname in clazz.fields:
+				rclass.fields[fname] = clazz.fields[fname].copy()
+		
+		...
+
+``tokensToString`` muodostaa luokan nimestä merkkijonoesityksen.
+``nameToCode`` etsii nimestä ne sanat, jotka taipuvat (nominatiivissa olevat substantiivit ja adjektiivit)
+ja luo kielioppikoodin, joka täsmää nimeen.
+
+Luokkaolion luomisen jälkeen luokalle lisätään kaikki sen yläluokkien kentät.
+Tämän jälkeen ``defineClass`` määrittelee useita kielioppisääntöjä, esimerkiksi alla olevan.
+
+.. code:: python
+   :number-lines: 27
+
+	pgl(".CLASS ::= %s -> %s" % (name_code, name_str), FuncOutput(lambda: rclass))
+
+``.CLASS`` määritellään täsmäämään luokan nimeen, ja tämän ehdon täsmätessä kutsutaan lambdaa, joka palauttaa luokaa vastaavan olion.
+Kun esimerkiksi ``.CLASS-DEF``:n sisältämä ``.CLASS`` täsmää tähän luokkaan, lambdan palauttama olio annetaan argumenttina ``defineClass``-funktiolle (``superclass``-parametriin).
