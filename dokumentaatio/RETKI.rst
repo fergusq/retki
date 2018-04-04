@@ -63,7 +63,7 @@ INTELLECTin valmistaneen Artificial Intelligence Corporation työntekijä Larry 
 	That process must be carried out by people without specific AI training. – –
 
 Tiivistäen, Harris kuvailee kahta ongelmaa.
-Ensinnäkin käyttäjän voi olla vaikea ymmärtää sitä, minkälaisia kysylyitä järjestelmä hyväksyy ja minkälaisia ei.
+Ensinnäkin käyttäjän voi olla vaikea ymmärtää sitä, minkälaisia kyselyitä järjestelmä hyväksyy ja minkälaisia ei.
 Viattomat muutokset kuten sanajärjestyksen muuttaminen voivat aiheuttaa virheen järjestelmässä.
 Käyttäjän on vaikea tai mahdoton ymmärtää mitä hän tekee väärin, varsinkin jos kielen käyttöohjeissa lukee pelkästään "kirjoita miten tuntuu luonnolliselta".
 Olen itse törmännyt vastaavaan ongelmaan Wolfram Alpha -järjestelmän kanssa.
@@ -80,13 +80,13 @@ Näistä ongelmista voimme tehdä seuraavat johtopäätökset:
 
 Toiseen kohtaan liittyy myös vahvasti monitulkintaisuus-ongelma.
 Koska ihminen on ymmärtää kontekstia, ei ihmisen kielen ole tarpeellista olla yksiselitteinen.
-Siksi eri aloilla voi olla samaa tarkoittavia sanoja ja ilmauksia.
+Siksi eri aloilla voi olla samaa tarkoittavia sanoja ja ilmauksia ja kielessä esiintyy muutenkin monitulkintaisuutta.
 On useita tapoja ratkaista tämä ongelma.
 
 Järjestelmä voi pyrkiä arvaamaan, mitä käyttäjä kysyy (Wolfram Alphan toimintatapa).
 Tämä voidaan toteuttaa tilastollisesti tai etukäteen määritellysti antamalla sanojen eri merkityksille etäisyyksiä ja tämän jälkeen valitsemalla ne tulkinnat, jotka ovat lähellä toisiaan, siis samassa kontekstissa.
 Kuitenkin arvaaminen on huono vaihtoehto, sillä se ei välttämättä johda käyttäjän haluamaan lopputulokseen.
-Siksi monet järjestelmät kysyvät käyttäjältä, mitä tämä tahtoo (INTELLECTin toimintatapa).
+Siksi monet järjestelmät kysyvät käyttäjältä tarvittaessa, mitä tämä tahtoo (INTELLECTin toimintatapa).
 Näin järjestelmä tekee aina, mitä halutaan.
 
 Kysyminen voi kuitenkin olla epäkäytännöllistä, jos järjestelmän on tarkoitus tulkita yksittäisten kyselyiden sijasta pitkiä komentolistauksia.
@@ -104,7 +104,7 @@ On kuitenkin toinenkin mahdollisuus: tehdä hyvin alakohtainen kieli ja hyväksy
 Mutta tämäkin on rajoittavaa: entä jos haluan käyttää joitakin muita sanoja kuin mitä kielen suunnittelija on etukäteen päättänyt?
 
 Ratkaisuksi tähän keksin järjestelmän, jota kutsun *itseään täydentäväksi kieliopiksi*.
-Kun jäsennin löytää muuttujan, funktion tai muun rakenteen määrityksen, se lisää tätä muuttujaa vastaavat säännöt kielioppitauluunsa ja muistaa sen jälkeen jäsentäessään uusia rivejä.
+Kun jäsennin löytää muuttujan, funktion tai muun rakenteen määrityksen, se lisää tätä muuttujaa vastaavat säännöt kielioppitauluunsa ja muistaa ne sen jälkeen jäsentäessään uusia rivejä.
 Tämän ansiosta ei ole vaaraa, että esimerkiksi "iso alkukirjain" voitaisiin tulkita sekä muuttujaksi että funktioksi, sillä järjestelmä tietää tämän jo ennen lausekkeen jäsentämistä.
 Menetelmä on toimiva, mutta siinä on joitakin suuria heikkouksia, joihin palaan Retken toteutusta käsittelevässä luvussa.
 
@@ -153,7 +153,7 @@ Alla on katkelma ``lyhyt-peli.txt``-esimerkistä. Se on tyypillinen huoneen mä�
 	
 		(Esine) on (bitit) (tyyppi) (paikka).
 	
-	mikä ei ole luonnollisista kielistä inspiroituneille ohjelmointikielille verboosia.
+	mikä ei ole luonnollisista kielistä inspiroituneille ohjelmointikielille tyypillisen verboosia.
 	Niinpä kielen käyttäminen ei ainakaan tässä tarkoituksessa ole epäkäytännöllistä.
 
 Toiseksi pöydästä käytetään kyseenalaista termiä "tukeva sisältäjä".
@@ -186,6 +186,8 @@ Jotta Voikko toimisi oikein, on asennettava myös suomen kielen morfologinen san
 
 .. _sanakirja1: http://www.puimula.org/htp/testing/voikko-snapshot/dict-morpho.zip
 .. _sanakirja2: https://www.puimula.org/htp/testing/voikko-snapshot-v5/dict-morpho.zip
+
+Pura zip-paketti ``~/.voikko/``-kansioon.
 
 Python 3
 --------
