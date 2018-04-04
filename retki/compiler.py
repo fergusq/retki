@@ -588,6 +588,10 @@ def defineVariable(name, class_pattern):
 		pattern({"yksikkö", "olento"}), name_str
 	), FuncOutput(lambda alias: obj.addVariableAlias(alias)))
 	
+	pgl(".SELECTION-DEF ::= tarkoittaako pelaaja %s : -> does the player mean %s:" % (
+		pattern({"yksikkö", "olento"}), name_str
+	), FuncOutput(lambda: SelectionParser(obj)))
+	
 	for clazz in vtype.superclasses():
 		pgl(".PATTERN-%d ::= %s -> %s" % (clazz.id, pattern({"$"}), name_str),
 			FuncOutput(lambda: RPattern(obj=obj)))
@@ -598,17 +602,17 @@ pgl(".DEF ::= .ALIAS-DEF -> $1", identity)
 
 # Apufunktio
 
-def addParamPhrases(grammar, case, vtype, name):
+def addParamPhrases(grammar, case, vtype, name, varname=None):
 	if name:
 		for clazz in vtype.superclasses():
 			grammar.parseGrammarLine(".EXPR-%d ::= %s -> %s param" % (
 				clazz.id, nameToCode(name, rbits={"yksikkö", "nimento"}), vtype.name
-			), FuncOutput(lambda: 'getVar(' + repr(case) + ')'))
+			), FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
 	else:
 		pronoun = "hän" if "inhimillinen" in vtype.bits else "se"
 		for clazz in vtype.superclasses():
 			grammar.parseGrammarLine(".EXPR-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
-				FuncOutput(lambda: 'getVar(' + repr(case) + ')'))
+				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
 
 # Toiminnot
 
@@ -783,12 +787,29 @@ class ForParser:
 
 # If-lause
 
+def joinCodes(codes):
+	if len(codes) == 1:
+		return codes[0]
+	elif len(codes) == 0:
+		return "()"
+	else:
+		return "(" + ", ".join(codes) + ")[-1]"
+
 class IfParser:
-	def __init__(self, condition):
+	def __init__(self, condition, category="CMD", force_else=False):
 		self.condition = condition
+		self.category = category
+		self.force_else = force_else
 	def parse(self, file, grammar, report=False):
-		self.block = parseBlock(file, grammar, report=report)
-		return "(%s and %s)" % (self.condition[0], "(" + ", ".join(self.block) + ")")
+		block = parseBlock(file, grammar, category=self.category, report=report)
+		block_str = joinCodes(block)
+		if self.force_else or (file.peekline() and file.peekline().lower() in ["muulloin:", "muuten:"]):
+			file.accept("muulloin:", "muuten:")
+			else_block = parseBlock(file, grammar, category=self.category, report=report)
+			else_str = joinCodes(else_block)
+			return "((%s and %s) or %s)" % (self.condition[0], block_str, else_str)
+		else:
+			return "(%s and %s)" % (self.condition[0], block_str)
 
 pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
 
@@ -799,6 +820,39 @@ pgl(".CMD ::= sano .EXPR-%d{nimento} . -> print($1)" % (asia.id,), FuncOutput(la
 # Pelin lopettaminen
 
 pgl(".CMD ::= lopeta peli . -> end game", FuncOutput(lambda: 'endGame()'))
+
+# Valitsemiskomennot
+
+pgl(".SELECTION-CMD ::= jos .COND : -> if $1:", FuncOutput(lambda cond: IfParser(cond, "SELECTION-CMD", True)))
+
+SELECTION_VALUES = [
+	("varmasti", "likely", 1000),
+	("hyvin todennäköisesti", "likely", 100),
+	("todennäköisesti", "likely", 10),
+	("ehkä", "maybe", 0),
+	("tuskin", "maybe", -10),
+	("epätodennäköistä", "maybe", -10),
+	("hyvin epätodennäköistä", "maybe", -10),
+	("varmasti ei", "maybe", -1000),
+]
+
+def addSelectionValueCommand(phrase_pattern, english_name, value):
+	pgl(".SELECTION-CMD ::= %s -> %s" % (phrase_pattern, english_name), FuncOutput(lambda: str(value)))
+
+for t in SELECTION_VALUES:
+	addSelectionValueCommand(*t)
+
+class SelectionParser:
+	def __init__(self, obj):
+		self.obj = obj
+	def parse(self, reader, grammar, report=False):
+		grammar = grammar.copy()
+		addParamPhrases(grammar, None, self.obj if isinstance(self.obj, RClass) else self.obj.rclass, None, varname="_arg")
+		block = parseBlock(reader, grammar, category="SELECTION-CMD", report=report)
+		self.obj.addSelectionRule("lambda _arg: " + joinCodes(block))
+
+pgl(".SELECTION-DEF ::= tarkoittaako pelaaja .CLASS{osanto} : -> does the player mean $1:", FuncOutput(lambda clazz: SelectionParser(clazz)))
+pgl(".DEF ::= .SELECTION-DEF -> $1", identity)
 
 # Komentojen jäsentäminen
 
@@ -814,7 +868,7 @@ def parseBlock(reader, grammar, category="CMD", report=False):
 			break
 		alternatives = grammar.matchAll(tokenize(line), category, set())
 		if len(alternatives) != 1:
-			sys.stderr.write("Virhe jäsennettäessä riviä %d: `%s' (%d vaihtoehtoa).\n" % (reader.linenum, line, len(alternatives)))
+			sys.stderr.write("Virhe jäsennettäessä riviä %d: `%s' (%s, %d vaihtoehtoa).\n" % (reader.linenum, line, category, len(alternatives)))
 			reader.skipToDedent()
 			break
 		if alternatives[0][1][-1] == ":":
@@ -874,6 +928,19 @@ class FileReader:
 		self.linenum = linenum
 		self.i += 1
 		return line
+	def peekline(self):
+		if self.i == len(self.lines):
+			return None
+		_, line = self.lines[self.i]
+		return line
+	def accept(self, *lines):
+		line = self.nextline()
+		if not line or line.lower() not in lines:
+			sys.stderr.write("Virhe jäsennettäessä tiedoston riviä %d: `%s'. Odotettiin riviä `%s'." % (
+				self.linenum,
+				line,
+				"' tai `".join(lines)
+			))
 	def skipToDedent(self):
 		while True:
 			line = self.nextline()

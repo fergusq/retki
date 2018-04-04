@@ -57,6 +57,12 @@ class FuncOutput:
 
 identity = FuncOutput(lambda x: x)
 
+class SumOutput:
+	def __init__(self, f=lambda: 0):
+		self.f = f
+	def eval(self, args):
+		return sum(args) + self.f()
+
 # Pythoniksi muuntamista varten
 
 def toPython(obj):
@@ -81,7 +87,7 @@ def getObjects():
 	return OBJECTS.values()
 
 class RObject(Bits):
-	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None):
+	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None):
 		Bits.__init__(self, bits)
 		if not obj_id:
 			increaseCounter()
@@ -96,6 +102,7 @@ class RObject(Bits):
 		self.name = name
 		self.name_tokens = name_tokens
 		self.aliases = []
+		self.selection_rules = srules or []
 		if name:
 			self.data["nimi koodissa"] = CLASSES["merkkijono"].newInstance().setExtra("str", name)
 	def __repr__(self):
@@ -107,19 +114,26 @@ class RObject(Bits):
 		names = self.aliases.copy()
 		if self.name_tokens:
 			names.append(self.name_tokens)
+		if self.rclass.name_tokens:
+			names.append(self.rclass.name_tokens)
 		
 		grammar = ""
 		for name in names:
-			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: %s))" % (
+			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: %s), SumOutput(lambda: %s.likeliness()))" % (
 				self.rclass.id,
 				nameToCode(name, bits={"$"}, rbits={"nimento", "yksikkö"}),
-				var
+				var, var
 			)
 		
 		# ulostulo on tuple, jonka ensimmäinen arvo luo olion ja parserisäännöt, ja toinen arvo luo kentät
 		return (
 			# ensimmäinen arvo:
-			'%s = RObject(CLASSES[%s], %s, %s, %s, %s)' % (var, repr(self.rclass.name), repr(self.name), repr(self.bits), repr(self.id), toPython(self.extra))
+			'%s = RObject(CLASSES[%s], %s, %s, %s, %s, %s, %s)' % (
+				var,
+				repr(self.rclass.name), repr(self.name),
+				repr(self.bits), repr(self.id), toPython(self.extra),
+				repr(self.name_tokens),
+				"[" + ", ".join(self.selection_rules) + "]")
 			+ grammar,
 			# toinen arvo:
 			";".join([
@@ -203,6 +217,13 @@ class RObject(Bits):
 	def setExtra(self, name, data):
 		self.extra[name] = data
 		return self
+	def addSelectionRule(self, rule):
+		self.selection_rules.append(rule)
+	def likeliness(self):
+		ans = 0
+		for rule in self.selection_rules:
+			ans += evalOrCall(rule, [self])
+		return ans
 	def asString(self, case="nimento"):
 		if case != "nimento":
 			if self.name_tokens:
@@ -258,20 +279,23 @@ class RClass(Bits):
 		self.fields = {}
 		self.bit_groups = bit_groups or []
 		self.attributePhraseAdders = []
+		self.selection_rules = []
 		
 		if superclass:
 			self.superclass.direct_subclasses.append(self)
 	def toPython(self):
 		sc = "None" if self.superclass is None else "CLASSES[" + repr(self.superclass.name) + "]"
-		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
+		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity, SumOutput())' % (self.superclass.id, self.id)
 		return (
 			'RClass(%s, %s, %s, %d, %s, %s);%s' % (repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), grammar),
 			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
 		)
 	def addField(self, name, field):
 		self.fields[name] = field
+	def addSelectionRule(self, rule):
+		self.selection_rules.append(rule)
 	def newInstance(self, name=None, bitsOn=set(), bitsOff=set(), name_tokens=None):
-		return RObject(self, name, (self.allBits()|bitsOn)-bitsOff, name_tokens=name_tokens)
+		return RObject(self, name, (self.allBits()|bitsOn)-bitsOff, name_tokens=name_tokens, srules=self.selection_rules[:])
 	def superclasses(self):
 		if self.superclass == None:
 			return [self]
@@ -443,7 +467,7 @@ class RAction:
 		return ";".join([
 			"RAction(" + repr(self.name) + ", " + repr(self.id) + ")"
 		] + [
-			"GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', FuncOutput(lambda *x: ACTIONS[%d].run(x)))" % (pattern, self.id) for pattern in self.commands
+			"GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', FuncOutput(lambda *x: ACTIONS[%d].run(x)), SumOutput())" % (pattern, self.id) for pattern in self.commands
 		])
 	def addPlayerCommand(self, pattern):
 		self.commands.append(pattern)
@@ -550,7 +574,5 @@ def playGame(grammar):
 		interpretations = grammar.matchAll(tokenize(line), "PLAYER-CMD", set())
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
-		elif len(interpretations) == 1:
-			interpretations[0]()
 		else:
-			print("Löydetty", len(interpretations), "tulkintaa.")
+			sorted(interpretations, key=lambda i: i[1])[-1][0]()
