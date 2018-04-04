@@ -413,7 +413,7 @@ Sekä komentomäärityksessä että pelaajakomentomäärityksessä tyyppien ja m
 mutta ne on pakko merkitä, jos kääntäjä ei pysty muuten päättelemään, mikä toiminto on kyseessä (esimerkiksi jos sekä "esineen ottaminen" että "ruoan ottaminen" ovat toimintoja).
 
 Todennäköisyysmääritys
-----------------------
+======================
 
 Todennäköisyysmäärityksellä voi määritellä todennäköisyyden sille, tarkoittaako pelaaja tiettyä esinettä (tai luokkaa) käyttäessään jotakin sanaa komennossaan.
 
