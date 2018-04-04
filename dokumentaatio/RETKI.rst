@@ -126,6 +126,45 @@ Useat sen rakenteet on lainattu Inform 7 -kielestä, joskaan ei kaikkia.
 
 Retkellä on periaatteessa mahdollista kirjoittaa minkä tahansa laisia ohjelmia, mutta se on esikuvansa tavoin suunniteltu tekstiseikkailuja varten.
 
+Alla on katkelma ``lyhyt-peli.txt``-esimerkistä. Se on tyypillinen huoneen määrittely.
+
+::
+
+	Olohuone on huone eteisestä pohjoiseen.
+	Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
+
+	Sohva on kiinteä esine olohuoneessa.
+	Sohvan kuvaus on "Vanha punainen sohva.".
+
+	Pöytä on kiinteä tukeva sisältäjä olohuoneessa.
+	Pöydän kuvaus on "Vanha puinen pöytä.".
+
+	Kirje on kirjoitusta sisältävä esine pöydän päällä.
+	Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä.".
+	Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
+
+..compound::
+
+	Esimerkistä voi tehdä joitakin huomioita.
+	Ensinnäkin jokaisen esineen määrittely on melko tiivis ja ymmärrettävä.
+	Määrittelyt noudattavat intuitiivista muotoa
+	
+	::
+	
+		(Esine) on (bitit) (tyyppi) (paikka).
+	
+	mikä ei ole luonnollisista kielistä inspiroituneille ohjelmointikielille verboosia.
+	Niinpä kielen käyttäminen ei ainakaan tässä tarkoituksessa ole epäkäytännöllistä.
+
+Toiseksi pöydästä käytetään kyseenalaista termiä "tukeva sisältäjä".
+Tämä on anglismi käsitteestä "supporting container" ja se viittaa esineeseen, joka sisältää muita esineitä ja erityisesti siten, että esineet ovat sen päällä.
+On olemassa myös "ympäröiviä sisältäjiä", jotka sisältävät esineitä sisällään.
+En ole keksinyt näille tähän mennessä parempia termejä, ja olen halukas muuttamaan niitä tarvittaessa.
+Ohjelmointikielen luonnollisuutta tulee kuitenkin aina rajoittamaan se, että suurelle osalle tarvittavista käsitteistä ei edes ole sanoja.
+
+Tässä dokumentissa käsittelen sekä Retki-kielen kielioppia, sen toteutusta sekä näiden heikkouksia.
+Mukana on myös kappale kääntäjän asentamista ja peruskäyttöä varten.
+
 -----------------------
  Asentaminen ja käyttö
 -----------------------
