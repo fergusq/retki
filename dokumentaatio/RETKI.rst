@@ -143,7 +143,7 @@ Alla on katkelma ``lyhyt-peli.txt``-esimerkistä. Se on tyypillinen huoneen mä�
 	Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä.".
 	Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
 
-..compound::
+.. compound::
 
 	Esimerkistä voi tehdä joitakin huomioita.
 	Ensinnäkin jokaisen esineen määrittely on melko tiivis ja ymmärrettävä.
