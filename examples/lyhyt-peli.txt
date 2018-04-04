@@ -95,6 +95,12 @@ Määritelmä. Kun esine (E) on "piilossa":
 	jokaiselle sisältäjälle (S) pelaajan esineluettelossa pätee:
 		E ei ole S:n varassa
 
+Tarkoittaako pelaaja esinettä:
+	Jos se on näkyvillä:
+		todennäköisesti
+	Muuten:
+		tuskin
+
 > Kuvaileminen
 
 [Asian] kuvaileminen on toiminto.
@@ -295,6 +301,15 @@ Ennen esineen avaamista:
 Esineen avaamisen aikana:
 	Se avautuu nyt.
 
+> Ovi
+
+Ovi on esineen alakäsite.
+Ovi on yleensä avattava.
+Ovi on yleensä kiinteä.
+
+[Ovesta] meneminen on toiminto.
+Tulkitse "mene [ovesta]" ovesta menemisenä.
+
 > Kartta
 
 Piha on suljettu huone.
@@ -303,8 +318,8 @@ Pihan kuvaus on "Näet oven läpi talon pihan.".
 Eteinen on huone pihasta pohjoiseen.
 Eteisen kuvaus on "Eteisessä ei ole juuri mitään mitään kiinnostavaa.".
 
-Ovi on kiinteä esine eteisessä.
-Oven kuvaus on "Eteisen ovi on lukossa. Voit nähdä sen läpi pihalle.".
+Ulko-ovi on ovi eteisessä.
+Ulko-oven kuvaus on "Eteisen ulko-ovi on lukossa. Voit nähdä sen läpi pihalle.".
 
 Matto on esine eteisessä.
 Maton kuvaus on "Räsymatto on hieman likainen.".
@@ -336,7 +351,7 @@ Kattilan kuvaus on "Kattila on vanha, kuten kaikki muukin.".
 
 Avain on esine kattilassa.
 Avaimen kuvaus on "Tämähän voisi sopia ulko-oveen.".
-Oven avain on avain.
+Ulko-oven avain on avain.
 
 Oven avautumisen jälkeen:
 	Sano "Onneksi olkoon, voitit pelin.".
