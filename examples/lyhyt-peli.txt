@@ -101,6 +101,34 @@ Tarkoittaako pelaaja esinettä:
 	Muuten:
 		tuskin
 
+> Avaaminen
+
+[Esineen] avautuminen on toiminto.
+Avautumisen komento on "[esine] avautuu nyt".
+
+Esine on joko avattava tai ei-avattava.
+Esineellä on avaimeksi kutsuttu esine.
+
+[Esineen] avaaminen on toiminto.
+Avaamisen komento on "avaa nyt [esine]".
+Tulkitse "avaa [esine]" avaamisena.
+
+Ennen piilossa olevan esineen avaamista:
+	Sano "Et näe mitään [sitä].".
+	Keskeytä toiminto.
+
+Ennen ei-avattavan esineen avaamista:
+	Sano "Ei [sitä] voi avata.".
+	Keskeytä toiminto.
+
+Ennen esineen avaamista:
+	Jos pelaajan esineluettelo ei sisällä sen avainta:
+		Sano "Sinulla ei ole oikeaa avainta.".
+		Keskeytä toiminto.
+
+Esineen avaamisen aikana:
+	Se avautuu nyt.
+
 > Kuvaileminen
 
 [Asian] kuvaileminen on toiminto.
@@ -108,7 +136,7 @@ Kuvailemisen komento on "kuvaile [asiaa]".
 Tulkitse "kuvaile [asiaa]" kuvailemisena.
 
 Ennen piilossa olevan esineen kuvailemista:
-	Sano "Ei tulkintaa.".
+	Sano "Et näe mitään [sitä].".
 	Keskeytä toiminto.
 
 Asian kuvailemisen aikana:
@@ -117,7 +145,6 @@ Asian kuvailemisen aikana:
 Huoneen kuvailemisen jälkeen:
 	Toista jokaiselle esineelle (e) sen esinejoukossa:
 		Sano "Näet täällä [e:n].".
-
 
 Suljetun huoneen kuvailemisen jälkeen:
 	Sano "Et voi mennä sinne.".
@@ -165,12 +192,48 @@ Etelän vastasuunta on pohjoinen.
 Lännen vastasuunta on itä.
 Idän vastasuunta on länsi.
 
+Tulkitse "p" pohjoisena.
+Tulkitse "e" etelänä.
+Tulkitse "l" läntenä.
+Tulkitse "i" itänä.
+
+Ei-suunta on suunta.
+Ei-suunnan vastasuunta on ei-suunta.
+
 Kutakin suuntaa kohden huoneella voi olla naapurihuoneeksi siinä suunnassa kutsuttu huone.
 Huoneen naapurihuone suunnassa on yleensä seinä.
+
+Kutakin huonetta kohden huoneella voi olla siihen huoneeseen johtavaksi suunnaksi kutsuttu suunta.
+Huoneen huoneeseen johtava suunta on yleensä ei-suunta.
 
 Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)]":
 	B:n naapurihuone tarkasteltavassa suunnassa on A
 	A:n naapurihuone tarkasteltavan suunnan vastasuunnassa on B
+	B:n A:han johtava suunta on tarkasteltava suunta
+	A:n B:hen johtava suunta on tarkasteltavan suunnan vastasuunta
+
+> Ovi
+
+Ovi on esineen alakäsite.
+Ovi on yleensä avattava.
+Ovi on yleensä kiinteä.
+
+Ovi on joko lukittu tai lukitsematon.
+Ovi on yleensä lukittu.
+Ovella on huonejoukoksi kutsuttu joukko huoneita.
+
+Määritelmä. Kun ovi on "[huoneen (A)] ja [huoneen (B)] välissä":
+	sen huonejoukko sisältää A:n
+	sen huonejoukko sisältää B:n
+	A:n esinejoukko sisältää sen
+	B:n esinejoukko sisältää sen
+
+Oven avautumisen aikana:
+	Se on nyt lukitsematon.
+	Se on nyt ei-avattava.
+
+Oven avautumisen jälkeen:
+	Sano "Avaat [sen].".
 
 > Liikkuminen
 
@@ -181,8 +244,20 @@ Tulkitse "mene [suuntaan]" liikkumisena.
 Tulkitse "[suuntaan]" liikkumisena.
 Tulkitse "[suunta]" liikkumisena.
 
+[Huoneeseen] liikkuminen on toiminto.
+Tulkitse "liiku [huoneeseen]" huoneeseen liikkumisena.
+Tulkitse "liiku [huoneelle]" huoneeseen liikkumisena.
+Tulkitse "mene [huoneeseen]" huoneeseen liikkumisena.
+Tulkitse "mene [huoneelle]" huoneeseen liikkumisena.
+
+Huoneeseen (H) liikkumisen sijasta:
+	liiku pelaajan sijainnin H:hon johtavaan suuntaan.
+
 [Huoneeseen] siirtyminen on toiminto.
 Siirtymisen komento on "siirry [huoneeseen]".
+
+Ei-suuntaan liikkumisen sijasta:
+	Sano "Et voi mennä sinne.".
 
 Suuntaan (se suunta) liikkumisen aikana:
 	Siirry pelaajan sijainnin naapurihuoneeseen siinä suunnassa.
@@ -191,6 +266,12 @@ Ennen suljettuun huoneeseen siirtymistä:
 	Sano "Et voi mennä sinne.".
 	Keskeytä toiminto.
 
+Ennen huoneeseen (pelaajan määränpää) siirtymistä:
+	Toista jokaiselle näkyvillä olevalle lukitulle ovelle (ovi) pelaajan sijainnin esinejoukossa:
+		Jos oven huonejoukko sisältää pelaajan määränpään:
+			Sano "(avataan ensin [ovi])".
+			Avaa nyt ovi.
+			
 Huoneeseen siirtymisen aikana:
 	Pelaajan sijainti on nyt se.
 
@@ -203,7 +284,7 @@ Huoneeseen siirtymisen jälkeen:
 Tulkitse "katso [suuntaan]" suuntaan katsomisena.
 
 Suuntaan (se suunta) katsomisen aikana:
-	Kuvaile pelaajan sijainnin naapurihuonetta siinä suunnassa.
+	Sano "Näet [siinä suunnassa] [pelaajan sijainnin naapurihuoneen siinä suunnassa].".
 
 [Esineen] katsominen on toiminto.
 Tulkitse "katso [esinettä]" esineen katsomisena.
@@ -218,16 +299,15 @@ Esineen katsomisen aikana:
 Tulkitse "ota [esine]" ottamisena.
 
 Ennen piilossa olevan esineen ottamista:
-	Jos pelaajan esineluettelo ei sisällä sitä:
-		Sano "Et näe mitään [sitä].".
-		Keskeytä toiminto.
+	Sano "Et näe mitään [sitä].".
+	Keskeytä toiminto.
 
 Ennen kiinteän esineen ottamista:
 	Sano "Et pystyisi liikuttamaan sitä.".
 	Keskeytä toiminto.
 
 Tylsän esineen ottamisen sijasta:
-	Sano "Sinun ei tee mieli koskea mihinkään.".
+	Sano "Sinun ei tee mieli koskea [siihen].".
 
 Esineen ottamisen aikana:
 	Se on nyt piilossa.
@@ -274,58 +354,24 @@ Kirjoitusta sisältävän esineen lukemisen aikana:
 	Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
 	Sano "[sen kirjoitus][rivinvaihto]".
 
-> Avaaminen
-
-[Esineen] avautuminen on toiminto.
-Avautumisen komento on "[esine] avautuu nyt".
-
-Esine on joko avattava tai ei-avattava.
-Esineellä on avaimeksi kutsuttu esine.
-
-[Esineen] avaaminen on toiminto.
-Tulkitse "avaa [esine]" avaamisena.
-
-Ennen ei-avattavan esineen avaamista:
-	Sano "Ei [sitä] voi avata.".
-	Keskeytä toiminto.
-
-Ennen piilossa olevan esineen avaamista:
-	Sano "Et näe mitään [sitä].".
-	Keskeytä toiminto.
-
-Ennen esineen avaamista:
-	Jos pelaajan esineluettelo ei sisällä sen avainta:
-		Sano "Sinulla ei ole avainta.".
-		Keskeytä toiminto.
-
-Esineen avaamisen aikana:
-	Se avautuu nyt.
-
-> Ovi
-
-Ovi on esineen alakäsite.
-Ovi on yleensä avattava.
-Ovi on yleensä kiinteä.
-
-[Ovesta] meneminen on toiminto.
-Tulkitse "mene [ovesta]" ovesta menemisenä.
-
-Ovesta menemisen sijasta:
-	Sano "Ovi on lukossa.".
-
 > Kartta
 
-Piha on suljettu huone.
-Pihan kuvaus on "Näet oven läpi talon pihan.".
+Piha on huone.
+Pihan kuvaus on "Talon pihalla kasvaa tiheää heinää. Rakennus sijaitsee syrjäisen metsätien varrella, mutta uskot löytäväsi täältä pois.".
+
+Pihaan siirtymisen jälkeen:
+	Sano "Olet nyt voittanut pelin.".
+	Lopeta peli.
 
 Eteinen on huone pihasta pohjoiseen.
 Eteisen kuvaus on "Eteisessä ei ole juuri mitään mitään kiinnostavaa.".
 
-Ulko-ovi on ovi eteisessä.
+Ulko-ovi on ovi eteisen ja pihan välissä.
 Ulko-oven kuvaus on "Eteisen ulko-ovi on lukossa. Voit nähdä sen läpi pihalle.".
 
-Matto on esine eteisessä.
-Maton kuvaus on "Räsymatto on hieman likainen.".
+Räsymatto on tylsä esine eteisessä.
+Räsymaton kuvaus on "Räsymatto on hieman likainen.".
+Tulkitse "matto" räsymattona.
 
 Olohuone on huone eteisestä pohjoiseen.
 Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
@@ -343,6 +389,10 @@ Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi 
 Ruokahuone on huone olohuoneesta länteen.
 Ruokahuoneen kuvaus on "Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois.".
 
+Itämainen matto on tylsä esine ruokahuoneessa.
+Itämaisen maton kuvaus on "Itämaiseen mattoon on kuvioitu kauniita muotoja.".
+Tulkitse "matto" itämaisena mattona.
+
 Takaovi on ovi ruokahuoneessa.
 Takaoven kuvaus on "Takaovi on tiukasti lukossa.".
 
@@ -351,6 +401,7 @@ Keittiön kuvaus on "Keittiön seinällä on työtaso. Voit nähdä ikkunasta pi
 
 Työtaso on kiinteä tukeva sisältäjä keittiössä.
 Työtason kuvaus on "Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan.".
+Tulkitse "taso" työtasona.
 
 Kattila on sisältäjä työtasolla.
 Kattilan kuvaus on "Kattila on vanha, kuten kaikki muukin.".
@@ -358,10 +409,6 @@ Kattilan kuvaus on "Kattila on vanha, kuten kaikki muukin.".
 Avain on esine kattilassa.
 Avaimen kuvaus on "Tämähän voisi sopia ulko-oveen.".
 Ulko-oven avain on avain.
-
-Ulko-oven avautumisen jälkeen:
-	Sano "Onneksi olkoon, voitit pelin.".
-	Lopeta peli.
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt eteinen.
