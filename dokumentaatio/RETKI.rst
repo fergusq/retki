@@ -543,6 +543,9 @@ Muuttujamäärittelyssä on myös mahdollista käyttää seuraavaa erikoissyntak
  Toteutus
 ----------
 
+Jäsennin
+========
+
 Retki on toteutettu Suomilog-kirjaston (ja sen käyttämän Voikko-kirjaston) avulla.
 Suomilog parsii kontekstivapaita kielioppeja, joihin on lisätty lisätietoa taivutusmuodoista.
 
@@ -594,3 +597,24 @@ Tämän jälkeen ``defineClass`` määrittelee useita kielioppisääntöjä, esi
 
 ``.CLASS`` määritellään täsmäämään luokan nimeen, ja tämän ehdon täsmätessä kutsutaan lambdaa, joka palauttaa luokaa vastaavan olion.
 Kun esimerkiksi ``.CLASS-DEF``:n sisältämä ``.CLASS`` täsmää tähän luokkaan, lambdan palauttama olio annetaan argumenttina ``defineClass``-funktiolle (``superclass``-parametriin).
+
+Edut
+----
+
+Itseään täydentävä kielioppi mahdollistaa mielivaltaisten luonnollisen kielen tukemien rakenteiden jäsentämisen.
+Jäsentimen ei itsessään tarvitse tietää mitään siitä, minkälaisia mahdollisia rakenteita suomen kielessä on, sillä käyttäjä voi määritellä uusia kielioppisääntöjä.
+
+Koska jokaisella tietotyypillä on oma lausekesääntönsä kielioppissa, on mahdollista siirtää kaikki tyyppitarkistus jäsentämisen osaksi.
+Tästä on hyötyä, sillä se mahdollistaa helpommin samannimisten, mutta erityyppisten muuttujien luomisen.
+Esimerkiksi muuttujaa ``se`` voi käyttää viittaamaan mihin tahansa parametriin, ja kielioppisääntöjen avulla sille valitaan oikea tulkinta,
+tai luodaan virhe jos tilanne on monitulkintainen.
+
+Heikkoudet
+----------
+
+Kieliopin täydentäminen onnistuu ratkaisemaan moniselitteisyysongelmia, mutta siinä on joitakin heikkouksia.
+Ensinnäkin kieliopista voi tulla pitkien ohjelmien kohdalla hyvin suuri, sillä jokainen muuttuja, luokka ja funktio on lisättävä kielioppiin.
+Esimerkiksi ``lyhyt-peli.txt``-esimerkin kielioppissa on tiedoston lopussa 1216 sääntöä.
+Sääntöjen määrän kasvaessa jäsentäminen muuttuu hitaammaksi ja useita tuhansia rivejä pitkän ohjelman kääntämiseen voi tästä syystä kulua useita minuutteja.
+
+Virheviestit saattavat myös olla sekavampia, sillä tyyppivirheiden sijasta käyttäjälle annetaan kielioppivirheitä.
