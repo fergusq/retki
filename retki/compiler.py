@@ -70,6 +70,8 @@ GRAMMAR.patterns["."] = [
 ]
 
 class StringContentPattern:
+	def __init__(self, create_alternative):
+		self.create_alternative = create_alternative
 	def __repr__(self):
 		return "StringContentPattern()"
 	def toCode(self):
@@ -79,6 +81,7 @@ class StringContentPattern:
 			if token.token == '"':
 				return []
 		string = ""
+		string_tokens = [[]]
 		subs = []
 		current_subs = None
 		capitalizeds = []
@@ -86,7 +89,7 @@ class StringContentPattern:
 			if current_subs is not None:
 				if token.token == "]":
 					string += " %s"
-					alts = grammar.matchAll(current_subs, "STR-EXPR", set())
+					alts = grammar.matchAll(current_subs, "EXPR-CASE", set())
 					subs.append(alts)
 					capitalizeds.append(current_subs[0].token.capitalize() == current_subs[0].token if current_subs else False)
 					current_subs = None
@@ -95,26 +98,38 @@ class StringContentPattern:
 				continue
 			if token.token == "[":
 				current_subs = []
+				string_tokens.append([])
 			elif token.token in [".", ":", ",", ";", "?", "!"]:
 				string += token.token
+				string_tokens[-1].append(token)
 			elif token.token == "%":
 				string += " %%"
+				string_tokens[-1].append(token)
 			else:
 				string += " " + token.token
+				string_tokens[-1].append(token)
 		string = string.strip()
 		ans = []
-		for alternative, capitalized in zip(itertools.product(*subs), capitalizeds or [False]):
-			ans.append([
-				lambda: "(" + repr(string) + " % (" + ", ".join([p[0]() for p in alternative])
-					+ ("," if len(alternative) == 1 else "") + "))" + (".capitalize()" if capitalized else ""),
-				string % tuple([p[1] for p in alternative])
-			])
+		for alternative in itertools.product(*subs):
+			ans.append(self.create_alternative(string, string_tokens, alternative, capitalizeds))
 		return ans
 	def allowsEmptyContent(self):
 		return True
 
+def createStringLiteralAlternative(string, string_tokens, alternative, capitalizeds):
+	def f():
+		subs = []
+		for (expr_f, _), capitalized in zip(alternative, capitalizeds):
+			expr, case = expr_f()
+			subs.append("%s.asString(case=%s)%s" % (expr, repr(case), ".capitalize()" if capitalized else ""))
+		return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
+	return [
+		f,
+		string % tuple([p[1] for p in alternative])
+	]
+
 GRAMMAR.patterns["STR-CONTENT"] = [
-	StringContentPattern()
+	StringContentPattern(createStringLiteralAlternative)
 ]
 
 # Apufunktio
@@ -123,8 +138,6 @@ def orTrue(code):
 	return "(" + code + " or True)"
 
 # Luokat
-
-CLASSES = {}
 
 def defineClass(name, superclass):
 	name_str = tokensToString(name)
@@ -173,17 +186,23 @@ def defineClass(name, superclass):
 		for is_pre in [True, False]:
 			addMapFieldDefPattern(key_case, is_pre)
 	
+	pgl(".EXPR-%d ::= viimeksi luotu{$} .CLASS-PATTERN-%d -> last created $1" % (rclass.id, rclass.id),
+		FuncOutput(lambda pattern: "searchLastObject(" + pattern.toPython() + ")"))
+	
 	return rclass
 
 pgl(".CLASS-DEF ::= .* on käsite . -> class $1 : asia", FuncOutput(lambda x: defineClass(x, asia)))
 pgl(".CLASS-DEF ::= .* on .CLASS{omanto} alakäsite . -> class $1 : $2", FuncOutput(defineClass))
 pgl(".DEF ::= .CLASS-DEF -> $1", identity)
 
-def addClassCasePhrase(case):
+# Sijamuodon tunnistamiseen käytettävät säännöt
+
+def addCasePhrases(case):
 	pgl(".CLASS-CASE ::= .CLASS{%s} -> $1:%s" % (case, case), FuncOutput(lambda cl: (cl, case)))
+	pgl(".EXPR-CASE ::= .EXPR{%s} -> $1:%s" % (case, case), FuncOutput(lambda ex: (ex, case)))
 
 for case in CASES:
-	addClassCasePhrase(case)
+	addCasePhrases(case)
 
 # Ominaisuudet
 
@@ -348,12 +367,12 @@ def defineBit(owner, *names):
 		
 		pgl(".CMD ::= .EXPR-%d{nimento} on nyt %s . -> $1.%s = True" % (
 			owner.id, name_code_nominative, name_str
-		), FuncOutput(lambda obj: 'obj.bitsOff(%s).bitOn(%s)' % (repr(name_set-{name_str}), repr(name_str))))
+		), FuncOutput(lambda obj: '%s.bitsOff(%s).bitOn(%s)' % (obj, repr(name_set-{name_str}), repr(name_str))))
 		
 		if len(name_set) == 1:
 			pgl(".CMD ::= .EXPR-%d{nimento} ei ole enää %s . -> $1.%s = False" % (
 				owner.id, name_code_nominative, name_str
-			), FuncOutput(lambda obj: 'obj.bitOff(%s)' % (repr(name_str),)))
+			), FuncOutput(lambda obj: '%s.bitOff(%s)' % (obj, repr(name_str))))
 		
 		pgl(".COND ::= .EXPR-%d{nimento} on %s -> $1.%s == True" % (
 			owner.id, name_code_nominative, name_str
@@ -566,6 +585,11 @@ def defineVariable(name, class_pattern):
 	name_str = tokensToString(name)
 	pattern = lambda bits: nameToCode(name, bits, rbits={"yksikkö", "nimento"})
 	
+	if name_str in GLOBAL_SCOPE.variables:
+		# muuttuja on jo olemassa
+		class_pattern.modify(GLOBAL_SCOPE.variables[name_str])
+		return
+	
 	vtype = class_pattern.type()
 	obj = class_pattern.newInstance(name)
 	GLOBAL_SCOPE.variables[name_str] = obj
@@ -624,7 +648,7 @@ class ListenerParser:
 		grammar = grammar.copy()
 		for i, (c, p, n) in enumerate(self.params):
 			addParamPhrases(grammar, "_" + str(i), p.type(), n)
-		grammar.parseGrammarLine(".CMD ::= keskeytä toiminto . -> stop", FuncOutput(lambda: 'SCOPE[-1].bitOn("stop action")')) # suoritetaan isäntäscopessa
+		grammar.parseGrammarLine(".CMD ::= keskeytä toiminto . -> stop", FuncOutput(lambda: 'ACTION_STACK[-1].bitOn("stop action")')) # suoritetaan isäntäscopessa
 		body = parseBlock(file, grammar, report=report)
 		return RListener(*self.args, body)
 
@@ -679,7 +703,7 @@ def defineAction(name, params, pre, post):
 			category,
 			command_pattern,
 			name.token
-		), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s])' % (action.id, ", ".join(val))))
+		), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s], True)' % (action.id, ", ".join(val))))
 		if category == "PLAYER-CMD":
 			action.addPlayerCommand(command_pattern)
 	
@@ -752,18 +776,14 @@ pgl(".DEF ::= .ACTION-DEF -> $1", identity)
 
 asia = defineClass(tokenize("asia"), None)
 
+pgl(".EXPR ::= .EXPR-%d{$} -> $1" % (asia.id,), identity)
+
 merkkijono = defineClass(tokenize("merkkijono"), asia)
 for clazz in [asia, merkkijono]:
 	pgl('.EXPR-%d ::= " .STR-CONTENT " -> "$1"' % (clazz.id,), FuncOutput(lambda s: 'createStringObj(' + s + ')'))
 	pgl('.EXPR-%d ::= rivinvaihto{$} -> "\\n"' % (clazz.id,), FuncOutput(lambda: 'createStringObj("\\n")'))
 	pgl('.EXPR-%d ::= .EXPR-%d{$} isolla alkukirjaimella -> capitalize($1)' % (clazz.id, merkkijono.id),
 		FuncOutput(lambda x: 'createStringObj(' + x + '.extra["str"].capitalize())'))
-
-def addStrExprPattern(case):
-	pgl('.STR-EXPR ::= .EXPR-%d{%s} -> $1:%s' % (asia.id,case,case), FuncOutput(lambda s: s + '.asString(case=' + repr(case) + ')'))
-
-for case in CASES:
-	addStrExprPattern(case)
 
 # For-silmikka
 
@@ -815,7 +835,7 @@ pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
 
 # Tulostaminen
 
-pgl(".CMD ::= sano .EXPR-%d{nimento} . -> print($1)" % (asia.id,), FuncOutput(lambda x: 'say(' + x + '.asString())'))
+pgl(".CMD ::= sano .EXPR{nimento} . -> print($1)", FuncOutput(lambda x: 'say(' + x + '.asString())'))
 
 # Pelin lopettaminen
 

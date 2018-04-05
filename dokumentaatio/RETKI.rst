@@ -482,9 +482,8 @@ Jälkeen-kuuntelijat ilmoittavat pelaajalle toiminnon lopputuloksesta.
 	Tulkitse "ota [esine]" ottamisena.
 
 	Ennen piilossa olevan esineen ottamista:
-		Jos pelaajan esineluettelo ei sisällä sitä:
-			Sano "Et näe mitään [sitä].".
-			Keskeytä toiminto.
+		Sano "Et näe mitään [sitä].".
+		Keskeytä toiminto.
 
 	Ennen kiinteän esineen ottamista:
 		Sano "Et pystyisi liikuttamaan sitä.".

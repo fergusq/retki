@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, readline
 from suomilog.finnish import tokenize
 from .tokenutils import *
 
@@ -85,6 +85,14 @@ def saveObjects():
 
 def getObjects():
 	return OBJECTS.values()
+	
+OBJECTS_IN_ORDER = []
+
+def searchLastObject(pattern):
+	for obj in reversed(OBJECTS_IN_ORDER):
+		if pattern.matches(obj):
+			return obj
+	return None
 
 class RObject(Bits):
 	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None):
@@ -96,6 +104,7 @@ class RObject(Bits):
 			self.id = obj_id
 		if OBJECTS is not None:
 			OBJECTS[self.id] = self
+		OBJECTS_IN_ORDER.append(self)
 		self.rclass = rclass
 		self.data = {}
 		self.extra = extra or {}
@@ -219,6 +228,8 @@ class RObject(Bits):
 		return self
 	def addSelectionRule(self, rule):
 		self.selection_rules.append(rule)
+	def addVariableAlias(self, alias):
+		self.aliases.append(alias)
 	def likeliness(self):
 		ans = 0
 		for rule in self.selection_rules:
@@ -372,6 +383,13 @@ class RPattern:
 		for cond in self.conditions:
 			cond.doModify(obj)
 		return obj
+	def modify(self, obj):
+		if obj.rclass != self.rclass:
+			sys.stderr.write("Yritettiin muuttaa " + obj.asString() + " (" + obj.rclass.name + ") tyyppiin " + self.rclass.name)
+		obj.bitsOff(self.my_bitsOff)
+		obj.bitsOn(self.my_bitsOn)
+		for cond in self.conditions:
+			cond.doModify(obj)
 	def matches(self, obj):
 		if self.obj:
 			if not obj == self.obj:
@@ -421,6 +439,7 @@ GLOBAL_SCOPE = RScope()
 SCOPE = []
 STACK = []
 STACK_NAMES = []
+ACTION_STACK = []
 
 def pushScope():
 	SCOPE.append(RScope())
@@ -432,6 +451,10 @@ def pushStackFrame(name):
 def popStackFrame():
 	STACK.pop()
 	STACK_NAMES.pop()
+def pushAction():
+	ACTION_STACK.append(RScope())
+def popAction():
+	ACTION_STACK.pop()
 def visibleScopes():
 	return [GLOBAL_SCOPE]+SCOPE+STACK[-1:]
 def getVar(name):
@@ -466,6 +489,7 @@ class RAction:
 		ACTIONS[self.id] = self
 		
 		self.commands = []
+		self.listeners = []
 	def toPython(self):
 		return ";".join([
 			"RAction(" + repr(self.name) + ", " + repr(self.id) + ")"
@@ -474,13 +498,14 @@ class RAction:
 		])
 	def addPlayerCommand(self, pattern):
 		self.commands.append(pattern)
-	def run(self, args):
+	def run(self, args, in_scope=False):
 		listeners = []
-		for listener in ACTION_LISTENERS:
+		for listener in self.listeners:
 			if listener.action is self and all([p.matches(obj) for obj, (_, p, _) in zip(args, listener.params)]):
 				listeners.append(listener)
-		pushScope()
-		scope = SCOPE[-1]
+		if not in_scope:
+			pushAction()
+		scope = ACTION_STACK[-1]
 		special_case_found = False
 		for listener in sorted(listeners, key=lambda l: l.priority):
 			if listener.is_general_case and special_case_found:
@@ -490,7 +515,8 @@ class RAction:
 			listener.run(args)
 			if "stop action" in scope.bits:
 				break
-		popScope()
+		if not in_scope:
+			popAction()
 
 ACTIONS = {}
 
@@ -503,6 +529,7 @@ class RListener:
 		self.is_general_case = is_general_case
 		self.body = body
 		ACTION_LISTENERS.append(self)
+		action.listeners.append(self)
 	def toPython(self):
 		return "".join(['RListener(',
 			'ACTIONS[', repr(self.action.id), '], ',
@@ -522,7 +549,7 @@ class RListener:
 				eval(cmd)
 			else:
 				cmd()
-			if "stop action" in SCOPE[-1].bits:
+			if "stop action" in ACTION_STACK[-1].bits:
 				break
 		popStackFrame()
 
@@ -530,10 +557,10 @@ class RListener:
 
 LISTENER_PRIORITIES = [
 #	 PRE       CASE     POST       PRI SPECIAL GENERAL
-	("ennen", "osanto", "",        20, False,  False),
-	("",      "omanto", "sijasta", 40, True,   False),
+	("ennen", "osanto", "",        20, False,  True),
+	("",      "omanto", "sijasta", 40, True,   True),
 	("",      "omanto", "aikana",  50, False,  True),
-	("",      "omanto", "jälkeen", 80, False,  False),
+	("",      "omanto", "jälkeen", 80, False,  True),
 ]
 
 ACTION_LISTENERS = []
@@ -579,3 +606,5 @@ def playGame(grammar):
 			print("Ei tulkintaa.")
 		else:
 			sorted(interpretations, key=lambda i: i[1])[-1][0]()
+	if not prev_was_newline:
+		print()
