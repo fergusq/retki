@@ -19,8 +19,7 @@ Below is an example of Retki source code::
 			Keskeytä toiminto.
 
 Retki has borrowed many features from Inform 7 including rules.
-It has also some unique features like the condition-constructor duality,
-but in general it is very limited when compared to other similar languages.
+but is much more limited in its current version.
 
 The rest of the document is written in Finnish as it is assumed that one must
 first know Finnish to use this programming language.
