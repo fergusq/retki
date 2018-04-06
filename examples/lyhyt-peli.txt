@@ -97,9 +97,9 @@ Määritelmä. Kun esine (E) on "piilossa":
 
 Tarkoittaako pelaaja esinettä:
 	Jos se on näkyvillä:
-		todennäköisesti
+		ehkä
 	Muuten:
-		tuskin
+		varmasti ei
 
 > Avaaminen
 
@@ -143,19 +143,28 @@ Asian kuvailemisen aikana:
 	Sano sen kuvaus.
 
 Huoneen kuvailemisen jälkeen:
-	Toista jokaiselle esineelle (e) sen esinejoukossa:
-		Sano "Näet täällä [e:n].".
+	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen esinejoukossa:
+		Jos ryhmän koko on 1:
+			Sano "Näet täällä [e:n].".
+		Muulloin:
+			Sano "Näet täällä [ryhmän koko] [e:tä].".
 
 Suljetun huoneen kuvailemisen jälkeen:
 	Sano "Et voi mennä sinne.".
 
 Tukevan sisältäjän kuvailemisen jälkeen:
-	Toista jokaiselle esineelle (e) sen sisältöjoukossa:
-		Sano "Sen päällä on [e].".
+	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen sisältöjoukossa:
+		Jos ryhmän koko on 1:
+			Sano "Sen päällä on [e].".
+		Muulloin:
+			Sano "Sen päällä on [ryhmän koko] [e:tä].".
 
 Ympäröivän sisältäjän kuvailemisen jälkeen:
-	Toista jokaiselle esineelle (e) sen sisältöjoukossa:
-		Sano "Sen sisällä on [e].".
+	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen sisältöjoukossa:
+		Jos ryhmän koko on 1:
+			Sano "Sen sisällä on [e].".
+		Muulloin:
+			Sano "Sen sisällä on [ryhmän koko] [e:tä].".
 
 > Esitteleminen
 
@@ -316,6 +325,15 @@ Esineen ottamisen aikana:
 Esineen ottamisen jälkeen:
 	Sano "Sinulla on nyt [se].".
 
+Tarkoittaako pelaaja piilossa olevan esineen ottamista:
+	varmasti ei
+
+Tarkoittaako pelaaja esineen ottamista:
+	Jos pelaajan esineluettelo sisältää sen:
+		tuskin
+	Muuten:
+		ehkä
+
 > Esineluettelon tulostaminen
 
 Esineluettelon tulostaminen on toiminto.
@@ -327,8 +345,11 @@ Tulkitse "listaa tavarat" esineluettelon tulostamisena.
 
 Esineluettelon tulostamisen aikana:
 	Sano "Sinulla on mukanasi:[rivinvaihto]".
-	Toista jokaiselle esineelle (e) pelaajan esineluettelossa:
-		Sano "- [e][rivinvaihto]".
+	Toista jokaiselle ryhmälle samanlaisia esineitä (e) pelaajan esineluettelossa:
+		Jos ryhmän koko on 1:
+			Sano "- [E].[rivinvaihto]".
+		Muulloin:
+			Sano "- [ryhmän koko] [e:tä].[rivinvaihto]".
 
 > Lukeminen
 
@@ -368,6 +389,9 @@ Eteisen kuvaus on "Eteisessä ei ole juuri mitään mitään kiinnostavaa.".
 
 Ulko-ovi on ovi eteisen ja pihan välissä.
 Ulko-oven kuvaus on "Eteisen ulko-ovi on lukossa. Voit nähdä sen läpi pihalle.".
+ 
+Kellari on huone eteisestä itään.
+Kellarin ovi on ovi eteisen ja kellarin välissä.
 
 Räsymatto on tylsä esine eteisessä.
 Räsymaton kuvaus on "Räsymatto on hieman likainen.".
@@ -402,6 +426,11 @@ Keittiön kuvaus on "Keittiön seinällä on työtaso. Voit nähdä ikkunasta pi
 Työtaso on kiinteä tukeva sisältäjä keittiössä.
 Työtason kuvaus on "Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan.".
 Tulkitse "taso" työtasona.
+
+Ruokalasi on esine.
+Ruokalasin kuvaus on "Tavallinen ruokalasi.".
+
+Työtasolla on 3 ruokalasia.
 
 Kattila on sisältäjä työtasolla.
 Kattilan kuvaus on "Kattila on vanha, kuten kaikki muukin.".
