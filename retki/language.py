@@ -104,7 +104,8 @@ class RObject(Bits):
 			self.id = obj_id
 		if OBJECTS is not None:
 			OBJECTS[self.id] = self
-		OBJECTS_IN_ORDER.append(self)
+		if not rclass.primitive:
+			OBJECTS_IN_ORDER.append(self)
 		self.rclass = rclass
 		self.data = data or {}
 		self.extra = extra or {}
@@ -327,7 +328,7 @@ CLASSES = {}
 CLASSES_IN_ORDER = []
 
 class RClass(Bits):
-	def __init__(self, name, superclass, name_tokens, class_id=None, bit_groups=None, bits=None):
+	def __init__(self, name, superclass, name_tokens, class_id=None, bit_groups=None, bits=None, primitive=False):
 		Bits.__init__(self, bits)
 		
 		CLASSES[name] = self
@@ -346,6 +347,7 @@ class RClass(Bits):
 		self.bit_groups = bit_groups or []
 		self.attributePhraseAdders = []
 		self.selection_rules = []
+		self.primitive = primitive
 		
 		if superclass:
 			self.superclass.direct_subclasses.append(self)
@@ -353,7 +355,10 @@ class RClass(Bits):
 		sc = "None" if self.superclass is None else "CLASSES[" + repr(self.superclass.name) + "]"
 		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
 		return (
-			'RClass(%s, %s, %s, %d, %s, %s);%s' % (repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), grammar),
+			'RClass(%s, %s, %s, %d, %s, %s, %s);%s' % (
+				repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), repr(self.primitive),
+				grammar
+			),
 			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
 		)
 	def addField(self, name, field):
@@ -654,14 +659,15 @@ def createIntegerObj(x):
 # Tulostaminen
 
 prev_was_newline = True
+print_buffer = ""
 
 def say(text):
-	global prev_was_newline
+	global prev_was_newline, print_buffer
 	if not text:
 		return
 	if not prev_was_newline:
-		print(" ", end="")
-	print(text,end="")
+		print_buffer += " "
+	print_buffer += text
 	prev_was_newline = text[-1] == "\n"
 
 # Pelin lopettaminen
@@ -675,17 +681,16 @@ def endGame():
 # Pelin komentotulkki
 
 def playGame(grammar):
-	global prev_was_newline, game_running
+	global prev_was_newline, game_running, print_buffer
 	game_running = True
 	while game_running:
-		if not prev_was_newline:
-			print()
-			prev_was_newline = True
+		print(print_buffer.strip())
+		print_buffer = ""
+		prev_was_newline = True
 		line = input(">> ")
 		interpretations = [i() for i in grammar.matchAll(tokenize(line), "PLAYER-CMD", set())]
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		else:
 			sorted(interpretations, key=lambda i: i[1])[-1][0]()
-	if not prev_was_newline:
-		print()
+	print(print_buffer.strip())

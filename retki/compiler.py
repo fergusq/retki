@@ -86,10 +86,13 @@ class StringContentPattern:
 		subs = []
 		current_subs = None
 		capitalizeds = []
+		quote = False
 		for token in tokens:
 			if current_subs is not None:
 				if token.token == "]":
-					string += " %s"
+					if not quote or string[-1] != '"':
+						string += " "
+					string += "%s"
 					alts = grammar.matchAll(current_subs, "EXPR-CASE", set())
 					subs.append(alts)
 					capitalizeds.append(current_subs[0].token.capitalize() == current_subs[0].token if current_subs else False)
@@ -103,11 +106,16 @@ class StringContentPattern:
 			elif token.token in [".", ":", ",", ";", "?", "!"]:
 				string += token.token
 				string_tokens[-1].append(token)
-			elif token.token == "%":
-				string += " %%"
-				string_tokens[-1].append(token)
 			else:
-				string += " " + token.token
+				if not quote or (string[-1] != '"' and token.token != "'"):
+					string += " "
+				if token.token == "%":
+					string += "%%"
+				elif token.token == "'":
+					string += '"'
+					quote = not quote
+				else:
+					string += token.token
 				string_tokens[-1].append(token)
 		string = string.strip()
 		ans = []
@@ -599,7 +607,7 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 				pgl(".CLASS-PATTERN-%d ::= %s .CLASS-PATTERN-%d{$} -> %s" % (clazz.id, pattern, clazz.id, output_str), FuncOutput(func))
 	else:
 		def addAttributePhrase(owner, clazz):
-			pgl(".PATTERN-%d ::= %s oleva{$} .PATTERN-%d{$} -> %s" % (clazz.id, pattern, clazz.id, output_str), FuncOutput(func))
+			pgl(".PATTERN-%d ::= %s oleva{$} .PATTERN-%d{$} -> %s" % (clazz.id, pattern, owner.id, output_str), FuncOutput(func))
 			if owner is clazz:
 				pgl(".CLASS-PATTERN-%d ::= %s oleva{$} .CLASS-PATTERN-%d{$} -> %s" % (clazz.id, pattern, clazz.id, output_str), FuncOutput(func))
 				pgl(".CLASS-PATTERN-WITH-ADV-%d ::= .CLASS-PATTERN-%d %s -> %s" % (clazz.id, clazz.id, pattern, output_str),
@@ -864,18 +872,22 @@ GRAMMAR.addCategoryName("ACTION-DEF", "toimintomääritys")
 
 # Sisäänrakennetut luokat
 
-asia = defineClass(tokenize("asia"), None)
+yläkäsite = defineClass(tokenize("yläkäsite"), None)
 
-pgl(".EXPR ::= .EXPR-%d{$} -> $1" % (asia.id,), identity)
+pgl(".EXPR ::= .EXPR-%d{$} -> $1" % (yläkäsite.id,), identity)
 
-merkkijono = defineClass(tokenize("merkkijono"), asia)
-for clazz in [asia, merkkijono]:
+asia = defineClass(tokenize("asia"), yläkäsite)
+
+merkkijono = defineClass(tokenize("merkkijono"), yläkäsite)
+merkkijono.primitive = True
+for clazz in [yläkäsite, merkkijono]:
 	pgl('.EXPR-%d ::= " .STR-CONTENT " -> "$1"' % (clazz.id,), FuncOutput(lambda s: 'createStringObj(' + s + ')'))
 	pgl('.EXPR-%d ::= rivinvaihto{$} -> "\\n"' % (clazz.id,), FuncOutput(lambda: 'createStringObj("\\n")'))
 	pgl('.EXPR-%d ::= .EXPR-%d{$} isolla alkukirjaimella -> capitalize($1)' % (clazz.id, merkkijono.id),
 		FuncOutput(lambda x: 'createStringObj(' + x + '.extra["str"].capitalize())'))
 
-kokonaisluku = defineClass(tokenize("kokonaisluku"), asia)
+kokonaisluku = defineClass(tokenize("kokonaisluku"), yläkäsite)
+kokonaisluku.primitive = True
 
 # For-silmikka
 
@@ -1012,6 +1024,8 @@ def parseBlock(reader, grammar, category="CMD", report=False):
 		if len(alternatives) != 1:
 			sys.stderr.write("Virhe jäsennettäessä riviä %d: `%s' (%s, %d vaihtoehtoa).\n" % (reader.linenum, line, category, len(alternatives)))
 			reader.skipToDedent()
+			for _, i in alternatives:
+				print(i)
 			for error in ERROR_STACK[-1]:
 				error.print(finnish=True)
 			break
@@ -1108,6 +1122,11 @@ def loadFile(file, report=True):
 			sys.stderr.write("Odottamaton sisennys rivillä %d.\n" % (reader.linenum))
 			reader.skipToDedent()
 			continue
+		if re.fullmatch(r'"[^"]+"', line):
+			string = line[1:-1].replace("'", '"')
+			obj = OBJECTS_IN_ORDER[-1]
+			obj.data["kuvaus"] = createStringObj(string)
+			continue
 		del ERROR_STACK[:]
 		ERROR_STACK.append([])
 		a = GRAMMAR.matchAll(tokenize(line), "DEF", set())
@@ -1116,7 +1135,9 @@ def loadFile(file, report=True):
 			if a[0][1][-1] == ":":
 				t.parse(reader, GRAMMAR, report=True)
 		else:
-			sys.stderr.write("\rVirhe jäsennettäessä tiedoston riviä %d: `%s'.\n" % (reader.linenum, line))
+			sys.stderr.write("\rVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
+			for _, i in a:
+				print(i)
 			for error in ERROR_STACK[-1]:
 				error.print(finnish=True)
 			
@@ -1228,7 +1249,7 @@ def interactive():
 				print(" "*indent + clazz.name + "{" + ", ".join(sorted(clazz.fields.keys())) + "}")
 				for subclass in sorted(clazz.direct_subclasses, key=lambda c: c.name):
 					printClass(subclass, indent+1)
-			printClass(asia, 0)
+			printClass(yläkäsite, 0)
 			continue
 		elif line == "/debug 0":
 			setDebug(0)

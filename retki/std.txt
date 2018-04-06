@@ -2,6 +2,11 @@
 
 Asialla on nimi koodissa, joka on merkkijono.
 
+> Asian kuvaus on merkkijono, jonka oliolle voi antaa sen luomisen jälkeen
+
+Asialla on kuvaukseksi kutsuttu merkkijono.
+Asian kuvaus on yleensä "".
+
 > Inhimillisyys
 
 Asia voi olla inhimillinen.
