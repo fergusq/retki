@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import readline, os, sys, argparse, traceback, time
+import re
 import itertools
 from suomilog.patternparser import ERROR_STACK, setDebug, PatternRef, Grammar
 from suomilog.finnish import tokenize, CASES
@@ -121,7 +122,7 @@ def createStringLiteralAlternative(string, string_tokens, alternative, capitaliz
 		subs = []
 		for (expr_f, _), capitalized in zip(alternative, capitalizeds):
 			expr, case = expr_f()
-			subs.append("%s.asString(case=%s)%s" % (expr, repr(case), ".capitalize()" if capitalized else ""))
+			subs.append("%s.asString(case=%s)%s" % (expr, repr(case), ".capitalize()" if capitalized else ".lower()"))
 		return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
 	return [
 		f,
@@ -133,6 +134,30 @@ GRAMMAR.patterns["STR-CONTENT"] = [
 ]
 
 GRAMMAR.addCategoryName("STR-CONTENT", "merkkijono")
+
+CARDINALS = ["nolla", "yksi", "kaksi", "kolme", "neljä", "viisi", "kuusi", "seitsemän", "kahdeksan", "yhdeksän", "kymmenen"]
+
+class NumberPattern:
+	def __repr__(self):
+		return "NumberPattern()"
+	def toCode(self):
+		return "<pattern that matches any number>"
+	def match(self, grammar, tokens, bits):
+		if len(tokens) != 1:
+			return []
+		for bf, altbits in tokens[0].alternatives:
+			if bits <= altbits:
+				if bf in CARDINALS:
+					return [[lambda: CARDINALS.index(bf), bf]]
+				elif re.fullmatch(r"[0-9]+", bf):
+					return [[lambda: int(bf), bf]]
+		return []
+	def allowsEmptyContent(self):
+		return False
+
+GRAMMAR.patterns["N"] = [
+	NumberPattern()
+]
 
 # Apufunktio
 
@@ -332,6 +357,10 @@ def defineListField(owner, name, vtype, case="nimento"):
 		pgl(".CMD ::= toista jokaiselle .PATTERN-%d{ulkotulento} %s .EXPR-%d{omanto} %s : -> for each $1 in $2.%s:" % (
 			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
 		), FuncOutput(lambda *p: ForParser(name_str, *p)))
+		
+		pgl(".CMD ::= toista jokaiselle ryhmälle samanlaisia .PATTERN-%d{osanto,monikko} %s .EXPR-%d{omanto} %s : -> for each $1 in $2.%s:" % (
+			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
+		), FuncOutput(lambda *p: ForParser(name_str, *p, group=True)))
 		
 		pgl(".COND-STMT ::= jokaiselle .PATTERN-%d{ulkotulento} %s .EXPR-%d{omanto} %s pätee : -> for each $1 in $2.%s:" % (
 			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
@@ -553,10 +582,12 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 		last_token = pre[-1] if len(params) == 0 else params[-1][2][-1]
 		is_adjective = ("laatusana" in last_token.bits() or "nimisana_laatusana" in last_token.bits()) and "nimento" in last_token.bits()
 	
+	create_condition = lambda p: RCondition(
+		"_obj", "(" + make_call("CHECKS", ("_obj",)+p) + ")[-2]", "(" + make_call("MODIFYS", ("_obj",)+p) + ")"
+	)
+	
 	# adjektiivisen ja adverbiaalisen fraasin yhteinen funktio
-	func = lambda *p: p[-1].addCondition(RCondition(
-		"_obj", "(" + make_call("CHECKS", ("_obj",)+p[:-1]) + ")[-2]", "(" + make_call("MODIFYS", ("_obj",)+p[:-1]) + ")"
-	))
+	func = lambda *p: p[-1].addCondition(create_condition(p[:-1]))
 	
 	# yhteinen output-merkkijonon osa
 	output_str = name_str + "(" + ", ".join(["$" + str(n+1) for n in range(len(params)+1)]) + ")"
@@ -572,9 +603,11 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 			if owner is clazz:
 				pgl(".CLASS-PATTERN-%d ::= %s oleva{$} .CLASS-PATTERN-%d{$} -> %s" % (clazz.id, pattern, clazz.id, output_str), FuncOutput(func))
 				pgl(".CLASS-PATTERN-WITH-ADV-%d ::= .CLASS-PATTERN-%d %s -> %s" % (clazz.id, clazz.id, pattern, output_str),
-					FuncOutput(lambda *p: p[0].addCondition(RCondition(
-						"_obj", "(" + make_call("CHECKS", ("_obj",)+p[1:]) + ")[-2]", "(" + make_call("MODIFYS", ("_obj",)+p[1:]) + ")"
-					))))
+					FuncOutput(lambda *p: p[0].addCondition(create_condition(p[1:]))))
+				pgl(".COPY-DEF ::= %s on .EXPR-%d{yksikkö,nimento} . -> copy $* ~ %s" % (pattern, clazz.id, output_str),
+					FuncOutput(lambda *p: eval(p[-1]).createCopies(1, create_condition(p[:-1]))))
+				pgl(".COPY-DEF ::= %s on .N .EXPR-%d{yksikkö,osanto} . -> copy $* ~ %s" % (pattern, clazz.id, output_str),
+					FuncOutput(lambda *p: eval(p[-1]).createCopies(p[-2], create_condition(p[:-2]))))
 	
 	if owner.superclass:
 		for clazz in owner.superclass.superclasses():
@@ -608,6 +641,9 @@ for num_params in [0,1,2]:
 
 pgl(".DEF ::= .COND-DEF -> $1", identity)
 GRAMMAR.addCategoryName("COND-DEF", "ehtomääritys")
+
+pgl(".DEF ::= .COPY-DEF -> $1", identity)
+GRAMMAR.addCategoryName("COPY-DEF", "kopiomääritys")
 
 # Muuttujat
 
@@ -659,14 +695,17 @@ GRAMMAR.addCategoryName("ALIAS-DEF", "tulkintamääritys")
 
 # Apufunktio
 
-def addParamPhrases(grammar, case, vtype, name, varname=None):
+def addParamPhrases(grammar, case, vtype, name, varname=None, plural=False):
 	if name:
 		for clazz in vtype.superclasses():
 			grammar.parseGrammarLine(".EXPR-%d ::= %s -> %s param" % (
 				clazz.id, nameToCode(name, rbits={"yksikkö", "nimento"}), vtype.name
 			), FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
 	else:
-		pronoun = "hän" if "inhimillinen" in vtype.bits else "se"
+		if not plural:
+			pronoun = "hän" if "inhimillinen" in vtype.bits else "se"
+		else:
+			pronoun = "he" if "inhimillinen" in vtype.bits else "he"
 		for clazz in vtype.superclasses():
 			grammar.parseGrammarLine(".EXPR-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
 				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
@@ -691,6 +730,9 @@ def defineAction(name, params, pre, post):
 	def defineActionListener(patterns, priority, is_special_case, is_general_case):
 		return ListenerParser((action, [(a_case, pattern, name) for (pattern, name), (_, _, a_case) in zip(patterns, params)], priority, is_special_case, is_general_case))
 	
+	def defineActionSelection(patterns):
+		return ActionSelectionParser(action, [(a_case, pattern, name) for (pattern, name), (_, _, a_case) in zip(patterns, params)])
+	
 	def separateGroups(groups, nameds):
 		i = 0
 		j = 0
@@ -705,21 +747,33 @@ def defineAction(name, params, pre, post):
 			j += 1
 		return ans
 	
-	def addListenerDefPattern(p_pre, p_case, p_post, priority, is_special_case, is_general_case, nameds):
+	signature_pattern = lambda nameds: " ".join([
+		"%s .PATTERN-%d{%s,yksikkö}" % (tokensToCode(a_pre), a_class.id, a_case)
+		+ (" ( .* )" if named else "")
+		for named, (a_pre, a_class, a_case) in zip(nameds, params)
+	])
+	
+	def addListenerDefPattern(nameds, p_pre, p_case, p_post, priority, is_special_case, is_general_case):
 		pgl(".LISTENER-DEF-%d ::= %s %s %s %s{-minen,%s} %s %s : -> def %s($1):" % (
 			action.id,
 			p_pre,
-			" ".join([
-				"%s .PATTERN-%d{%s,yksikkö}" % (tokensToCode(a_pre), a_class.id, a_case)
-				+ (" ( .* )" if named else "")
-			for named, (a_pre, a_class, a_case) in zip(nameds, params)]),
+			signature_pattern(nameds),
 			tokensToCode(pre), name.baseform("-minen"), p_case, tokensToCode(post), p_post,
 			name.token
 		), FuncOutput(lambda *groups: defineActionListener(separateGroups(groups, nameds), priority, is_special_case, is_general_case)))
+
+	def addSelectionDefPattern(nameds):
+		pgl(".SELECTION-DEF ::= tarkoittaako pelaaja %s %s %s{-minen,osanto} %s : -> does the player mean %s($*):" % (
+			signature_pattern(nameds),
+			tokensToCode(pre), name.baseform("-minen"), tokensToCode(post),
+			name.token
+		), FuncOutput(lambda *groups: defineActionSelection(separateGroups(groups, nameds))))
+
+	for nameds in itertools.product(*[[False, True]]*len(params)):
+		for priority_properties in LISTENER_PRIORITIES:
+			addListenerDefPattern(nameds, *priority_properties)
+		addSelectionDefPattern(nameds)
 	
-	for p_pre, p_case, p_post, priority, is_special_case, is_general_case in LISTENER_PRIORITIES:
-		for nameds in itertools.product(*[[False, True]]*len(params)):
-			addListenerDefPattern(p_pre, p_case, p_post, priority, is_special_case, is_general_case, nameds)
 	pgl(".DEF ::= .LISTENER-DEF-%d -> $1" % (action.id,), identity)
 	GRAMMAR.addCategoryName("LISTENER-DEF-%d" % (action.id,), "kuuntelijamääritys")
 	
@@ -821,12 +875,15 @@ for clazz in [asia, merkkijono]:
 	pgl('.EXPR-%d ::= .EXPR-%d{$} isolla alkukirjaimella -> capitalize($1)' % (clazz.id, merkkijono.id),
 		FuncOutput(lambda x: 'createStringObj(' + x + '.extra["str"].capitalize())'))
 
+kokonaisluku = defineClass(tokenize("kokonaisluku"), asia)
+
 # For-silmikka
 
 class ForParser:
-	def __init__(self, field_name, *args):
+	def __init__(self, field_name, *args, group=False):
 		self.field_name = field_name
 		self.args = args
+		self.group = group
 	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		
@@ -834,12 +891,21 @@ class ForParser:
 		param_name = None if len(self.args) == 2 else self.args[1]
 		obj = self.args[-1]
 		
-		addParamPhrases(grammar, "_val", param_pattern.type(), param_name)
+		addParamPhrases(grammar, "_val", param_pattern.type(), param_name, plural=self.group)
+		if self.group:
+			for clazz in kokonaisluku.superclasses():
+				grammar.parseGrammarLine(".EXPR-%d ::= ryhmän koko{$} -> val count" % (clazz.id,),
+					FuncOutput(lambda: 'getVar("_count")'))
+			# TODO PURKKAA:
+			grammar.parseGrammarLine(".COND ::= ryhmän koko{$} on .N -> val count = $1",
+				FuncOutput(lambda n: ('getVar("_count").extra["int"] == %s' % (repr(n),), "()"))) # TODO virhe modify-osassa
 		
 		block = parseBlock(file, grammar, report=report)
 		block_str = "lambda: (" + ", ".join(block) + ")"
 		
-		return '%s.forSet(%s, %s, %s, %s)' % (obj, repr(self.field_name), repr("_val"), param_pattern.toPython(), block_str)
+		return '%s.forSet(%s, "_val", %s, %s, group=%s, count_var_name="_count")' % (
+			obj, repr(self.field_name), param_pattern.toPython(), block_str, repr(self.group)
+		)
 
 # If-lause
 
@@ -863,7 +929,7 @@ class IfParser:
 			file.accept("muulloin:", "muuten:")
 			else_block = parseBlock(file, grammar, category=self.category, report=report)
 			else_str = joinCodes(else_block)
-			return "((%s and %s) or %s)" % (self.condition[0], block_str, else_str)
+			return "(%s if %s else %s)" % (block_str, self.condition[0], else_str)
 		else:
 			return "(%s and %s)" % (self.condition[0], block_str)
 
@@ -910,6 +976,19 @@ class SelectionParser:
 		addParamPhrases(grammar, None, self.obj if isinstance(self.obj, RClass) else self.obj.rclass, None, varname="_arg")
 		block = parseBlock(reader, grammar, category="SELECTION-CMD", report=report)
 		self.obj.addSelectionRule("lambda _arg: " + joinCodes(block))
+
+class ActionSelectionParser:
+	def __init__(self, action, params):
+		self.action = action
+		self.params = params
+	def parse(self, reader, grammar, report=False):
+		grammar = grammar.copy()
+		lambdaparams = []
+		for i, (c, p, n) in enumerate(self.params):
+			addParamPhrases(grammar, None, p.type(), n, varname="_" + str(i))
+			lambdaparams.append("_" + str(i))
+		block = parseBlock(reader, grammar, category="SELECTION-CMD", report=report)
+		self.action.addSelectionRule(self.params, "lambda " + ", ".join(lambdaparams) + ": " + joinCodes(block))
 
 pgl(".SELECTION-DEF ::= tarkoittaako pelaaja .CLASS{osanto} : -> does the player mean $1:", FuncOutput(lambda clazz: SelectionParser(clazz)))
 pgl(".DEF ::= .SELECTION-DEF -> $1", identity)

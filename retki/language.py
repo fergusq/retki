@@ -95,7 +95,7 @@ def searchLastObject(pattern):
 	return None
 
 class RObject(Bits):
-	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None):
+	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None, aliases=None, data=None):
 		Bits.__init__(self, bits)
 		if not obj_id:
 			increaseCounter()
@@ -106,16 +106,32 @@ class RObject(Bits):
 			OBJECTS[self.id] = self
 		OBJECTS_IN_ORDER.append(self)
 		self.rclass = rclass
-		self.data = {}
+		self.data = data or {}
 		self.extra = extra or {}
 		self.name = name
 		self.name_tokens = name_tokens
-		self.aliases = []
+		self.aliases = aliases or []
 		self.selection_rules = srules or []
 		if name:
-			self.data["nimi koodissa"] = CLASSES["merkkijono"].newInstance().setExtra("str", name)
+			self.data["nimi koodissa"] = createStringObj(name)
 	def __repr__(self):
 		return self.asString()
+	def copy(self):
+		data_copy = {}
+		for key in self.data:
+			if isinstance(self.data[key], RObject):
+				data_copy[key] = self.data[key]
+			elif isinstance(self.data[key], dict):
+				data_copy[key] = self.data[key].copy()
+			elif isinstance(self.data[key], set):
+				data_copy[key] = self.data[key].copy()
+			else:
+				raise Exception("not implemented")
+		return RObject(
+			self.rclass, self.name, self.bits.copy(),
+			extra=self.extra.copy(), name_tokens=self.name_tokens, srules=self.selection_rules.copy(),
+			data=data_copy
+		)
 	def toPython(self):
 		var = 'OBJECTS[' + repr(self.id) + ']'
 		
@@ -128,7 +144,7 @@ class RObject(Bits):
 		
 		grammar = ""
 		for name in names:
-			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: %s), SumOutput(lambda: %s.likeliness()))" % (
+			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: (%s, %s.likeliness())))" % (
 				self.rclass.id,
 				nameToCode(name, bits={"$"}, rbits={"nimento", "yksikkö"}),
 				var, var
@@ -162,6 +178,21 @@ class RObject(Bits):
 				for key in self.data if isinstance(self.data[key], set)
 			])
 		)
+	def equals(self, obj):
+		if self.id == obj.id:
+			return True
+		if self.name != obj.name:
+			return False
+		if self.rclass != obj.rclass:
+			return False
+		if len(self.data) != len(obj.data):
+			return False
+		for key in self.data:
+			if key not in obj.data or self.data[key] != obj.data[key]:
+				return False
+		if self.extra != obj.extra:
+			return False
+		return True
 	def get(self, field_name):
 		if field_name not in self.data:
 			for clazz in self.rclass.superclasses():
@@ -201,15 +232,31 @@ class RObject(Bits):
 		if field_name not in self.data:
 			return False
 		return val in self.data[field_name]
-	def forSet(self, field_name, var_name, pattern, f):
+	def forSet(self, field_name, var_name, pattern, f, group=False, count_var_name=None):
 		if field_name not in self.data:
 			return []
 		pushScope()
 		ans = []
-		for val in self.data[field_name]:
-			if pattern.matches(val):
-				putVar(var_name, val)
-				ans.append(f())
+		if not group:
+			for val in self.data[field_name]:
+				if pattern.matches(val):
+					putVar(var_name, val)
+					ans.append(f())
+		else:
+			# TODO
+			groups = []
+			for val in self.data[field_name]:
+				if pattern.matches(val):
+					for group in groups:
+						if group[0].equals(val):
+							group.append(val)
+							break
+					else:
+						groups.append([val])
+			for group in groups:
+					putVar(count_var_name, createIntegerObj(len(group)))
+					putVar(var_name, group[0])
+					ans.append(f())
 		popScope()
 		return ans
 	def onceSet(self, field_name, var_name, pattern, f):
@@ -223,6 +270,10 @@ class RObject(Bits):
 					return True
 		popScope()
 		return False
+	def createCopies(self, n, condition):
+		for i in range(n):
+			obj = self.copy()
+			condition.doModify(obj)
 	def setExtra(self, name, data):
 		self.extra[name] = data
 		return self
@@ -243,6 +294,8 @@ class RObject(Bits):
 				name_tokens = tokenize(self.name)
 			elif "str" in self.extra:
 				name_tokens = tokenize(self.extra["str"])
+			elif "int" in self.extra:
+				name_tokens = tokenize(str(self.extra["int"]))
 			else:
 				name_tokens = self.rclass.name_tokens or tokenize(self.rclass.name)
 			return tokensToInflectedString(name_tokens, case)
@@ -250,6 +303,8 @@ class RObject(Bits):
 			return self.name
 		if "str" in self.extra:
 			return self.extra["str"]
+		if "int" in self.extra:
+			return str(self.extra["int"])
 		return "[eräs " + self.rclass.name + "]"
 	def toKey(self):
 		if "str" in self.extra:
@@ -296,7 +351,7 @@ class RClass(Bits):
 			self.superclass.direct_subclasses.append(self)
 	def toPython(self):
 		sc = "None" if self.superclass is None else "CLASSES[" + repr(self.superclass.name) + "]"
-		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity, SumOutput())' % (self.superclass.id, self.id)
+		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
 		return (
 			'RClass(%s, %s, %s, %d, %s, %s);%s' % (repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), grammar),
 			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
@@ -439,7 +494,7 @@ GLOBAL_SCOPE = RScope()
 SCOPE = []
 STACK = []
 STACK_NAMES = []
-ACTION_STACK = []
+ACTION_STACK = [RScope()]
 
 def pushScope():
 	SCOPE.append(RScope())
@@ -480,7 +535,7 @@ def addAlias(name, alias):
 # Toiminnot
 
 class RAction:
-	def __init__(self, name, a_id=None):
+	def __init__(self, name, a_id=None, srules=None):
 		if not a_id:
 			increaseCounter()
 		self.id = a_id or getCounter()
@@ -490,18 +545,30 @@ class RAction:
 		
 		self.commands = []
 		self.listeners = []
+		self.selection_rules = srules or []
 	def toPython(self):
 		return ";".join([
-			"RAction(" + repr(self.name) + ", " + repr(self.id) + ")"
+			"RAction(" + repr(self.name) + ", " + repr(self.id)
+			+ ", [" + ", ".join(["(" + toPython(p) + ", " + r + ")" for p, r in self.selection_rules]) + "])"
 		] + [
-			"GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', FuncOutput(lambda *x: ACTIONS[%d].run(x)), SumOutput())" % (pattern, self.id) for pattern in self.commands
+			("GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', "
+			+ "FuncOutput(lambda *x: (lambda: ACTIONS[%d].run([p for p, _ in x]), ACTIONS[%d].likeliness([p for p, _ in x]) + sum([p for _, p in x]))))")
+			% (pattern, self.id, self.id) for pattern in self.commands
 		])
 	def addPlayerCommand(self, pattern):
 		self.commands.append(pattern)
+	def addSelectionRule(self, params, rule):
+		self.selection_rules.append((params, rule))
+	def likeliness(self, args):
+		ans = 0
+		for params, rule in self.selection_rules:
+			if allPatternsMatch(args, params):
+				ans += evalOrCall(rule, args)
+		return ans
 	def run(self, args, in_scope=False):
 		listeners = []
 		for listener in self.listeners:
-			if listener.action is self and all([p.matches(obj) for obj, (_, p, _) in zip(args, listener.params)]):
+			if listener.action is self and allPatternsMatch(args, listener.params):
 				listeners.append(listener)
 		if not in_scope:
 			pushAction()
@@ -517,6 +584,9 @@ class RAction:
 				break
 		if not in_scope:
 			popAction()
+
+def allPatternsMatch(args, params):
+	return all([p.matches(obj) for obj, (_, p, _) in zip(args, params)])
 
 ACTIONS = {}
 
@@ -567,8 +637,19 @@ ACTION_LISTENERS = []
 
 # Merkkijonon luominen
 
+STRING_CACHE = {}
+
 def createStringObj(x):
-	return CLASSES["merkkijono"].newInstance().setExtra("str", x)
+	if x in STRING_CACHE:
+		return STRING_CACHE[x]
+	obj = CLASSES["merkkijono"].newInstance().setExtra("str", x)
+	STRING_CACHE[x] = obj
+	return obj
+
+# Kokonaisluvun luominen
+
+def createIntegerObj(x):
+	return CLASSES["kokonaisluku"].newInstance().setExtra("int", x)
 
 # Tulostaminen
 
@@ -601,7 +682,7 @@ def playGame(grammar):
 			print()
 			prev_was_newline = True
 		line = input(">> ")
-		interpretations = grammar.matchAll(tokenize(line), "PLAYER-CMD", set())
+		interpretations = [i() for i in grammar.matchAll(tokenize(line), "PLAYER-CMD", set())]
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		else:

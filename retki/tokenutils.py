@@ -38,7 +38,7 @@ def tokensToString(tokens, rbits={"nimento", "yksikkö"}):
 	return " ".join([text for text, bits in nameToBaseform(tokens, {}, rbits)])
 
 def tokensToInflectedString(tokens, case, rbits={"nimento", "yksikkö"}):
-	return " ".join([inflect(text, case, "monikko" in rbits) for text, _ in nameToBaseform(tokens, {}, rbits)])
+	return " ".join([inflect(text, case, "monikko" in rbits) if "$" in bit else text for text, bit in nameToBaseform(tokens, {}, rbits)])
 
 def nameToCode(name, bits=None, rbits={"nimento", "yksikkö"}):
 	return " ".join([token + ("{" + ",".join(tbits) + "}" if tbits else "") for token, tbits in nameToBaseform(name, bits, rbits)])
