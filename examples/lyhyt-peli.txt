@@ -3,7 +3,6 @@ Tulkitse "peli alkaa" pelin alkamisena.
 
 > Kuvaukset
 
-Asialla on kuvaukseksi kutsuttu merkkijono.
 Asian kuvaus on yleensä "Ei mikään kiinnostava asia.".
 
 > Esineet
@@ -28,6 +27,22 @@ Sisältäjä on esineen alakäsite.
 Sisältäjällä on sisältöjoukoksi kutsuttu joukko esineitä.
 Sisältäjä on joko tukeva tai ympäröivä.
 Sisältäjä on yleensä ympäröivä.
+
+> Ihminen, pelaaja
+
+Ihminen on käsite.
+Ihminen on yleensä inhimillinen.
+Ihmisellä on sijainti, joka on huone.
+Ihmisellä on esineluetteloksi kutsuttu joukko esineitä.
+
+Huoneella on henkilöjoukoksi kutsuttu joukko ihmisiä.
+
+Ihminen on joko tietokoneen ohjaama tai pelaajan ohjaama.
+Ihminen on yleensä tietokoneen ohjaama.
+
+Pelaaja on pelaajan ohjaama ihminen.
+Tulkitse "itse" pelaajana.
+Tulkitse "sinä" pelaajana.
 
 > Sisältäminen
 
@@ -74,13 +89,14 @@ Määritelmä. Kun esine (E) "ei ole [huoneessa (H)]":
 		jokaiselle sisältäjälle (S) H:n esinejoukossa pätee:
 			E ei ole S:n varassa
 
-> Ihminen, pelaaja
+Määritelmä. Kun ihminen (I) on "[huoneessa (H)]":
+	H:n henkilöjoukko sisältää I:n
 
-Ihminen on käsite.
-Ihminen on yleensä inhimillinen.
-Ihmisellä on sijainti, joka on huone.
-Ihmisellä on esineluetteloksi kutsuttu joukko esineitä.
-Pelaaja on ihminen.
+Määritelmä. Kun ihminen (I) on "[huoneella (H)]":
+	I on H:ssa
+
+Määritelmä. Kun ihminen (I) "ei ole [huoneessa (H)]":
+	H:n henkilöjoukko ei sisällä I:tä
 
 Määritelmä. Kun esine (E) on "näkyvillä":
 	jokin seuraavista:
@@ -95,8 +111,20 @@ Määritelmä. Kun esine (E) on "piilossa":
 	jokaiselle sisältäjälle (S) pelaajan esineluettelossa pätee:
 		E ei ole S:n varassa
 
+Määritelmä. Kun ihminen (I) on "näkyvillä":
+	I on pelaajan sijainnissa
+
+Määritelmä. Kun ihminen (I) on "piilossa":
+	I ei ole pelaajan sijainnissa
+
 Tarkoittaako pelaaja esinettä:
 	Jos se on näkyvillä:
+		ehkä
+	Muuten:
+		varmasti ei
+
+Tarkoittaako pelaaja ihmistä:
+	Jos hän on näkyvillä:
 		ehkä
 	Muuten:
 		varmasti ei
@@ -107,7 +135,7 @@ Tarkoittaako pelaaja esinettä:
 Avautumisen komento on "[esine] avautuu nyt".
 
 Esine on joko avattava tai ei-avattava.
-Esineellä on avaimeksi kutsuttu esine.
+Esineellä on avaavaksi avaimeksi kutsuttu esine.
 
 [Esineen] avaaminen on toiminto.
 Avaamisen komento on "avaa nyt [esine]".
@@ -122,7 +150,7 @@ Ennen ei-avattavan esineen avaamista:
 	Keskeytä toiminto.
 
 Ennen esineen avaamista:
-	Jos pelaajan esineluettelo ei sisällä sen avainta:
+	Jos pelaajan esineluettelo ei sisällä sen avaavaa avainta:
 		Sano "Sinulla ei ole oikeaa avainta.".
 		Keskeytä toiminto.
 
@@ -139,32 +167,41 @@ Ennen piilossa olevan esineen kuvailemista:
 	Sano "Et näe mitään [sitä].".
 	Keskeytä toiminto.
 
+Ennen piilossa olevan ihmisen kuvailemista:
+	Sano "[Hän] ei ole täällä.".
+	Keskeytä toiminto.
+
 Asian kuvailemisen aikana:
 	Sano sen kuvaus.
 
 Huoneen kuvailemisen jälkeen:
+	Sano "[rivinvaihto][rivinvaihto]".
 	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen esinejoukossa:
 		Jos ryhmän koko on 1:
 			Sano "Näet täällä [e:n].".
 		Muulloin:
 			Sano "Näet täällä [ryhmän koko] [e:tä].".
+	Toista jokaiselle tietokoneen ohjaamalle ihmiselle sen henkilöjoukossa:
+		Sano "[Hän] on täällä.[rivinvaihto]".
 
 Suljetun huoneen kuvailemisen jälkeen:
 	Sano "Et voi mennä sinne.".
 
 Tukevan sisältäjän kuvailemisen jälkeen:
+	Sano "[rivinvaihto][rivinvaihto]".
 	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen sisältöjoukossa:
 		Jos ryhmän koko on 1:
-			Sano "Sen päällä on [e].".
+			Sano "Sen päällä on [e].[rivinvaihto]".
 		Muulloin:
-			Sano "Sen päällä on [ryhmän koko] [e:tä].".
+			Sano "Sen päällä on [ryhmän koko] [e:tä].[rivinvaihto]".
 
 Ympäröivän sisältäjän kuvailemisen jälkeen:
+	Sano "[rivinvaihto][rivinvaihto]".
 	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen sisältöjoukossa:
 		Jos ryhmän koko on 1:
-			Sano "Sen sisällä on [e].".
+			Sano "Sen sisällä on [e].[rivinvaihto]".
 		Muulloin:
-			Sano "Sen sisällä on [ryhmän koko] [e:tä].".
+			Sano "Sen sisällä on [ryhmän koko] [e:tä].[rivinvaihto]".
 
 > Esitteleminen
 
@@ -215,11 +252,15 @@ Huoneen naapurihuone suunnassa on yleensä seinä.
 Kutakin huonetta kohden huoneella voi olla siihen huoneeseen johtavaksi suunnaksi kutsuttu suunta.
 Huoneen huoneeseen johtava suunta on yleensä ei-suunta.
 
+Huoneella on naapurihuonejoukoksi kutsuttu joukko huoneita.
+
 Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)]":
 	B:n naapurihuone tarkasteltavassa suunnassa on A
 	A:n naapurihuone tarkasteltavan suunnan vastasuunnassa on B
 	B:n A:han johtava suunta on tarkasteltava suunta
 	A:n B:hen johtava suunta on tarkasteltavan suunnan vastasuunta
+	A:n naapurihuonejoukko sisältää B:n
+	B:n naapurihuonejoukko sisältää A:n
 
 > Ovi
 
@@ -247,20 +288,21 @@ Oven avautumisen jälkeen:
 > Liikkuminen
 
 [Suuntaan] liikkuminen on toiminto.
-Liikkumisen komento on "liiku [suuntaan]".
+Liikkumisen komento on "liiku nyt [suuntaan]".
 Tulkitse "liiku [suuntaan]" liikkumisena.
 Tulkitse "mene [suuntaan]" liikkumisena.
 Tulkitse "[suuntaan]" liikkumisena.
 Tulkitse "[suunta]" liikkumisena.
 
 [Huoneeseen] liikkuminen on toiminto.
+Huoneeseen liikkumisen komento on "liiku nyt [huoneeseen]".
 Tulkitse "liiku [huoneeseen]" huoneeseen liikkumisena.
 Tulkitse "liiku [huoneelle]" huoneeseen liikkumisena.
 Tulkitse "mene [huoneeseen]" huoneeseen liikkumisena.
 Tulkitse "mene [huoneelle]" huoneeseen liikkumisena.
 
 Huoneeseen (H) liikkumisen sijasta:
-	liiku pelaajan sijainnin H:hon johtavaan suuntaan.
+	liiku nyt pelaajan sijainnin H:hon johtavaan suuntaan.
 
 [Huoneeseen] siirtyminen on toiminto.
 Siirtymisen komento on "siirry [huoneeseen]".
@@ -280,12 +322,34 @@ Ennen huoneeseen (pelaajan määränpää) siirtymistä:
 		Jos oven huonejoukko sisältää pelaajan määränpään:
 			Sano "(avataan ensin [ovi])".
 			Avaa nyt ovi.
+			Sano "[rivinvaihto][rivinvaihto]".
 			
 Huoneeseen siirtymisen aikana:
+	Pelaaja on nyt piilossa.
 	Pelaajan sijainti on nyt se.
+	Pelaaja on nyt näkyvillä.
 
 Huoneeseen siirtymisen jälkeen:
 	Esittele se.
+
+> Ovesta meneminen
+
+[Ovesta] meneminen on toiminto.
+Tulkitse "mene [ovesta]" ovesta menemisenä.
+
+Ennen lukitusta ovesta menemistä:
+	Sano "(avataan ensin [se])".
+	Avaa nyt se.
+	Sano "[rivinvaihto][rivinvaihto]".
+
+Ovesta (O) menemisen aikana:
+	Toista jokaiselle huoneelle (naapurihuone) pelaajan sijainnin naapurihuonejoukossa:
+		Jos O on naapurihuoneessa:
+			Liiku nyt naapurihuoneeseen.
+			Keskeytä toiminto.
+
+Ovesta menemisen jälkeen:
+	Sano "[Se] ei vie mihinkään.".
 
 > Katsominen
 
@@ -375,69 +439,112 @@ Kirjoitusta sisältävän esineen lukemisen aikana:
 	Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
 	Sano "[sen kirjoitus][rivinvaihto]".
 
+> Puhuminen
+
+[Ihmiselle] puhuminen on toiminto.
+Puhumisen komento on "puhu nyt [ihmiselle]".
+Tulkitse "puhu [ihmiselle]" puhumisena.
+
+Ennen piilossa olevalle ihmiselle puhumista:
+	Sano "[Hän] ei ole paikalla.".
+	Keskeytä toiminto.
+
+Pelaajalle puhumisen sijasta:
+	Sano "Höpiset jotain yksin.".
+
+Ihmiselle puhumisen aikana:
+	Sano "[Hän] ei näytä kiinnostuneelta höpinästäsi.".
+
+[Ihmiselle] [asian] kertominen on toiminto.
+Tulkitse "kerro [ihmiselle] [asiasta]" kertomisena.
+Tulkitse "kerro [ihmiselle] [asia]" kertomisena.
+
+Ennen piilossa olevalle ihmiselle asian kertomista:
+	Sano "[Hän] ei ole paikalla.".
+	Keskeytä toiminto.
+
+Ihmiselle asian kertomisen aikana:
+	Puhu nyt hänelle.
+
 > Kartta
+
+> Piha
 
 Piha on huone.
 Pihan kuvaus on "Talon pihalla kasvaa tiheää heinää. Rakennus sijaitsee syrjäisen metsätien varrella, mutta uskot löytäväsi täältä pois.".
 
 Pihaan siirtymisen jälkeen:
+	Sano "[rivinvaihto][rivinvaihto]".
 	Sano "Olet nyt voittanut pelin.".
 	Lopeta peli.
 
+> Eteinen
+
 Eteinen on huone pihasta pohjoiseen.
-Eteisen kuvaus on "Eteisessä ei ole juuri mitään mitään kiinnostavaa.".
+"Eteisessä ei ole juuri mitään mitään kiinnostavaa."
 
 Ulko-ovi on ovi eteisen ja pihan välissä.
-Ulko-oven kuvaus on "Eteisen ulko-ovi on lukossa. Voit nähdä sen läpi pihalle.".
- 
-Kellari on huone eteisestä itään.
-Kellarin ovi on ovi eteisen ja kellarin välissä.
+"Eteisen ulko-ovi on lukossa. Voit nähdä sen läpi pihalle."
 
 Räsymatto on tylsä esine eteisessä.
-Räsymaton kuvaus on "Räsymatto on hieman likainen.".
+"Räsymatto on hieman likainen."
 Tulkitse "matto" räsymattona.
 
+> Olohuone
+
 Olohuone on huone eteisestä pohjoiseen.
-Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
+"Olohuone tuntuu ahtaalta."
 
 Sohva on kiinteä esine olohuoneessa.
-Sohvan kuvaus on "Vanha punainen sohva.".
+"Vanha punainen sohva."
 
 Pöytä on kiinteä tukeva sisältäjä olohuoneessa.
-Pöydän kuvaus on "Vanha puinen pöytä.".
+"Vanha puinen pöytä."
 
 Kirje on kirjoitusta sisältävä esine pöydän päällä.
-Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä.".
+"Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä."
 Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
 
+> Ruokahuone
+
 Ruokahuone on huone olohuoneesta länteen.
-Ruokahuoneen kuvaus on "Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois.".
+"Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois."
 
 Itämainen matto on tylsä esine ruokahuoneessa.
-Itämaisen maton kuvaus on "Itämaiseen mattoon on kuvioitu kauniita muotoja.".
+"Itämaiseen mattoon on kuvioitu kauniita muotoja."
 Tulkitse "matto" itämaisena mattona.
 
 Takaovi on ovi ruokahuoneessa.
-Takaoven kuvaus on "Takaovi on tiukasti lukossa.".
+"Takaovi on tiukasti lukossa."
+
+Virtanen on ihminen ruokahuoneessa.
+"Neiti Virtanen on tämän talon omistaja. Hän mutisee jotain itsekseen."
+
+Virtaselle puhumisen sijasta:
+	Sano "Neiti Virtanen ei näytä kuuntelevan sinua.[rivinvaihto][rivinvaihto]".
+	Sano "'Koti, avain, takapiha, ruokalasi', hän sanoo.".
+
+> Keittiö
 
 Keittiö on huone ruokahuoneesta etelään.
-Keittiön kuvaus on "Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle.".
+"Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle."
 
 Työtaso on kiinteä tukeva sisältäjä keittiössä.
-Työtason kuvaus on "Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan.".
+"Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan."
 Tulkitse "taso" työtasona.
 
 Ruokalasi on esine.
-Ruokalasin kuvaus on "Tavallinen ruokalasi.".
+"Tavallinen ruokalasi."
 
 Työtasolla on 3 ruokalasia.
 
 Kattila on sisältäjä työtasolla.
-Kattilan kuvaus on "Kattila on vanha, kuten kaikki muukin.".
+"Kattila on vanha, kuten kaikki muukin."
 
 Avain on esine kattilassa.
-Avaimen kuvaus on "Tämähän voisi sopia ulko-oveen.".
-Ulko-oven avain on avain.
+"Tämähän voisi sopia ulko-oveen."
+Ulko-oven avaava avain on avain.
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt eteinen.
+	Pelaaja on nyt näkyvillä.
