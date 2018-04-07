@@ -513,7 +513,7 @@ Esineen sytyttämisen aikana:
 > Piha
 
 Piha on huone.
-Pihan kuvaus on "Talon pihalla kasvaa tiheää heinää. Rakennus sijaitsee syrjäisen metsätien varrella, mutta uskot löytäväsi täältä pois.".
+"Talon pihalla kasvaa tiheää heinää. Rakennus sijaitsee syrjäisen metsätien varrella, mutta uskot löytäväsi täältä pois."
 
 Pihaan siirtymisen jälkeen:
 	Sano "[rivinvaihto][rivinvaihto]".
@@ -556,7 +556,7 @@ Hylly on kiinteä listaamaton esine varastossa.
 "Varaston seiniä kiertävä hylly on täynnä rojua."
 
 Roju on kiinteä listaamaton esine varastossa.
-"Varaston seiniä kiertäväle hyllylle on aseteltu sekalaisia esineitä."
+"Varaston seiniä kiertävälle hyllylle on aseteltu sekalaisia esineitä."
 
 Punainen avain on esine.
 "Pieni metallinen avain, johon on kiinnitetty punainen merkki."
