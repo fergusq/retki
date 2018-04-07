@@ -378,13 +378,21 @@ def defineListField(owner, name, vtype, case="nimento"):
 			vtype.id, named_code, owner.id, pattern({"yksikkö", "sisaolento"}), name_str
 		), FuncOutput(lambda *p: ForCondParser(name_str, None, "onceSet", *p)))
 	
-	pgl(".COND ::= .EXPR-%d{omanto} %s sisältää .EXPR-%d{omanto} -> $1.%s.contains($2)" % (
-		owner.id, pattern({"yksikkö", "nimento"}), vtype.id, name_str
-	), FuncOutput(lambda obj, val: ('%s.containsSet(%s, %s)' % (obj, repr(name_str), val), orTrue(to_append(val, obj)))))
+	def addContainsPattern(condpattern, arglambda, pseudonot, pynot, modify):
+		pgl(".COND ::= .EXPR-%d{omanto} %s %s -> %s$1.%s.contains($2)" % (
+			owner.id, pattern({"yksikkö", "nimento"}), condpattern, pseudonot, name_str
+		), FuncOutput(lambda obj, val: (
+			'(%s %s.containsSet(%s, %s))' % (pynot, obj, repr(name_str), arglambda(val)),
+			orTrue(modify(arglambda(val), obj))
+		)))
 	
-	pgl(".COND ::= .EXPR-%d{omanto} %s ei sisällä .EXPR-%d{osanto} -> !$1.%s.contains($2)" % (
-		owner.id, pattern({"yksikkö", "nimento"}), vtype.id, name_str
-	), FuncOutput(lambda obj, val: ('(not %s.containsSet(%s, %s))' % (obj, repr(name_str), val), orTrue(to_remove(val, obj)))))
+	for p in [
+		("sisältää .EXPR-%d{omanto}" % (vtype.id,),               lambda x: x,            "", "",     to_append),
+		("sisältää yhdenkin .PATTERN-%d{omanto}" % (vtype.id,),   lambda x: x.toPython(), "", "",     to_append),
+		("ei sisällä .EXPR-%d{osanto}" % (vtype.id,),             lambda x: x,            "!", "not", to_remove),
+		("ei sisällä yhtäkään .PATTERN-%d{osanto}" % (vtype.id,), lambda x: x.toPython(), "!", "not", to_remove)
+	]:
+		addContainsPattern(*p)
 
 # Adjektiivit
 
@@ -717,6 +725,8 @@ def addParamPhrases(grammar, case, vtype, name, varname=None, plural=False):
 		for clazz in vtype.superclasses():
 			grammar.parseGrammarLine(".EXPR-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
 				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
+			grammar.parseGrammarLine(".PATTERN-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
+				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
 
 # Toiminnot
 
@@ -733,7 +743,8 @@ class ListenerParser:
 		return RListener(*self.args, body)
 
 def defineAction(name, params, pre, post):
-	action = RAction(name)
+	name_str = (tokensToString(pre) + " " + name.token + " " + tokensToString(post)).lower().strip()
+	action = RAction(name_str)
 	
 	def defineActionListener(patterns, priority, is_special_case, is_general_case):
 		return ListenerParser((action, [(a_case, pattern, name) for (pattern, name), (_, _, a_case) in zip(patterns, params)], priority, is_special_case, is_general_case))
@@ -875,6 +886,7 @@ GRAMMAR.addCategoryName("ACTION-DEF", "toimintomääritys")
 yläkäsite = defineClass(tokenize("yläkäsite"), None)
 
 pgl(".EXPR ::= .EXPR-%d{$} -> $1" % (yläkäsite.id,), identity)
+GRAMMAR.addCategoryName("EXPR", "lauseke")
 
 asia = defineClass(tokenize("asia"), yläkäsite)
 

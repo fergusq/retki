@@ -10,3 +10,7 @@ Asian kuvaus on yleensä "".
 > Inhimillisyys
 
 Asia voi olla inhimillinen.
+
+> Pelin alkaminen
+
+Pelin alkaminen on toiminto.

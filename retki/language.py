@@ -223,16 +223,37 @@ class RObject(Bits):
 	def appendSet(self, field_name, val):
 		if field_name not in self.data:
 			self.data[field_name] = set()
-		self.data[field_name].add(val)
+		field = self.data[field_name]
+		if isinstance(val, RPattern):
+			if not self.containsSet(field_name, val):
+				field.add(val.newInstance(tokenize("uusi arvo")))
+		else:
+			field.add(val)
 	def removeSet(self, field_name, val):
 		if field_name not in self.data:
 			return
-		if val in self.data[field_name]:
-			self.data[field_name].remove(val)
+		field = self.data[field_name]
+		if isinstance(val, RPattern):
+			for obj in field:
+				if val.matches(obj):
+					field.remove(obj)
+		else:
+			if val in field:
+				field.remove(val)
 	def containsSet(self, field_name, val):
 		if field_name not in self.data:
 			return False
-		return val in self.data[field_name]
+		field = self.data[field_name]
+		if isinstance(val, RPattern):
+			if val.obj:
+				return val.obj in field and val.matches(val.obj)
+			else:
+				for obj in field:
+					if val.matches(obj):
+						return True
+				return False
+		else:
+			return val in field
 	def forSet(self, field_name, var_name, pattern, f, group=False, count_var_name=None):
 		if field_name not in self.data:
 			return []
@@ -547,6 +568,7 @@ class RAction:
 		self.name = name
 		
 		ACTIONS[self.id] = self
+		ACTIONS_BY_NAME[name] = self
 		
 		self.commands = []
 		self.listeners = []
@@ -594,6 +616,7 @@ def allPatternsMatch(args, params):
 	return all([p.matches(obj) for obj, (_, p, _) in zip(args, params)])
 
 ACTIONS = {}
+ACTIONS_BY_NAME = {}
 
 class RListener:
 	def __init__(self, action, params, priority, is_special_case, is_general_case, body):
@@ -683,6 +706,7 @@ def endGame():
 def playGame(grammar):
 	global prev_was_newline, game_running, print_buffer
 	game_running = True
+	ACTIONS_BY_NAME["pelin alkaminen"].run([])
 	while game_running:
 		print(print_buffer.strip())
 		print_buffer = ""
