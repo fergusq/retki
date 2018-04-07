@@ -130,16 +130,16 @@ Alla on katkelma ``lyhyt-peli.txt``-esimerkistä. Se on tyypillinen huoneen mä�
 ::
 
 	Olohuone on huone eteisestä pohjoiseen.
-	Olohuoneen kuvaus on "Olohuone tuntuu ahtaalta.".
+	"Olohuone tuntuu ahtaalta."
 
 	Sohva on kiinteä esine olohuoneessa.
-	Sohvan kuvaus on "Vanha punainen sohva.".
+	"Vanha punainen sohva."
 
 	Pöytä on kiinteä tukeva sisältäjä olohuoneessa.
-	Pöydän kuvaus on "Vanha puinen pöytä.".
+	"Vanha puinen pöytä."
 
 	Kirje on kirjoitusta sisältävä esine pöydän päällä.
-	Kirjeen kuvaus on "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä.".
+	"Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä."
 	Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
 
 .. compound::
@@ -364,7 +364,9 @@ Ehtolauseet
 Ehtolause                                     Tulkinta todeksi pakottamisessa
 ============================================= ===============================
 (joukkokenttä) sisältää (arvon)               Arvo lisätään joukkoon.
+(joukkokenttä) sisältää yhdenkin (hahmon)     Uusi hahmoa vastaava arvo lisätään joukkoon.
 (joukkokenttä) ei sisällä (arvoa)             Arvo poistetaan joukosta.
+(joukkokenttä) ei sisällä yhtäkään (hahmoa)   Kaikki hahmoa vastaavat arvot poistetaan joukosta.
 (arvo) on (bitti)                             Bitti laitetaan päälle ja sen vastabitit laitetaan pois päältä.
 (arvo) on (ehto)                              Ehto pakotetaan todeksi.
 kaikki seuraavista:                           Kaikki sisennetyt ehdot pakotetaan todeksi.
@@ -503,21 +505,35 @@ Kuuntelijan sisällä voi käyttää toimintojen yhteydessä määriteltyjä kom
 Komennot
 --------
 
-============================================== ====================
-Komento                                        Selitys
-============================================== ====================
-(Arvo) on nyt (bitti).                         Laittaa bitin päälle.
-(Arvo) on nyt (ehto).                          Pakottaa ehdon todeksi.
-(Arvo) ei ole enää (bitti).                    Poistaa bitin (tämän voi tehdä vain jos bitille ei ole määritelty vastabittejä).
-(Muuttuja) on nyt (arvo).                      Muuttaa muuttujan arvoa.
-Lisää (arvo) (joukkokenttään).                 Lisää arvon joukkoon.
-Poista (arvo) (joukkokentästä).                Poistaa arvon joukosta.
-Toista jokaiselle (hahmolle) (joukkokentässä): Toistaa sisennetyt komennot jokaiselle hahmoon täsmäävälle arvolle joukossa.
-Jos (ehtolause):                               Suorittaa sisennetyt komennot, jos ehtolause on tosi.
-Sano (merkkijono).                             Tulostaa merkkijonon pelaajalle.
-Keskeytä toiminto.                             Keskeyttää nykyisen toiminnon suorittamisen.
-Lopeta peli.                                   Keskeyttää ohjelman suorituksen.
-============================================== ====================
+.. list-table:: Komennot
+	:header-rows: 1
+
+	* - Komento
+	  - Selitys
+	* - (Arvo) on nyt (bitti).
+	  - Laittaa bitin päälle.
+	* - (Arvo) on nyt (ehto).
+	  - Pakottaa ehdon todeksi.
+	* - (Arvo) ei ole enää (bitti).
+	  - Poistaa bitin (tämän voi tehdä vain jos bitille ei ole määritelty vastabittejä).
+	* - (Muuttuja) on nyt (arvo).
+	  - Muuttaa muuttujan arvoa.
+	* - Lisää (arvo) (joukkokenttään).
+	  - Lisää arvon joukkoon.
+	* - Poista (arvo) (joukkokentästä).
+	  - Poistaa arvon joukosta.
+	* - Toista jokaiselle (hahmolle) (joukkokentässä):
+	  - Toistaa sisennetyt komennot jokaiselle hahmoon täsmäävälle arvolle joukossa.
+	* - Toista jokaiselle ryhmälle samanlaisia (hahmoja) (joukkokentässä):
+	  - Toistaa sisennetyt komennot jokaiselle uniikille hahmoon täsmäävälle arvolle joukossa (arvoon viitataan pronominilla "ne", "ryhmän koko" on samanlaisten arvojen määrä).
+	* - Jos (ehtolause):
+	  - Suorittaa sisennetyt komennot, jos ehtolause on tosi.
+	* - Sano (merkkijono).
+	  - Tulostaa merkkijonon pelaajalle.
+	* - Keskeytä toiminto.
+	  - Keskeyttää nykyisen toiminnon suorittamisen.
+	* - Lopeta peli.
+	  - Keskeyttää ohjelman suorituksen.
 
 Hahmot
 ------
