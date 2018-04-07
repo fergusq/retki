@@ -147,6 +147,7 @@ Tarkoittaako pelaaja ihmistä:
 Avautumisen komento on "[esine] avautuu nyt".
 
 Esine on joko avattava tai ei-avattava.
+Esine on yleensä ei-avattava.
 Esineellä on avaavaksi avaimeksi kutsuttu esine.
 
 [Esineen] avaaminen on toiminto.
@@ -398,6 +399,9 @@ Ennen piilossa olevan esineen ottamista:
 	Sano "Et näe mitään [sitä].".
 	Keskeytä toiminto.
 
+Ennen pelaajan mukana olevan esineen ottamista:
+	Sano "Sinulla on se jo.".
+
 Ennen kiinteän esineen ottamista:
 	Sano "Et pystyisi liikuttamaan sitä.".
 	Keskeytä toiminto.
@@ -613,6 +617,7 @@ Tulkitse "pöytä" puutarhapöytänä.
 
 Sytytinpistooli on sytytin puutarhapöydän päällä.
 "Tavallinen muovinen sytytin. Se on ollut kauan ulkona, mutta voisi silti toimia."
+Tulkitse "pistooli" sytytinpistoolina.
 
 > Keittiö
 
@@ -625,6 +630,7 @@ Tulkitse "taso" työtasona.
 
 Ruokalasi on esine.
 "Tavallinen ruokalasi."
+Tulkitse "lasi" ruokalasina.
 
 Työtasolla on 3 ruokalasia.
 
