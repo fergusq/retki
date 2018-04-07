@@ -1,6 +1,3 @@
-Pelin alkaminen on toiminto.
-Tulkitse "peli alkaa" pelin alkamisena.
-
 > Kuvaukset
 
 Asian kuvaus on yleensä "Ei mikään kiinnostava asia.".
@@ -11,12 +8,23 @@ Esine on käsite.
 Esine voi olla kiinteä.
 Esine voi olla tylsä.
 
+Esine on joko listattu tai listaamaton.
+Esine on yleensä listattu.
+
+Esine on joko valaiseva tai valaisematon.
+Esine on yleensä valaisematon.
+
 > Huoneet
 
 Huone on käsite.
+
 Huone on joko avoin tai suljettu.
 Huone on yleensä avoin.
+
 Huoneella on esinejoukoksi kutsuttu joukko esineitä.
+
+Huone on joko valaistu tai pimeä.
+Huone on yleensä valaistu.
 
 Seinä on suljettu huone.
 Seinän kuvaus on "Melko tavallinen seinä.".
@@ -35,12 +43,16 @@ Ihminen on yleensä inhimillinen.
 Ihmisellä on sijainti, joka on huone.
 Ihmisellä on esineluetteloksi kutsuttu joukko esineitä.
 
+Määritelmä. Kun esine on "[ihmisen (I)] mukana":
+	I:n esineluettelo sisältää sen
+
 Huoneella on henkilöjoukoksi kutsuttu joukko ihmisiä.
 
 Ihminen on joko tietokoneen ohjaama tai pelaajan ohjaama.
 Ihminen on yleensä tietokoneen ohjaama.
 
 Pelaaja on pelaajan ohjaama ihminen.
+"Olet mielestäsi melko hyvännäköinen."
 Tulkitse "itse" pelaajana.
 Tulkitse "sinä" pelaajana.
 
@@ -101,7 +113,7 @@ Määritelmä. Kun ihminen (I) "ei ole [huoneessa (H)]":
 Määritelmä. Kun esine (E) on "näkyvillä":
 	jokin seuraavista:
 		E on pelaajan sijainnissa
-		pelaajan esineluettelo sisältää E:n
+		E on pelaajan mukana
 		jollekin sisältäjälle (S) pelaajan esineluettelossa pätee:
 			E on S:n varassa
 
@@ -161,7 +173,6 @@ Esineen avaamisen aikana:
 
 [Asian] kuvaileminen on toiminto.
 Kuvailemisen komento on "kuvaile [asiaa]".
-Tulkitse "kuvaile [asiaa]" kuvailemisena.
 
 Ennen piilossa olevan esineen kuvailemista:
 	Sano "Et näe mitään [sitä].".
@@ -176,7 +187,7 @@ Asian kuvailemisen aikana:
 
 Huoneen kuvailemisen jälkeen:
 	Sano "[rivinvaihto][rivinvaihto]".
-	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen esinejoukossa:
+	Toista jokaiselle ryhmälle samanlaisia listattuja esineitä (e) sen esinejoukossa:
 		Jos ryhmän koko on 1:
 			Sano "Näet täällä [e:n].".
 		Muulloin:
@@ -189,7 +200,7 @@ Suljetun huoneen kuvailemisen jälkeen:
 
 Tukevan sisältäjän kuvailemisen jälkeen:
 	Sano "[rivinvaihto][rivinvaihto]".
-	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen sisältöjoukossa:
+	Toista jokaiselle ryhmälle samanlaisia listattuja esineitä (e) sen sisältöjoukossa:
 		Jos ryhmän koko on 1:
 			Sano "Sen päällä on [e].[rivinvaihto]".
 		Muulloin:
@@ -197,7 +208,7 @@ Tukevan sisältäjän kuvailemisen jälkeen:
 
 Ympäröivän sisältäjän kuvailemisen jälkeen:
 	Sano "[rivinvaihto][rivinvaihto]".
-	Toista jokaiselle ryhmälle samanlaisia esineitä (e) sen sisältöjoukossa:
+	Toista jokaiselle ryhmälle samanlaisia listattuja esineitä (e) sen sisältöjoukossa:
 		Jos ryhmän koko on 1:
 			Sano "Sen sisällä on [e].[rivinvaihto]".
 		Muulloin:
@@ -317,6 +328,11 @@ Ennen suljettuun huoneeseen siirtymistä:
 	Sano "Et voi mennä sinne.".
 	Keskeytä toiminto.
 
+Ennen pimeään huoneeseen siirtymistä:
+	Jos pelaajan esineluettelo ei sisällä yhtäkään valaisevaa esinettä:
+		Sano "Siellä on pimeää, etkä näkisi siellä mitään.".
+		Keskeytä toiminto.
+
 Ennen huoneeseen (pelaajan määränpää) siirtymistä:
 	Toista jokaiselle näkyvillä olevalle lukitulle ovelle (ovi) pelaajan sijainnin esinejoukossa:
 		Jos oven huonejoukko sisältää pelaajan määränpään:
@@ -365,6 +381,13 @@ Tulkitse "tutki [esinettä]" esineen katsomisena.
 
 Esineen katsomisen aikana:
 	Kuvaile sitä.
+
+[Ihmisen] katsominen on toiminto.
+Tulkitse "katso [ihmistä]" ihmisen katsomisena.
+Tulkitse "tutki [ihmistä]" ihmisen katsomisena.
+
+Ihmisen katsomisen aikana:
+	Kuvaile häntä.
 
 > Ottaminen
 
@@ -466,6 +489,25 @@ Ennen piilossa olevalle ihmiselle asian kertomista:
 Ihmiselle asian kertomisen aikana:
 	Puhu nyt hänelle.
 
+> Sytyttäminen
+
+[Esineen] sytyttäminen on toiminto.
+Tulkitse "sytytä [esine]" sytyttämisenä.
+Tulkitse "polta [esine]" sytyttämisenä.
+
+Sytytin on esineen alakäsite.
+
+Ennen piilossa olevan esineen sytyttämistä:
+	Sano "Et näe mitään [sitä].".
+
+Ennen esineen sytyttämistä:
+	Jos pelaajan esineluettelo ei sisällä yhtäkään sytytintä:
+		Sano "Sinulla ei ole sytytintä.".
+		Keskeytä toiminto.
+
+Esineen sytyttämisen aikana:
+	Sano "Sinun ei tee mieli sytyttää [sitä].".
+
 > Kartta
 
 > Piha
@@ -505,6 +547,26 @@ Kirje on kirjoitusta sisältävä esine pöydän päällä.
 "Taitellulle paperiarkille on kirjoitettu koukeroista tekstiä."
 Kirjeen kirjoitus on "Hyvä pelaaja! Tervetuloa esimerkkipeliin. Tehtävänäsi on löytää avain, jolla pääset pois tästä talosta.".
 
+> Varasto
+
+Varasto on pimeä huone olohuoneesta itään.
+"Varasto sisältää sekalaista rojua."
+
+Hylly on kiinteä listaamaton esine varastossa.
+"Varaston seiniä kiertävä hylly on täynnä rojua."
+
+Roju on kiinteä listaamaton esine varastossa.
+"Varaston seiniä kiertäväle hyllylle on aseteltu sekalaisia esineitä."
+
+Punainen avain on esine.
+"Pieni metallinen avain, johon on kiinnitetty punainen merkki."
+Tulkitse "avain" punaisena avaimena.
+
+Rojun katsomisen aikana:
+	Jos punainen avain on piilossa:
+		Sano "Löysit avaimen rojun seasta.".
+		Punainen avain on nyt varastossa.
+
 > Ruokahuone
 
 Ruokahuone on huone olohuoneesta länteen.
@@ -514,15 +576,43 @@ Itämainen matto on tylsä esine ruokahuoneessa.
 "Itämaiseen mattoon on kuvioitu kauniita muotoja."
 Tulkitse "matto" itämaisena mattona.
 
-Takaovi on ovi ruokahuoneessa.
-"Takaovi on tiukasti lukossa."
-
 Virtanen on ihminen ruokahuoneessa.
 "Neiti Virtanen on tämän talon omistaja. Hän mutisee jotain itsekseen."
 
 Virtaselle puhumisen sijasta:
 	Sano "Neiti Virtanen ei näytä kuuntelevan sinua.[rivinvaihto][rivinvaihto]".
 	Sano "'Koti, avain, takapiha, ruokalasi', hän sanoo.".
+
+> Takapiha
+
+Takapiha on huone ruokahuoneesta pohjoiseen.
+"Korkeat ylitsepääsemättömät aidat reunustavat heinän valtaamaa takapihaa."
+
+Takaovi on ovi takapihan ja ruokahuoneen välissä.
+"Takaovi on tiukasti lukossa."
+Ulko-oven avaava avain on punainen avain.
+
+Heinä on kiinteä listaamaton esine takapihalla.
+"Heinä kasvaa villisti takapihalla. Kukaan ei ole hoitanut pihaa pitkään aikaan."
+
+Heinän sytyttämisen sijasta:
+	Sano "Sytytät heinän tuleen ja katsot liekkien kaunista loimua.".
+	Sano "Sinusta tuntuu hyvältä ajatella villeinä rehottaneiden rikkaruohojen tuhoa.".
+	Sano "[rivinvaihto][rivinvaihto]".
+	Sano "Liekit ympäröivät sinut nopeasti, etkä ehdi pakenemaan sisälle.".
+	Sano "Vaatteesi syttyvät tuleen, ja juokset hätääntyneenä väistellen tulta.".
+	Sano "Huudat kehosi palaessa. Olet kuollut.".
+	Lopeta peli.
+
+Aita on kiinteä listaamaton esine takapihalla.
+"Aita on valmistettu kovasta puusta ja se on yli kaksi metriä korkea. Et pysty kiipeämään sen yli."
+
+Puutarhapöytä on kiinteä tukeva sisältäjä takapihalla.
+"Puutarhapöytä on likainen ja kosteuden pilaama."
+Tulkitse "pöytä" puutarhapöytänä.
+
+Sytytinpistooli on sytytin puutarhapöydän päällä.
+"Tavallinen muovinen sytytin. Se on ollut kauan ulkona, mutta voisi silti toimia."
 
 > Keittiö
 
@@ -541,9 +631,22 @@ Työtasolla on 3 ruokalasia.
 Kattila on sisältäjä työtasolla.
 "Kattila on vanha, kuten kaikki muukin."
 
-Avain on esine kattilassa.
-"Tämähän voisi sopia ulko-oveen."
-Ulko-oven avaava avain on avain.
+Sininen avain on esine kattilassa.
+"Pieni metallinen avain, johon on kiinnitetty sininen merkki."
+Takaoven avaava avain on sininen avain.
+Tulkitse "avain" sinisenä avaimena.
+
+Kynttilä on esine työtasolla.
+"Käyttämätön valkoinen kynttilä."
+
+Ennen valaisevan kynttilän sytyttämistä:
+	Sano "[Se] palaa jo.".
+	Keskeytä toiminto.
+
+Kynttilän sytyttämisen sijasta:
+	Sano "Sytytät [sen] palamaan.".
+	Se on nyt valaiseva.
+	Sen kuvaus on nyt "Palava kynttilä loistaa kirkkaasti. Sydänlankaa riittää vielä pitkäksi aikaa.".
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt eteinen.
