@@ -219,6 +219,8 @@ Esimerkkipelin kääntäminen ja ajaminen::
 	retki examples/lyhyt-peli.txt -o peli.py
 	python3 peli.py
 
+Esimerkkiohjelman kirjoittamisesta on kerrottu lisää osiossa `Tekstiseikkailupelin kirjoittaminen`_.
+
 Interaktiivinen tila
 --------------------
 
@@ -241,7 +243,7 @@ Luokkamääritykset
 =================
 
 Luokkia kutsutaan retkessä *käsitteiksi*.
-Kaikilla luokilla on yhteinen yläluokka "asia".
+Kaikilla käyttäjän luomilla luokilla on yhteinen yläluokka "asia".
 
 Jos luokka on suoraan asian alaluokka, on mahdollista sanoa vain::
 
@@ -536,7 +538,7 @@ Komennot
 	  - Keskeyttää ohjelman suorituksen.
 
 Hahmot
-------
+======
 
 Hahmo on tapa tunnistaa ja luoda tietyntyyppisiä olioita.
 Se koostuu luokan nimestä, biteistä ja ehdoista.
@@ -553,6 +555,30 @@ Muuttujamäärittelyssä on myös mahdollista käyttää seuraavaa erikoissyntak
 
 	Muki on esine pöydän päällä.
 	Tuoli on kiinteä esine olohuoneessa.
+
+Sisäänrakennetut luokat
+=======================
+
+Retkeen on sisäänrakennettu käsitteet ``yläkäsite``, ``asia``, ``merkkijono`` ja ``kokonaisluku``.
+Näistä "yläluokkaa" ei ole tarkoitus käyttää ja "merkkijono" sekä "kokonaisluku" ovat primitiivisiä.
+Kaikkien käyttäjän luomien luokkien tulisi periä "asia".
+
+::
+
+	yläkäsite
+	 merkkijono
+	 kokonaisluku
+	 asia
+
+Pelin alkaminen
+===============
+
+``Pelin alkaminen`` on sisäänrakennettu toiminto, joka suoritetaan aina ohjelman käynnistyessä.
+Se vastaa siis monien kielten ``main``-funktiota.
+Pelin alkamiselle voi lisätä kuuntelijoita samalla tavalla kuin muillekin toiminnoille::
+
+	Pelin alkamisen jälkeen:
+		Sano "Tervetuloa peliin!".
 
 ----------
  Toteutus
@@ -633,3 +659,85 @@ Esimerkiksi ``lyhyt-peli.txt``-esimerkin kielioppissa on tiedoston lopussa 1216 
 Sääntöjen määrän kasvaessa jäsentäminen muuttuu hitaammaksi ja useita tuhansia rivejä pitkän ohjelman kääntämiseen voi tästä syystä kulua useita minuutteja.
 
 Virheviestit saattavat myös olla sekavampia, sillä tyyppivirheiden sijasta käyttäjälle annetaan kielioppivirheitä.
+
+-------------------------------------
+ Tekstiseikkailupelin kirjoittaminen
+-------------------------------------
+
+Tässä osiossa käyn läpi ``lyhyt-peli.txt``-esimerkin sisältöä.
+
+``lyhyt-peli.txt`` on kokonainen pieni tekstiseikkailu, jossa pelaajan löydettävä tie ulos talosta, jonka kaikki ulos vievät ovet ovat lukossa.
+Esimerkki koostuu kahdesta osasta: tekstiseikkailukirjastosta ja varsinaisesta pelistä.
+
+Tekstiseikkailukirjasto
+=======================
+
+Kirjasto määrittelee seuraavat asian alakäsitteet::
+
+	asia
+	  esine
+	    ovi
+	    sisältäjä
+	    sytytin
+	  huone
+	  ihminen
+	  suunta
+
+Ja seuraavat toiminnot::
+
+	        esineen avaaminen
+	        huoneen esitteleminen
+	                katseleminen
+	       suuntaan katsominen
+	        esineen katsominen
+	        ihmisen katsominen
+	ihmiselle asian kertominen
+	          asian kuvaileminen
+	       suuntaan liikkuminen
+	     huoneeseen liikkuminen
+	        esineen lukeminen
+	         ovesta meneminen
+	        esineen ottaminen
+	      ihmiselle puhuminen
+	     huoneeseen siirtyminen
+	        esineen sytyttäminen
+	 esineluettelon tulostaminen
+
+Näistä ``huoneen esitteleminen``, ``asian kuvaileminen`` ja ``huoneeseen siirtyminen`` ovat pelin sisäisesti käyttämä toimintoja
+ja kaikki muut ovat komentoja, joita pelaaja voi syöttää.
+Monet komennoista ovat vaihtoehtoisia tapoja ilmaista sama asia.
+Esimerkiksi komennoissa ``huoneeseen liikkuminen``, ``suuntaan liikkuminen`` ja ``ovesta  meneminen`` määränpäähän viitataan eri tavoin,
+mutta lopputulos on sama.
+
+Osa komennoista ei tee mitään oletuksena.
+Esimerkiksi puhuminen ja sytyttäminen on määritelty seuraavasti::
+
+	Ihmiselle puhumisen aikana:
+		Sano "[Hän] ei näytä kiinnostuneelta höpinästäsi.".
+	
+	Esineen sytyttämisen aikana:
+		Sano "Sinun ei tee mieli sytyttää [sitä].".
+
+Vastavaasti lukeminen on määritelty vain, jos esineelle on määritelty kirjoitus::
+
+	Ennen kirjoitusta sisältämättömän esineen lukemista:
+		Sano "[Se] ei sisällä mitään kirjoitusta.".
+		Keskeytä toiminto.
+
+	Kirjoitusta sisältävän esineen lukemisen aikana:
+		Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
+		Sano "[sen kirjoitus][rivinvaihto]".
+
+Jos peli sisältää sytytettäviä tai luettavia asiota, nämä oletukset voi korvata pelin vaatimilla tavoilla::
+
+	Salainen viesti on kirjoitusta sisältävä esine pöydällä.
+	
+	Salaisen viestin lukemisen sijasta:
+		Sano "Saat vaivoin selvää koodikielisestä viestistä.".
+		Sano "Kirjeen mukaan sinua kaivataan peitetehtävässä Turussa.".
+		Sano "Yhteyshenkilösi on Matti Virtanen, tapaat hänet Kauppatorilla klo 13.".
+		Sano "Polta tämä viesti lukemisen jälkeen.".
+	
+	Salaisen viestin sytyttämisen sijasta:
+		Sano "[Se] palaa tuhkaksi.".
+		Se on nyt piilossa.
