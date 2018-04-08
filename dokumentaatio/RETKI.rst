@@ -712,6 +712,9 @@ Monet komennoista ovat vaihtoehtoisia tapoja ilmaista sama asia.
 Esimerkiksi komennoissa ``huoneeseen liikkuminen``, ``suuntaan liikkuminen`` ja ``ovesta  meneminen`` määränpäähän viitataan eri tavoin,
 mutta lopputulos on sama.
 
+Komennoista
+-----------
+
 Osa komennoista ei tee mitään oletuksena.
 Esimerkiksi puhuminen ja sytyttäminen on määritelty seuraavasti::
 
@@ -744,3 +747,55 @@ Jos peli sisältää sytytettäviä tai luettavia asiota, nämä oletukset voi k
 	Salaisen viestin sytyttämisen sijasta:
 		Sano "[Se] palaa tuhkaksi.".
 		Se on nyt piilossa.
+
+Huoneiden luominen
+------------------
+
+Kun huone luodaan, on tarkoitus pakottaa todeksi seuraava ehto::
+
+	Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)]":
+		B:n naapurihuone tarkasteltavassa suunnassa on A
+		A:n naapurihuone tarkasteltavan suunnan vastasuunnassa on B
+		B:n A:han johtava suunta on tarkasteltava suunta
+		A:n B:hen johtava suunta on tarkasteltavan suunnan vastasuunta
+		A:n naapurihuonejoukko sisältää B:n
+		B:n naapurihuonejoukko sisältää A:n
+
+Ehto lisää naapurihuoneet toistensa tietorakenteisiin.
+Sen käyttäminen on helppoa::
+
+	Aula on huone.
+	Käytävä on huone aulasta pohjoiseen.
+
+Esimerkkipeli
+=============
+
+Esimerkkipelissä on tarkoitus löytää avain, jonka avulla pääsee pois talosta.
+Avaimen saamiseksi pelaajan on osattava hyödyntää eri esineitä.
+
+Pelin kartta on seuraavanlainen::
+
+	 Takapiha
+	     |
+	Ruokahuone - Olohuone - Varasto
+	     |          |
+	  Keittiö    Eteinen
+	                |
+	              Piha
+
+Kartan luominen on helppoa käyttäen hyväksi ylempänä määriteltyä ehtoa::
+
+	Piha on huone.
+	Eteinen on huone pihasta pohjoiseen.
+	Olohuone on huone eteisestä pohjoiseen.
+	Varasto on pimeä huone olohuoneesta itään.
+	Ruokahuone on huone olohuoneesta länteen.
+	Takapiha on huone ruokahuoneesta pohjoiseen.
+	Keittiö on huone ruokahuoneesta etelään.
+
+
+Ulkona olevien huoneiden ja talon huoneiden välissä on lukitut ovet.
+Näidenkin luominen on helppoa ``välissä``-ehdon avulla::
+
+	Ulko-ovi on ovi eteisen ja pihan välissä.
+	Takaovi on ovi takapihan ja ruokahuoneen välissä.
