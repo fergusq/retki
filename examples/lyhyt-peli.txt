@@ -155,7 +155,7 @@ Avaamisen komento on "avaa nyt [esine]".
 Tulkitse "avaa [esine]" avaamisena.
 
 Ennen piilossa olevan esineen avaamista:
-	Sano "Et näe mitään [sitä].".
+	Sano "Et näe sellaista asiaa.".
 	Keskeytä toiminto.
 
 Ennen ei-avattavan esineen avaamista:
@@ -176,7 +176,7 @@ Esineen avaamisen aikana:
 Kuvailemisen komento on "kuvaile [asiaa]".
 
 Ennen piilossa olevan esineen kuvailemista:
-	Sano "Et näe mitään [sitä].".
+	Sano "Et näe sellaista asiaa.".
 	Keskeytä toiminto.
 
 Ennen piilossa olevan ihmisen kuvailemista:
@@ -379,6 +379,7 @@ Suuntaan (se suunta) katsomisen aikana:
 [Esineen] katsominen on toiminto.
 Tulkitse "katso [esinettä]" esineen katsomisena.
 Tulkitse "tutki [esinettä]" esineen katsomisena.
+Tulkitse "t [esine]" esineen katsomisena.
 
 Esineen katsomisen aikana:
 	Kuvaile sitä.
@@ -386,6 +387,7 @@ Esineen katsomisen aikana:
 [Ihmisen] katsominen on toiminto.
 Tulkitse "katso [ihmistä]" ihmisen katsomisena.
 Tulkitse "tutki [ihmistä]" ihmisen katsomisena.
+Tulkitse "t [ihminen]" ihmisen katsomisena.
 
 Ihmisen katsomisen aikana:
 	Kuvaile häntä.
@@ -396,7 +398,7 @@ Ihmisen katsomisen aikana:
 Tulkitse "ota [esine]" ottamisena.
 
 Ennen piilossa olevan esineen ottamista:
-	Sano "Et näe mitään [sitä].".
+	Sano "Et näe sellaista asiaa.".
 	Keskeytä toiminto.
 
 Ennen pelaajan mukana olevan esineen ottamista:
@@ -455,7 +457,7 @@ Tulkitse "lue [esine]" lukemisena.
 Tulkitse "lue [esinettä]" lukemisena.
 
 Ennen piilossa olevan esineen lukemista:
-	Sano "Et näe mitään [sitä].".
+	Sano "Et näe sellaista asiaa.".
 	Keskeytä toiminto.
 
 Ennen kirjoitusta sisältämättömän esineen lukemista:
@@ -502,7 +504,7 @@ Tulkitse "polta [esine]" sytyttämisenä.
 Sytytin on esineen alakäsite.
 
 Ennen piilossa olevan esineen sytyttämistä:
-	Sano "Et näe mitään [sitä].".
+	Sano "Et näe sellaista asiaa.".
 
 Ennen esineen sytyttämistä:
 	Jos pelaajan esineluettelo ei sisällä yhtäkään sytytintä:
@@ -605,7 +607,9 @@ Heinän sytyttämisen sijasta:
 	Sano "[rivinvaihto][rivinvaihto]".
 	Sano "Liekit ympäröivät sinut nopeasti, etkä ehdi pakenemaan sisälle.".
 	Sano "Vaatteesi syttyvät tuleen, ja juokset hätääntyneenä väistellen tulta.".
-	Sano "Huudat kehosi palaessa. Olet kuollut.".
+	Sano "Huudat kehosi palaessa.".
+	Sano "[rivinvaihto][rivinvaihto]".
+	Sano "Olet kuollut.".
 	Lopeta peli.
 
 Aita on kiinteä listaamaton esine takapihalla.
