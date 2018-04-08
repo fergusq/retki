@@ -660,6 +660,9 @@ Sääntöjen määrän kasvaessa jäsentäminen muuttuu hitaammaksi ja useita tu
 
 Virheviestit saattavat myös olla sekavampia, sillä tyyppivirheiden sijasta käyttäjälle annetaan kielioppivirheitä.
 
+Koska muuttujia ja funktioita ei ole olemassa ennen niiden määrittelyä, niihin ei myöskään voi viitata ennen sitä.
+Tämän johdosta kaksi määrittelyä eivät voi olla toistensa riippuvuuksia.
+
 -------------------------------------
  Tekstiseikkailupelin kirjoittaminen
 -------------------------------------
