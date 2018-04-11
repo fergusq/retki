@@ -130,7 +130,7 @@ def createStringLiteralAlternative(string, string_tokens, alternative, capitaliz
 		subs = []
 		for (expr_f, _), capitalized in zip(alternative, capitalizeds):
 			expr, case = expr_f()
-			subs.append("%s.asString(case=%s)%s" % (expr, repr(case), ".capitalize()" if capitalized else ".lower()"))
+			subs.append("%s.asString(case=%s, capitalized=%s)" % (expr, repr(case), repr(capitalized)))
 		return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
 	return [
 		f,
@@ -891,7 +891,7 @@ GRAMMAR.addCategoryName("EXPR", "lauseke")
 asia = defineClass(tokenize("asia"), yläkäsite)
 
 merkkijono = defineClass(tokenize("merkkijono"), yläkäsite)
-merkkijono.primitive = True
+merkkijono.primitive = "lambda obj: 'createStringObj(' + repr(obj.extra['str']) + ')'"
 for clazz in [yläkäsite, merkkijono]:
 	pgl('.EXPR-%d ::= " .STR-CONTENT " -> "$1"' % (clazz.id,), FuncOutput(lambda s: 'createStringObj(' + s + ')'))
 	pgl('.EXPR-%d ::= rivinvaihto{$} -> "\\n"' % (clazz.id,), FuncOutput(lambda: 'createStringObj("\\n")'))
@@ -899,7 +899,7 @@ for clazz in [yläkäsite, merkkijono]:
 		FuncOutput(lambda x: 'createStringObj(' + x + '.extra["str"].capitalize())'))
 
 kokonaisluku = defineClass(tokenize("kokonaisluku"), yläkäsite)
-kokonaisluku.primitive = True
+kokonaisluku.primitive = "lambda obj: 'createIntegerObj(' + repr(obj.extra['int']) + ')'"
 
 # For-silmikka
 

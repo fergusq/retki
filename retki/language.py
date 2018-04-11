@@ -102,7 +102,7 @@ class RObject(Bits):
 			self.id = getCounter()
 		else:
 			self.id = obj_id
-		if OBJECTS is not None:
+		if OBJECTS is not None and not rclass.primitive:
 			OBJECTS[self.id] = self
 		if not rclass.primitive:
 			OBJECTS_IN_ORDER.append(self)
@@ -133,7 +133,15 @@ class RObject(Bits):
 			extra=self.extra.copy(), name_tokens=self.name_tokens, srules=self.selection_rules.copy(),
 			data=data_copy
 		)
+	def toPythonRef(self):
+		if self.rclass.primitive:
+			return evalOrCall(self.rclass.primitive, [self])
+		else:
+			return 'OBJECTS[' + repr(self.id) + ']'
 	def toPython(self):
+		if self.rclass.primitive:
+			return "", ""
+		
 		var = 'OBJECTS[' + repr(self.id) + ']'
 		
 		# muodostetaan parserisäännöt aliaksista ja
@@ -164,18 +172,18 @@ class RObject(Bits):
 			# toinen arvo:
 			";".join([
 				# olioviittauskentät
-				'%s.data[%s] = OBJECTS[%d]' % (var, repr(key), self.data[key].id) for key in self.data if isinstance(self.data[key], RObject)
+				'%s.data[%s] = %s' % (var, repr(key), self.data[key].toPythonRef()) for key in self.data if isinstance(self.data[key], RObject)
 			] + [
 				# karttakentät
 				'%s.data[%s] = {%s}' % (
 					var,
 					repr(key),
-					", ".join(["OBJECTS[" + repr(keykey.id) + "]: OBJECTS[" + str(self.data[key][keykey].id) + "]" for keykey in self.data[key]])
+					", ".join([keykey.toPythonRef() + ": " + self.data[key][keykey].toPythonRef() for keykey in self.data[key]])
 				)
 				for key in self.data if isinstance(self.data[key], dict)
 			] + [
 				# joukkokentät
-				'%s.data[%s] = {%s}' % (var, repr(key), ", ".join(["OBJECTS[" + str(val.id) + "]" for val in self.data[key]]))
+				'%s.data[%s] = {%s}' % (var, repr(key), ", ".join([val.toPythonRef() for val in self.data[key]]))
 				for key in self.data if isinstance(self.data[key], set)
 			])
 		)
@@ -308,7 +316,8 @@ class RObject(Bits):
 		for rule in self.selection_rules:
 			ans += evalOrCall(rule, [self])
 		return ans
-	def asString(self, case="nimento"):
+	def asString(self, case="nimento", capitalized=False):
+		do_lower = True
 		if case != "nimento":
 			if self.name_tokens:
 				name_tokens = self.name_tokens
@@ -316,18 +325,29 @@ class RObject(Bits):
 				name_tokens = tokenize(self.name)
 			elif "str" in self.extra:
 				name_tokens = tokenize(self.extra["str"])
+				do_lower = False
 			elif "int" in self.extra:
 				name_tokens = tokenize(str(self.extra["int"]))
+				do_lower = False
 			else:
 				name_tokens = self.rclass.name_tokens or tokenize(self.rclass.name)
-			return tokensToInflectedString(name_tokens, case)
-		if self.name:
-			return self.name
-		if "str" in self.extra:
-			return self.extra["str"]
-		if "int" in self.extra:
-			return str(self.extra["int"])
-		return "[eräs " + self.rclass.name + "]"
+			ans = tokensToInflectedString(name_tokens, case)
+		elif self.name:
+			ans = self.name
+		elif "str" in self.extra:
+			ans = self.extra["str"]
+			do_lower = False
+		elif "int" in self.extra:
+			ans = str(self.extra["int"])
+			do_lower = False
+		else:
+			ans = "[eräs " + self.rclass.name + "]"
+		if capitalized:
+			return ans.capitalize()
+		elif do_lower:
+			return ans.lower()
+		else:
+			return ans
 	def toKey(self):
 		if "str" in self.extra:
 			return self.extra["str"]
@@ -349,7 +369,7 @@ CLASSES = {}
 CLASSES_IN_ORDER = []
 
 class RClass(Bits):
-	def __init__(self, name, superclass, name_tokens, class_id=None, bit_groups=None, bits=None, primitive=False):
+	def __init__(self, name, superclass, name_tokens, class_id=None, bit_groups=None, bits=None, primitive=None):
 		Bits.__init__(self, bits)
 		
 		CLASSES[name] = self
@@ -377,7 +397,7 @@ class RClass(Bits):
 		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
 		return (
 			'RClass(%s, %s, %s, %d, %s, %s, %s);%s' % (
-				repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), repr(self.primitive),
+				repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), self.primitive,
 				grammar
 			),
 			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
@@ -420,7 +440,7 @@ class RField:
 		self.is_map = is_map
 		self.default_value = defa
 	def toPythonExpr(self):
-		defa = "None" if not self.default_value else "OBJECTS[" + repr(self.default_value.id) + "]"
+		defa = "None" if not self.default_value else self.default_value.toPythonRef()
 		return 'RField(%d, %s, CLASSES[%s], %s, %s)' % (self.id, repr(self.name), repr(self.type.name), defa, repr(self.is_map))
 	def setDefaultValue(self, defa):
 		self.default_value = defa
@@ -436,7 +456,7 @@ class RPattern:
 		self.obj = obj
 	def toPython(self):
 		clazz = "None" if not self.rclass else "CLASSES[" + repr(self.rclass.name) + "]"
-		obj = "None" if not self.obj else "OBJECTS[" + repr(self.obj.id) + "]"
+		obj = "None" if not self.obj else self.obj.toPythonRef()
 		return ("RPattern(" + clazz + ", "
 			+ repr(self.my_bitsOn) + ", " + repr(self.my_bitsOff)
 			+ ", " + toPython(self.conditions) + ", " + obj + ")")
@@ -665,14 +685,8 @@ ACTION_LISTENERS = []
 
 # Merkkijonon luominen
 
-STRING_CACHE = {}
-
 def createStringObj(x):
-	if x in STRING_CACHE:
-		return STRING_CACHE[x]
-	obj = CLASSES["merkkijono"].newInstance().setExtra("str", x)
-	STRING_CACHE[x] = obj
-	return obj
+	return CLASSES["merkkijono"].newInstance().setExtra("str", x)
 
 # Kokonaisluvun luominen
 
