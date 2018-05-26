@@ -43,5 +43,5 @@ in the given item will be showed to the player.
 		Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
 		Sano "[sen kirjoitus][rivinvaihto]".
 
-Please read the `Finnish documentation <dokumentaatio/retki.rst>`_ for more
+Please read the `Finnish documentation <dokumentaatio/RETKI.rst>`_ for more
 information.
