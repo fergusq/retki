@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import sys, readline
+import math
 from suomilog.finnish import tokenize
 from .tokenutils import *
 

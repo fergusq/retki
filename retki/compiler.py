@@ -901,6 +901,16 @@ for clazz in [yläkäsite, merkkijono]:
 kokonaisluku = defineClass(tokenize("kokonaisluku"), yläkäsite)
 kokonaisluku.primitive = "lambda obj: 'createIntegerObj(' + repr(obj.extra['int']) + ')'"
 
+def addIntOperator(clazz, op, pyop):
+	pgl('.EXPR-%d ::= ( .EXPR-%d{nimento} %s .EXPR-%d{$} ) -> ($1 %s $2)' % (clazz.id, kokonaisluku.id, op, kokonaisluku.id, pyop),
+		FuncOutput(lambda a, b: 'createIntegerObj(%s.extra["int"] %s %s.extra["int"])' % (a, pyop, b)))
+
+for clazz in [yläkäsite, kokonaisluku]:
+	pgl('.EXPR-%d ::= .N -> $1' % (clazz.id,), FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
+	pgl('.EXPR-%d ::= .EXPR-%d{omanto} neliöjuuri{$} -> $1' % (clazz.id,kokonaisluku.id), FuncOutput(lambda arg: 'createIntegerObj(math.sqrt(' + arg + '.extra["int"]))'))
+	for op, pyop in [("+", "+"), ("-", "-"), ("–", "-"), ("−", "-"), ("*", "*"), ("/", "/")]:
+		addIntOperator(clazz, op, pyop)
+
 # For-silmikka
 
 class ForParser:
