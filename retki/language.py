@@ -114,7 +114,7 @@ class RObject(Bits):
 		self.name_tokens = name_tokens
 		self.aliases = aliases or []
 		self.selection_rules = srules or []
-		if name:
+		if name and "nimi koodissa" not in self.data:
 			self.data["nimi koodissa"] = createStringObj(name)
 	def __repr__(self):
 		return self.asString()
@@ -198,11 +198,13 @@ class RObject(Bits):
 		if len(self.data) != len(obj.data):
 			return False
 		for key in self.data:
-			if key not in obj.data or self.data[key] != obj.data[key]:
+			if key not in obj.data or not self.data[key].quickEquals(obj.data[key]):
 				return False
 		if self.extra != obj.extra:
 			return False
 		return True
+	def quickEquals(self, obj):
+		return self.id == obj.id or self.rclass == obj.rclass and self.rclass.primitive and self.extra == obj.extra
 	def get(self, field_name):
 		if field_name not in self.data:
 			for clazz in self.rclass.superclasses():
