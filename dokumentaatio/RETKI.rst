@@ -520,6 +520,8 @@ Komennot
 	  - Poistaa bitin (tämän voi tehdä vain jos bitille ei ole määritelty vastabittejä).
 	* - (Muuttuja) on nyt (arvo).
 	  - Muuttaa muuttujan arvoa.
+	* - (Arvo) (muuttujana):
+	  - Muuttaa muuttujan arvoa, suorittaa sisennetyt komennot ja palauttaa muuttujan arvon takaisin alkuperäiseksi.
 	* - Lisää (arvo) (joukkokenttään).
 	  - Lisää arvon joukkoon.
 	* - Poista (arvo) (joukkokentästä).
@@ -560,7 +562,7 @@ Sisäänrakennetut luokat
 =======================
 
 Retkeen on sisäänrakennettu käsitteet ``yläkäsite``, ``asia``, ``merkkijono`` ja ``kokonaisluku``.
-Näistä "yläluokkaa" ei ole tarkoitus käyttää ja "merkkijono" sekä "kokonaisluku" ovat primitiivisiä.
+Näistä "yläkäsitettä" ei ole tarkoitus käyttää ja "merkkijono" sekä "kokonaisluku" ovat primitiivisiä.
 Kaikkien käyttäjän luomien luokkien tulisi periä "asia".
 
 ::
@@ -766,6 +768,20 @@ Sen käyttäminen on helppoa::
 
 	Aula on huone.
 	Käytävä on huone aulasta pohjoiseen.
+
+Fokalisointi
+------------
+
+Fokalisoija-muuttuja sisältää sen ihmisen, jonka näkökulmasta komennot suoritetaan.
+Alussa fokalisoija on aina pelaaja, mutta fokalisoijaa voi tarvittaessa muuttaa.
+Esimerkiksi NPC-hahmon siirtäminen toiseen huoneeseen on mahdollista seuraavasti::
+
+	Poika on ihminen eteisessä.
+	
+	Pojalle puhumisen aikana:
+		Sano "Poika pelästyy sinua ja juoksee pois.".
+		Poika fokalisoijana:
+			Siirry nyt olohuoneeseen.
 
 Esimerkkipeli
 =============

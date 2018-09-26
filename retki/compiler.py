@@ -683,8 +683,12 @@ def defineVariable(name, class_pattern):
 		pgl(".EXPR-%d ::= %s -> %s" % (clazz.id, pattern({"$"}), name_str),
 			FuncOutput(to_get))
 	
+	# Asettaminen lopullisesti
 	pgl(".CMD ::= %s on nyt EXPR-%d{nimento} . -> %s = $1" % (pattern({"yksikkö", "nimento"}), vtype.id, name_str),
 		FuncOutput(to_set))
+	
+	# Asettaminen väliaikaisesti
+	pgl(".CMD ::= .EXPR-%d %s : -> $1 as $2:" % (vtype.id, pattern({"olento"})), FuncOutput(lambda val: AsParser(name_str, val)))
 	
 	pgl(".COND ::= %s on .EXPR-%d{nimento} -> %s==$2" % (
 		pattern({"yksikkö", "nimento"}), vtype.id, name_str
@@ -701,13 +705,28 @@ def defineVariable(name, class_pattern):
 	for clazz in vtype.superclasses():
 		pgl(".PATTERN-%d ::= %s -> %s" % (clazz.id, pattern({"$"}), name_str),
 			FuncOutput(lambda: RPattern(obj=obj)))
+	
+	pgl(".VARIABLE-VALUE-DEF ::= %s on alussa .EXPR-%d{nimento} . -> %s = $1" % (
+		pattern({"yksikkö", "nimento"}), vtype.id, name_str
+	), FuncOutput(lambda x: setGlobalVar(name_str, eval(x))))
 
 pgl(".VARIABLE-DEF ::= .* on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
 pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
 pgl(".DEF ::= .ALIAS-DEF -> $1", identity)
+pgl(".DEF ::= .VARIABLE-VALUE-DEF -> $1", identity)
 
 GRAMMAR.addCategoryName("VARIABLE-DEF", "muuttujamääritys")
 GRAMMAR.addCategoryName("ALIAS-DEF", "tulkintamääritys")
+GRAMMAR.addCategoryName("VARIABLE-VALUE-DEF", "muuttuja-arvomääritys")
+
+class AsParser:
+	def __init__(self, variable, value):
+		self.variable = variable
+		self.value = value
+	def parse(self, file, grammar, report=False):
+		block = parseBlock(file, grammar, report=report)
+		block_str = joinCodes(block)
+		return "(pushScope(), putVar(%s, %s, to_scope_stack=True), %s, popScope())" % (repr(self.variable), self.value, block_str)
 
 # Apufunktio
 
@@ -800,17 +819,24 @@ def defineAction(name, params, pre, post):
 		cmd_params = []
 		for i in range(0, len(cases_posts), 2):
 			cmd_params.append((cases_posts[i], cases_posts[i+1]))
+		
 		command_pattern = "%s %s" % (
 			tokensToCode(pre),
 			" ".join([
 				".EXPR-%d{%s,yksikkö} %s" % (a_class.id, cmd_case, tokensToCode(post))
 			for (_, a_class, _), (cmd_case, post) in zip(params, cmd_params)])
 		)
-		pgl(".%s ::= %s . -> %s($1)" % (
-			category,
-			command_pattern,
-			name.token
-		), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s], True)' % (action.id, ", ".join(val))))
+		
+		def addCommandPhrase(cmd_post, in_scope):
+			pgl(".%s ::= %s %s -> %s($1)" % (
+				category,
+				command_pattern,
+				cmd_post,
+				name.token
+			), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s], %s)' % (action.id, ", ".join(val), repr(in_scope))))
+		for cmd_post, in_scope in [(".", True), ("jos mahdollista .", False)]:
+			addCommandPhrase(cmd_post, in_scope)
+		
 		if category == "PLAYER-CMD":
 			action.addPlayerCommand(command_pattern)
 	

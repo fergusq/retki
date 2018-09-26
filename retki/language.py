@@ -273,7 +273,7 @@ class RObject(Bits):
 		if not group:
 			for val in self.data[field_name]:
 				if pattern.matches(val):
-					putVar(var_name, val)
+					putVar(var_name, val, to_scope_stack=True)
 					ans.append(f())
 		else:
 			# TODO
@@ -287,8 +287,8 @@ class RObject(Bits):
 					else:
 						groups.append([val])
 			for group in groups:
-					putVar(count_var_name, createIntegerObj(len(group)))
-					putVar(var_name, group[0])
+					putVar(count_var_name, createIntegerObj(len(group)), to_scope_stack=True)
+					putVar(var_name, group[0], to_scope_stack=True)
 					ans.append(f())
 		popScope()
 		return ans
@@ -298,7 +298,7 @@ class RObject(Bits):
 		pushScope()
 		for val in self.data[field_name]:
 			if pattern.matches(val):
-				putVar(var_name, val)
+				putVar(var_name, val, to_scope_stack=True)
 				if f():
 					return True
 		popScope()
@@ -574,8 +574,14 @@ def setVar(name, val):
 			break
 	else:
 		scopes[-1].variables[name] = val
-def putVar(name, val):
-	visibleScopes()[-1].variables[name] = val
+def setGlobalVar(name, val):
+	GLOBAL_SCOPE.variables[name] = val
+def putVar(name, val, to_scope_stack=False):
+	if to_scope_stack:
+		stack = SCOPE
+	else:
+		stack = visibleScopes()
+	stack[-1].variables[name] = val
 def addAlias(name, alias):
 	if name not in ALIASES:
 		ALIASES[name] = []
@@ -677,11 +683,13 @@ class RListener:
 # jälkimmäinen sarake kertoo, syrjäytyvätkö tämäntyyppiset säännöt, jos toiseksi jälkimmäisessä sarakkeessa vastaava syrjäyttävä sääntö täsmää
 
 LISTENER_PRIORITIES = [
-#	 PRE       CASE     POST       PRI SPECIAL GENERAL
-	("ennen", "osanto", "",        20, False,  True),
-	("",      "omanto", "sijasta", 40, True,   True),
-	("",      "omanto", "aikana",  50, False,  True),
-	("",      "omanto", "jälkeen", 80, False,  True),
+#	 PRE            CASE      POST       PRI SPECIAL GENERAL
+	("ennen",       "osanto", "",        20, False,  True),
+	("juuri ennen", "osanto", "",        30, False,  True),
+	("",            "omanto", "sijasta", 40, True,   True),
+	("",            "omanto", "aikana",  50, False,  True),
+	("heti",        "omanto", "jälkeen", 60, False,  True),
+	("",            "omanto", "jälkeen", 80, False,  True),
 ]
 
 ACTION_LISTENERS = []

@@ -56,6 +56,9 @@ Pelaaja on pelaajan ohjaama ihminen.
 Tulkitse "itse" pelaajana.
 Tulkitse "sinä" pelaajana.
 
+Fokalisoija on ihminen.
+Fokalisoija on alussa pelaaja.
+
 > Sisältäminen
 
 Määritelmä. Kun esine (E) on "[sisältäjän (S)] varassa":
@@ -102,6 +105,7 @@ Määritelmä. Kun esine (E) "ei ole [huoneessa (H)]":
 			E ei ole S:n varassa
 
 Määritelmä. Kun ihminen (I) on "[huoneessa (H)]":
+	I:n sijainti on H
 	H:n henkilöjoukko sisältää I:n
 
 Määritelmä. Kun ihminen (I) on "[huoneella (H)]":
@@ -112,22 +116,22 @@ Määritelmä. Kun ihminen (I) "ei ole [huoneessa (H)]":
 
 Määritelmä. Kun esine (E) on "näkyvillä":
 	jokin seuraavista:
-		E on pelaajan sijainnissa
-		E on pelaajan mukana
-		jollekin sisältäjälle (S) pelaajan esineluettelossa pätee:
+		E on fokalisoijan sijainnissa
+		E on fokalisoijan mukana
+		jollekin sisältäjälle (S) fokalisoijan esineluettelossa pätee:
 			E on S:n varassa
 
 Määritelmä. Kun esine (E) on "piilossa":
-	E ei ole pelaajan sijainnissa
-	pelaajan esineluettelo ei sisällä E:tä
-	jokaiselle sisältäjälle (S) pelaajan esineluettelossa pätee:
+	E ei ole fokalisoijan sijainnissa
+	fokalisoijan esineluettelo ei sisällä E:tä
+	jokaiselle sisältäjälle (S) fokalisoijan esineluettelossa pätee:
 		E ei ole S:n varassa
 
 Määritelmä. Kun ihminen (I) on "näkyvillä":
-	I on pelaajan sijainnissa
+	I on fokalisoijan sijainnissa
 
 Määritelmä. Kun ihminen (I) on "piilossa":
-	I ei ole pelaajan sijainnissa
+	I ei ole fokalisoijan sijainnissa
 
 Tarkoittaako pelaaja esinettä:
 	Jos se on näkyvillä:
@@ -163,8 +167,10 @@ Ennen ei-avattavan esineen avaamista:
 	Keskeytä toiminto.
 
 Ennen esineen avaamista:
-	Jos pelaajan esineluettelo ei sisällä sen avaavaa avainta:
-		Sano "Sinulla ei ole oikeaa avainta.".
+	Jos fokalisoijan esineluettelo ei sisällä sen avaavaa avainta:
+		Jos fokalisoija on pelaajan ohjaama:
+			Sano "Sinulla ei ole oikeaa avainta.".
+		
 		Keskeytä toiminto.
 
 Esineen avaamisen aikana:
@@ -295,7 +301,8 @@ Oven avautumisen aikana:
 	Se on nyt ei-avattava.
 
 Oven avautumisen jälkeen:
-	Sano "Avaat [sen].".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "[Se] avautuu.".
 
 > Liikkuminen
 
@@ -314,40 +321,47 @@ Tulkitse "mene [huoneeseen]" huoneeseen liikkumisena.
 Tulkitse "mene [huoneelle]" huoneeseen liikkumisena.
 
 Huoneeseen (H) liikkumisen sijasta:
-	liiku nyt pelaajan sijainnin H:hon johtavaan suuntaan.
+	Liiku nyt fokalisoijan sijainnin H:hon johtavaan suuntaan.
 
 [Huoneeseen] siirtyminen on toiminto.
-Siirtymisen komento on "siirry [huoneeseen]".
+Siirtymisen komento on "siirry nyt [huoneeseen]".
 
 Ei-suuntaan liikkumisen sijasta:
 	Sano "Et voi mennä sinne.".
 
 Suuntaan (se suunta) liikkumisen aikana:
-	Siirry pelaajan sijainnin naapurihuoneeseen siinä suunnassa.
+	Siirry nyt fokalisoijan sijainnin naapurihuoneeseen siinä suunnassa.
 
 Ennen suljettuun huoneeseen siirtymistä:
-	Sano "Et voi mennä sinne.".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Et voi mennä sinne.".
+	
 	Keskeytä toiminto.
 
 Ennen pimeään huoneeseen siirtymistä:
-	Jos pelaajan esineluettelo ei sisällä yhtäkään valaisevaa esinettä:
-		Sano "Siellä on pimeää, etkä näkisi siellä mitään.".
+	Jos fokalisoijan esineluettelo ei sisällä yhtäkään valaisevaa esinettä:
+		Jos fokalisoija on pelaajan ohjaama:
+			Sano "Siellä on pimeää, etkä näkisi siellä mitään. Et voi mennä sinne.".
+		
 		Keskeytä toiminto.
 
-Ennen huoneeseen (pelaajan määränpää) siirtymistä:
-	Toista jokaiselle näkyvillä olevalle lukitulle ovelle (ovi) pelaajan sijainnin esinejoukossa:
-		Jos oven huonejoukko sisältää pelaajan määränpään:
-			Sano "(avataan ensin [ovi])".
+Ennen huoneeseen (fokalisoijan määränpää) siirtymistä:
+	Toista jokaiselle näkyvillä olevalle lukitulle ovelle (ovi) fokalisoijan sijainnin esinejoukossa:
+		Jos oven huonejoukko sisältää fokalisoijan määränpään:
+			Jos fokalisoija on pelaajan ohjaama:
+				Sano "(avataan ensin [ovi])".
 			Avaa nyt ovi.
-			Sano "[rivinvaihto][rivinvaihto]".
+			Jos fokalisoija on pelaajan ohjaama:
+				Sano "[rivinvaihto][rivinvaihto]".
 			
 Huoneeseen siirtymisen aikana:
-	Pelaaja on nyt piilossa.
-	Pelaajan sijainti on nyt se.
-	Pelaaja on nyt näkyvillä.
+	Fokalisoija on nyt piilossa.
+	Fokalisoijan sijainti on nyt se.
+	Fokalisoija on nyt näkyvillä.
 
-Huoneeseen siirtymisen jälkeen:
-	Esittele se.
+Huoneeseen (H) siirtymisen jälkeen:
+	Jos fokalisoija on pelaajan ohjaama:
+		Esittele H.
 
 > Ovesta meneminen
 
@@ -355,18 +369,21 @@ Huoneeseen siirtymisen jälkeen:
 Tulkitse "mene [ovesta]" ovesta menemisenä.
 
 Ennen lukitusta ovesta menemistä:
-	Sano "(avataan ensin [se])".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "(avataan ensin [se])".
 	Avaa nyt se.
-	Sano "[rivinvaihto][rivinvaihto]".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "[rivinvaihto][rivinvaihto]".
 
 Ovesta (O) menemisen aikana:
-	Toista jokaiselle huoneelle (naapurihuone) pelaajan sijainnin naapurihuonejoukossa:
+	Toista jokaiselle huoneelle (naapurihuone) fokalisoijan sijainnin naapurihuonejoukossa:
 		Jos O on naapurihuoneessa:
 			Liiku nyt naapurihuoneeseen.
 			Keskeytä toiminto.
 
 Ovesta menemisen jälkeen:
-	Sano "[Se] ei vie mihinkään.".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "[Se] ei vie mihinkään.".
 
 > Katsominen
 
@@ -398,25 +415,34 @@ Ihmisen katsomisen aikana:
 Tulkitse "ota [esine]" ottamisena.
 
 Ennen piilossa olevan esineen ottamista:
-	Sano "Et näe sellaista asiaa.".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Et näe sellaista asiaa.".
+	
 	Keskeytä toiminto.
 
-Ennen pelaajan mukana olevan esineen ottamista:
-	Sano "Sinulla on se jo.".
+Ennen fokalisoijan mukana olevan esineen ottamista:
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Sinulla on se jo.".
+	
+	Keskeytä toiminto.
 
 Ennen kiinteän esineen ottamista:
-	Sano "Et pystyisi liikuttamaan sitä.".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Et pystyisi liikuttamaan sitä.".
+	
 	Keskeytä toiminto.
 
 Tylsän esineen ottamisen sijasta:
-	Sano "Sinun ei tee mieli koskea [siihen].".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Sinun ei tee mieli koskea [siihen].".
 
 Esineen ottamisen aikana:
 	Se on nyt piilossa.
-	Lisää se pelaajan esineluetteloon.
+	Lisää se fokalisoijan esineluetteloon.
 
 Esineen ottamisen jälkeen:
-	Sano "Sinulla on nyt [se].".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Sinulla on nyt [se].".
 
 Tarkoittaako pelaaja piilossa olevan esineen ottamista:
 	varmasti ei
@@ -427,7 +453,7 @@ Tarkoittaako pelaaja esineen ottamista:
 	Muuten:
 		ehkä
 
-> Esineluettelon tulostaminen
+> Pelaajan esineluettelon tulostaminen
 
 Esineluettelon tulostaminen on toiminto.
 Tulkitse "esineet" esineluettelon tulostamisena.
@@ -504,15 +530,21 @@ Tulkitse "polta [esine]" sytyttämisenä.
 Sytytin on esineen alakäsite.
 
 Ennen piilossa olevan esineen sytyttämistä:
-	Sano "Et näe sellaista asiaa.".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Et näe sellaista asiaa.".
+	
+	Keskeytä toiminto.
 
 Ennen esineen sytyttämistä:
-	Jos pelaajan esineluettelo ei sisällä yhtäkään sytytintä:
-		Sano "Sinulla ei ole sytytintä.".
+	Jos fokalisoijan esineluettelo ei sisällä yhtäkään sytytintä:
+		Jos fokalisoija on pelaajan ohjaama:
+			Sano "Sinulla ei ole sytytintä.".
+		
 		Keskeytä toiminto.
 
 Esineen sytyttämisen aikana:
-	Sano "Sinun ei tee mieli sytyttää [sitä].".
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Sinun ei tee mieli sytyttää [sitä].".
 
 > Kartta
 
@@ -570,7 +602,7 @@ Tulkitse "avain" punaisena avaimena.
 
 Rojun katsomisen aikana:
 	Jos punainen avain on piilossa:
-		Sano "Löysit avaimen rojun seasta.".
+		Sano "Löydät avaimen rojun seasta.".
 		Punainen avain on nyt varastossa.
 
 > Ruokahuone
@@ -587,7 +619,14 @@ Virtanen on ihminen ruokahuoneessa.
 
 Virtaselle puhumisen sijasta:
 	Sano "Neiti Virtanen ei näytä kuuntelevan sinua.[rivinvaihto][rivinvaihto]".
-	Sano "'Koti, avain, takapiha, ruokalasi', hän sanoo.".
+	Jos Virtasen sijainti on ruokahuone:
+		Sano "'Koti, avain, takapiha, ruokalasi', hän sanoo ja kävelee olohuoneeseen.".
+		Virtanen fokalisoijana:
+			Siirry nyt olohuoneeseen.
+	Muulloin:
+		Sano "'Koti, avain, takapiha, ruokalasi', hän sanoo ja kävelee ruokahuoneeseen.".
+		Virtanen fokalisoijana:
+			Siirry nyt ruokahuoneeseen.
 
 > Takapiha
 
@@ -627,6 +666,9 @@ Tulkitse "pistooli" sytytinpistoolina.
 
 Keittiö on huone ruokahuoneesta etelään.
 "Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle."
+
+Ikkuna on kiinteä listaamaton esine keittiössä.
+"Ikkuna on tahrainen ja hoitamaton. Näet sen läpi etupihalle."
 
 Työtaso on kiinteä tukeva sisältäjä keittiössä.
 "Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan."
