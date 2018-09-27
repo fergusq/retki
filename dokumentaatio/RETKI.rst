@@ -691,7 +691,9 @@ Kirjasto määrittelee seuraavat asian alakäsitteet::
 Ja seuraavat toiminnot::
 
 	        esineen avaaminen
+	                esineluettelon tulostaminen
 	        huoneen esitteleminen
+	    merkkijonon fokalisoijalle sanominen
 	                katseleminen
 	       suuntaan katsominen
 	        esineen katsominen
@@ -706,10 +708,9 @@ Ja seuraavat toiminnot::
 	      ihmiselle puhuminen
 	     huoneeseen siirtyminen
 	        esineen sytyttäminen
-	 esineluettelon tulostaminen
 
-Näistä ``huoneen esitteleminen``, ``asian kuvaileminen`` ja ``huoneeseen siirtyminen`` ovat pelin sisäisesti käyttämä toimintoja
-ja kaikki muut ovat komentoja, joita pelaaja voi syöttää.
+Näistä ``merkkijonon fokalisoijalle sanominen``, ``huoneen esitteleminen``, ``asian kuvaileminen`` ja ``huoneeseen siirtyminen``
+ovat pelin sisäisesti käyttämä toimintoja ja kaikki muut ovat komentoja, joita pelaaja voi syöttää.
 Monet komennoista ovat vaihtoehtoisia tapoja ilmaista sama asia.
 Esimerkiksi komennoissa ``huoneeseen liikkuminen``, ``suuntaan liikkuminen`` ja ``ovesta  meneminen`` määränpäähän viitataan eri tavoin,
 mutta lopputulos on sama.
@@ -718,15 +719,12 @@ Komennoista
 -----------
 
 Osa komennoista ei tee mitään oletuksena.
-Esimerkiksi puhuminen ja sytyttäminen on määritelty seuraavasti::
+Esimerkiksi puhuminen on määritelty seuraavasti::
 
 	Ihmiselle puhumisen aikana:
 		Sano "[Hän] ei näytä kiinnostuneelta höpinästäsi.".
-	
-	Esineen sytyttämisen aikana:
-		Sano "Sinun ei tee mieli sytyttää [sitä].".
 
-Vastavaasti lukeminen on määritelty vain, jos esineelle on määritelty kirjoitus::
+Vastavaasti lukeminen on määritelty vain, jos esineelle on määritelty kirjoitus ja sytyttäminen vain, jos sytytettävä esine on syttyvä::
 
 	Ennen kirjoitusta sisältämättömän esineen lukemista:
 		Sano "[Se] ei sisällä mitään kirjoitusta.".
@@ -735,10 +733,14 @@ Vastavaasti lukeminen on määritelty vain, jos esineelle on määritelty kirjoi
 	Kirjoitusta sisältävän esineen lukemisen aikana:
 		Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
 		Sano "[sen kirjoitus][rivinvaihto]".
+	
+	Ennen syttymättömän esineen sytyttämistä:
+		Sano fokalisoijalle "[Sitä] ei voi sytyttää.".
+		Keskeytä toiminto.
 
 Jos peli sisältää sytytettäviä tai luettavia asiota, nämä oletukset voi korvata pelin vaatimilla tavoilla::
 
-	Salainen viesti on kirjoitusta sisältävä esine pöydällä.
+	Salainen viesti on kirjoitusta sisältävä syttyvä esine pöydällä.
 	
 	Salaisen viestin lukemisen sijasta:
 		Sano "Saat vaivoin selvää koodikielisestä viestistä.".
@@ -746,8 +748,8 @@ Jos peli sisältää sytytettäviä tai luettavia asiota, nämä oletukset voi k
 		Sano "Yhteyshenkilösi on Matti Virtanen, tapaat hänet Kauppatorilla klo 13.".
 		Sano "Polta tämä viesti lukemisen jälkeen.".
 	
-	Salaisen viestin sytyttämisen sijasta:
-		Sano "[Se] palaa tuhkaksi.".
+	Salaisen viestin sytyttämisen jälkeen:
+		Sano fokalisoijalle "[Se] palaa tuhkaksi.".
 		Se on nyt piilossa.
 
 Huoneiden luominen
@@ -782,6 +784,11 @@ Esimerkiksi NPC-hahmon siirtäminen toiseen huoneeseen on mahdollista seuraavast
 		Sano "Poika pelästyy sinua ja juoksee pois.".
 		Poika fokalisoijana:
 			Siirry nyt olohuoneeseen.
+
+Komento ``Sano fokalisoijalle`` tulostaa annetun viestin vain, jos fokalisoja on pelaaja.
+Sitä suositellaan käytettäväksi, jos nykyisen toiminnon voi suorittaa sekä pelaaja että NPC-hahmo.
+Jos toiminnon on tarkoitus voida suorittaa vain pelaaja (kuten esimerkiksi ``puhuminen``-toiminnon),
+voi sen koodissa käyttää tavallista ``Sano``-komentoa tämän intention selventämiseksi.
 
 Esimerkkipeli
 =============
