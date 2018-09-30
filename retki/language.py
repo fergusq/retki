@@ -16,6 +16,7 @@
 
 import sys, readline
 import math
+import random
 from suomilog.finnish import tokenize
 from .tokenutils import *
 
@@ -94,6 +95,10 @@ def searchLastObject(pattern):
 		if pattern.matches(obj):
 			return obj
 	return None
+
+def searchRandomObject(pattern):
+	matching = list(filter(pattern.matches, OBJECTS_IN_ORDER))
+	return random.choice(matching)
 
 class RObject(Bits):
 	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None, aliases=None, data=None):

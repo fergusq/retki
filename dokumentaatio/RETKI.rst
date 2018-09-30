@@ -377,6 +377,19 @@ jokaiselle (hahmolle) (joukkokentässä) pätee: Kaikki sisennetyt lauseet pakot
 jollekin (hahmolle) (joukkokentässä) pätee:   Ensimmäinen hahmoon täsmäävä arvo pakotetaan noudattamaan sisennettyjä ehtoja. Jos yksikään arvo ei täsmää hahmoon, syntyy virhe.
 ============================================= ===============================
 
+Kokonaisluvuille on määritelty lisäksi seuraavat ehtolauseet, joita **ei** voi pakottaa todeksi.
+Lauseille on sekä symboliset että sanalliset versiot.
+
+================================ ====================
+Symbolinen ehtolause             Sanallinen ehtolause
+================================ ====================
+(kokonaisluku) = (kokonaisluku)  (kokonaisluku) on yhtä suuri kuin (kokonaisluku)
+(kokonaisluku) /= (kokonaisluku) (kokonaisluku) ei ole (kokonaisluku)
+(kokonaisluku) < (kokonaisluku)  (kokonaisluku) on pienempi kuin (kokonaisluku)
+(kokonaisluku) > (kokonaisluku)  (kokonaisluku) on suurempi kuin (kokonaisluku)
+(kokonaisluku) <= (kokonaisluku) (kokonaisluku) on pienempi tai yhtä suuri kuin (kokonaisluku), (kokonaisluku) on enintään (kokonaisluku)
+(kokonaisluku) >= (kokonaisluku) (kokonaisluku) on suurempi tai yhtä suuri kuin (kokonaisluku), (kokonaisluku) on vähintään (kokonaisluku)
+
 Toimintomääritys
 ================
 
@@ -470,9 +483,11 @@ Kuuntelijoita on neljää tyyppiä: ennen, sijasta, aikana ja jälkeen -kuunteli
 Nämä suoritetaan seuraavasti:
 
 1. Ensin kaikki sopivat ennen-kuuntelijat suoritetaan.
-2. Jos yksikin sijasta-kuuntelija sopii, se suoritetaan ja toiminnon suoritus keskeytetään.
-3. Kaikki aikana-kuuntelijat suoritetaan.
-4. Kaikki jälkeen-kuuntelijat suoritetaan.
+2. Kaikki sopivat juuri ennen -kuuntelijat suoritetaan.
+3. Jos yksikin sijasta-kuuntelija sopii, se suoritetaan ja toiminnon suoritus keskeytetään.
+4. Kaikki sopivat aikana-kuuntelijat suoritetaan.
+5. Kaikki sopivat heti jälkeen -kuuntelijat suoritetaan.
+6. Kaikki sopivat jälkeen-kuuntelijat suoritetaan.
 
 Ideaalisesti ennen-kuuntelijat sisältävät ehtoja ja keskeyttävät toiminnon tarvittaessa.
 Sijasta-kuuntelijat sisältävät ennen-lauseita tilannekohtaisempia sääntöjä.
@@ -530,6 +545,10 @@ Komennot
 	  - Toistaa sisennetyt komennot jokaiselle hahmoon täsmäävälle arvolle joukossa.
 	* - Toista jokaiselle ryhmälle samanlaisia (hahmoja) (joukkokentässä):
 	  - Toistaa sisennetyt komennot jokaiselle uniikille hahmoon täsmäävälle arvolle joukossa (arvoon viitataan pronominilla "ne", "ryhmän koko" on samanlaisten arvojen määrä).
+	* - Toista (kokonaisluku) kertaa:
+	  - Toistaa sisennetyt komennon halutun määrän kertoja.
+	* - Toista jokaiselle kokonaisluvulle (nimi) välillä (kokonaisluvusta) (kokonaislukuun):
+	  - Toistaa sisennetyt komennot jokaiselle kokonaisluvulle annetulla välillä.
 	* - Jos (ehtolause):
 	  - Suorittaa sisennetyt komennot, jos ehtolause on tosi.
 	* - Sano (merkkijono).

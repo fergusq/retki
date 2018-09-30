@@ -226,8 +226,11 @@ def defineClass(name, superclass):
 		for is_pre in [True, False]:
 			addMapFieldDefPattern(key_case, is_pre)
 	
-	pgl(".EXPR-%d ::= viimeksi luotu{$} .CLASS-PATTERN-%d -> last created $1" % (rclass.id, rclass.id),
+	pgl(".EXPR-%d ::= viimeksi luotu{$} .CLASS-PATTERN-%d{$} -> last created $1" % (rclass.id, rclass.id),
 		FuncOutput(lambda pattern: "searchLastObject(" + pattern.toPython() + ")"))
+
+	pgl(".EXPR-%d ::= satunnainen{$} .CLASS-PATTERN-%d{$} -> random $1" % (rclass.id, rclass.id),
+		FuncOutput(lambda pattern: "searchRandomObject(" + pattern.toPython() + ")"))
 	
 	GRAMMAR.addCategoryName("EXPR-%d" % (rclass.id,), name_str + "-tyyppinen lauseke")
 	
@@ -647,10 +650,11 @@ def addConditionDefPatterns(num_params):
 def addConditionDefPattern(num_params, first_named, nameds):
 	fname = "" if not first_named else "( .* )"
 	pattern = " ".join(["[ .CLASS-CASE %s ] .**" % ("" if not named else "( .* )",) for named in nameds])
-	pgl(".COND-DEF ::= Määritelmä . Kun .CLASS{nimento} %s on \" .** %s \" : -> def $1~ $*:" % (fname, pattern),
-		FuncOutput(lambda *p: ConditionParser(False, nameds, first_named, *p)))
-	pgl(".COND-DEF ::= Määritelmä . Kun .CLASS{nimento} %s \" .** %s \" : -> def $1~ $*:" % (fname, pattern),
-		FuncOutput(lambda *p: ConditionParser(True, nameds, first_named, *p)))
+	for prefix, postfix in [("Kun", ""), ("", ", jos")]:
+		pgl(".COND-DEF ::= Määritelmä . %s .CLASS{nimento} %s on \" .** %s \" %s : -> def $1~ $*:" % (prefix, fname, pattern, postfix),
+			FuncOutput(lambda *p: ConditionParser(False, nameds, first_named, *p)))
+		pgl(".COND-DEF ::= Määritelmä . %s .CLASS{nimento} %s \" .** %s \" %s : -> def $1~ $*:" % (prefix, fname, pattern, postfix),
+			FuncOutput(lambda *p: ConditionParser(True, nameds, first_named, *p)))
 
 for num_params in [0,1,2]:
 	addConditionDefPatterns(num_params)
@@ -684,7 +688,7 @@ def defineVariable(name, class_pattern):
 			FuncOutput(to_get))
 	
 	# Asettaminen lopullisesti
-	pgl(".CMD ::= %s on nyt EXPR-%d{nimento} . -> %s = $1" % (pattern({"yksikkö", "nimento"}), vtype.id, name_str),
+	pgl(".CMD ::= %s on nyt .EXPR-%d{nimento} . -> %s = $1" % (pattern({"yksikkö", "nimento"}), vtype.id, name_str),
 		FuncOutput(to_set))
 	
 	# Asettaminen väliaikaisesti
@@ -855,7 +859,7 @@ def defineAction(name, params, pre, post):
 			action_patterns.append(
 				"%s %s %s{-minen,CASE} %s" % (
 					" ".join([
-						tokensToCode(a_pre) + a_class.nameToCode({a_case, "yksikkö"})
+						tokensToCode(a_pre) + " " + a_class.nameToCode({a_case, "yksikkö"})
 					for a_pre, a_class, a_case in params]),
 					tokensToCode(pre), name.baseform("-minen"), tokensToCode(post)
 				)
@@ -931,11 +935,24 @@ def addIntOperator(clazz, op, pyop):
 	pgl('.EXPR-%d ::= ( .EXPR-%d{nimento} %s .EXPR-%d{$} ) -> ($1 %s $2)' % (clazz.id, kokonaisluku.id, op, kokonaisluku.id, pyop),
 		FuncOutput(lambda a, b: 'createIntegerObj(%s.extra["int"] %s %s.extra["int"])' % (a, pyop, b)))
 
+def addIntCondition(op, pyop):
+	pgl('.COND ::= .EXPR-%d{nimento} %s .EXPR-%d{$} -> ($1 %s $2)' % (kokonaisluku.id, op, kokonaisluku.id, pyop),
+		FuncOutput(lambda a, b: ('(%s.extra["int"] %s %s.extra["int"])' % (a, pyop, b), '()'))) # TODO: virhe modify-osassa
+
 for clazz in [yläkäsite, kokonaisluku]:
 	pgl('.EXPR-%d ::= .N -> $1' % (clazz.id,), FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
 	pgl('.EXPR-%d ::= .EXPR-%d{omanto} neliöjuuri{$} -> $1' % (clazz.id,kokonaisluku.id), FuncOutput(lambda arg: 'createIntegerObj(math.sqrt(' + arg + '.extra["int"]))'))
 	for op, pyop in [("+", "+"), ("-", "-"), ("–", "-"), ("−", "-"), ("*", "*"), ("/", "/")]:
 		addIntOperator(clazz, op, pyop)
+
+for op, pyop in [
+	("=", "=="), ("on yhtä suuri kuin", "=="),
+	("/=", "!="), ("ei ole", "!="),
+	("<", "<"), ("on pienempi kuin", "<"),
+	(">", ">"), ("on suurempi kuin", ">"),
+	("<=", "<="), ("on pienempi tai yhtä suuri kuin", "<="), ("on enintään", "<="),
+	(">=", ">="), ("on suurempi tai yhtä suuri kuin", ">="), ("on vähintään", ">=")]:
+	addIntCondition(op, pyop)
 
 # For-silmikka
 
@@ -956,9 +973,6 @@ class ForParser:
 			for clazz in kokonaisluku.superclasses():
 				grammar.parseGrammarLine(".EXPR-%d ::= ryhmän koko{$} -> val count" % (clazz.id,),
 					FuncOutput(lambda: 'getVar("_count")'))
-			# TODO PURKKAA:
-			grammar.parseGrammarLine(".COND ::= ryhmän koko{$} on .N -> val count = $1",
-				FuncOutput(lambda n: ('getVar("_count").extra["int"] == %s' % (repr(n),), "()"))) # TODO virhe modify-osassa
 		
 		block = parseBlock(file, grammar, report=report)
 		block_str = "lambda: (" + ", ".join(block) + ")"
@@ -966,6 +980,34 @@ class ForParser:
 		return '%s.forSet(%s, "_val", %s, %s, group=%s, count_var_name="_count")' % (
 			obj, repr(self.field_name), param_pattern.toPython(), block_str, repr(self.group)
 		)
+
+class RepeatParser:
+	def __init__(self, end, start=None, var=None):
+		self.end = end
+		self.start = start
+		self.var = var
+	def parse(self, file, grammar, report=False):
+		grammar = grammar.copy()
+		
+		increaseCounter()
+		counter = getCounter()
+		varname = "i_" + str(counter)
+		
+		addParamPhrases(grammar, None, kokonaisluku, self.var, plural=self.group, varname=varname)
+		
+		block = parseBlock(file, grammar, report=report)
+		return '[%s for %s in range(%s, %s.extra["int"])]' % (
+			", ".join(block), varname,
+			self.start + '.extra["int"]' if self.start else "1",
+			self.end
+		)
+
+pgl(".CMD ::= toista .EXPR-%d{nimento} kertaa : -> repeat $1 times:" % (kokonaisluku.id,),
+	FuncOutput(RepeatParser))
+
+pgl(".CMD ::= toista jokaiselle kokonaisluvulle .* välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} : -> repeat $1 times:" % (
+	kokonaisluku.id, kokonaisluku.id
+), FuncOutput(lambda var, start, end: RepeatParser(end, start=start, var=var)))
 
 # If-lause
 

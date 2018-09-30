@@ -27,7 +27,7 @@ def nameToBaseform(tokens, bits, rbits):
 					found = True
 					break
 			else:
-				if rbits <= tbits and tbits & {"laatusana", "nimisana_laatusana", "agent", "asemosana"}:
+				if rbits <= tbits and tbits & {"laatusana", "nimisana_laatusana", "agent", "asemosana", "lukusana"}:
 					ans.append((bf, bits or {"$"}))
 					break
 		else:
