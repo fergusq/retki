@@ -389,6 +389,7 @@ Symbolinen ehtolause             Sanallinen ehtolause
 (kokonaisluku) > (kokonaisluku)  (kokonaisluku) on suurempi kuin (kokonaisluku)
 (kokonaisluku) <= (kokonaisluku) (kokonaisluku) on pienempi tai yhtä suuri kuin (kokonaisluku), (kokonaisluku) on enintään (kokonaisluku)
 (kokonaisluku) >= (kokonaisluku) (kokonaisluku) on suurempi tai yhtä suuri kuin (kokonaisluku), (kokonaisluku) on vähintään (kokonaisluku)
+================================ ====================
 
 Toimintomääritys
 ================
