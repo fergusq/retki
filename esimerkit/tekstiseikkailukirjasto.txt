@@ -206,8 +206,11 @@ Huoneen kuvailemisen jälkeen:
 			Sano "Näet täällä [e:n].".
 		Muulloin:
 			Sano "Näet täällä [ryhmän koko] [e:tä].".
-	Toista jokaiselle tietokoneen ohjaamalle ihmiselle sen henkilöjoukossa:
-		Sano "[Hän] on täällä.[rivinvaihto]".
+	Toista jokaiselle ryhmälle samanlaisia tietokoneen ohjaamia ihmisiä (i) sen henkilöjoukossa:
+		Jos ryhmän koko on 1:
+			Sano "[I] on täällä.".
+		Muulloin:
+			Sano "Täällä on [ryhmän koko] [i:tä].".
 
 Suljetun huoneen kuvailemisen jälkeen:
 	Sano "Et voi mennä sinne.".
@@ -419,7 +422,7 @@ Ennen fokalisoijan mukana olevan esineen ottamista:
 	Sano fokalisoijalle "Sinulla on se jo.".
 	Keskeytä toiminto.
 
-Ennen kiinteän esineen ottamista:
+Juuri ennen kiinteän esineen ottamista:
 	Sano fokalisoijalle "Et pystyisi liikuttamaan sitä.".
 	Keskeytä toiminto.
 
@@ -480,7 +483,7 @@ Ennen piilossa olevan esineen lukemista:
 	Sano "Et näe sellaista asiaa.".
 	Keskeytä toiminto.
 
-Ennen kirjoitusta sisältämättömän esineen lukemista:
+Juuri ennen kirjoitusta sisältämättömän esineen lukemista:
 	Sano "[Se] ei sisällä mitään kirjoitusta.".
 	Keskeytä toiminto.
 
@@ -543,3 +546,25 @@ Ennen esineen sytyttämistä:
 		Sano fokalisoijalle "Sinulla ei ole sytytintä.".
 		Keskeytä toiminto.
 
+> Hyökkääminen
+
+[Ihmistä] vastaan hyökkääminen on toiminto.
+Ihmistä vastaan hyökkäämisen komento on "hyökkää nyt [ihmistä] vastaan".
+Tulkitse "hyökkää [ihmistä] vastaan" ihmistä vastaan hyökkäämisenä.
+Tulkitse "lyö [ihmistä]" ihmistä vastaan hyökkäämisenä.
+Tulkitse "iske [ihmistä]" ihmistä vastaan hyökkäämisenä.
+
+Ihminen on joko ystävällismielinen tai vihamielinen.
+Ihminen on yleensä ystävällismielinen.
+
+Ennen piilossa olevaa ihmistä vastaan hyökkäämistä:
+	Sano "[Hän] ei ole paikalla.".
+	Keskeytä toiminto.
+
+Ennen ihmistä vastaan hyökkäämistä:
+	Jos fokalisoija on hän:
+		Sano fokalisoijalle "Et voi hyökätä itseäsi vastaan.".
+		Keskeytä toiminto.
+
+Ystävällismielistä ihmistä vastaan hyökkäämisen sijasta:
+	Sano "Et halua hyökätä [häntä] vastaan.".
