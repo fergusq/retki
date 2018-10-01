@@ -1,4 +1,4 @@
-Tuo examples/tekstiseikkailukirjasto.txt.
+Tuo tekstiseikkailukirjasto.
 
 > Kartta
 
