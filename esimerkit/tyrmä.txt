@@ -1,0 +1,66 @@
+Tuo tekstiseikkailukirjasto.
+
+>> Taistelu
+
+Ihmisellä on terveysluvuksi kutsuttu kokonaisluku.
+Ihmisen terveysluku on yleensä 10.
+
+Ihmisellä on voimakkuudeksi kutsuttu kokonaisluku.
+Ihmisen voimakkuus on yleensä 2.
+
+Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
+	Vihollisen terveysluku on nyt (vihollisen terveysluku - satunnaisluku välillä 1:stä fokalisoijan voimakkuuteen).
+
+Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Lyöt [vihollista] nyrkeilläsi!".
+	Muulloin:
+		Jos vihollinen on pelaajan ohjaama:
+			Sano "[Fokalisoija] lyö sinua nyrkeillään!".
+		Muulloin:
+			Sano "[Fokalisoija] lyö [vihollista] nyrkeillään!".
+	
+	Jos vihollinen on pelaajan ohjaama:
+		Sano "Terveyslukusi: [vihollisen terveysluku].".
+	Muulloin:
+		Sano "[Vihollisen] terveysluku: [vihollisen terveysluku].".
+
+>> Viholliset
+
+Vihollinen on ihmisen alakäsite.
+Vihollinen on yleensä vihamielinen.
+
+Sotilas on vihollinen.
+"Sotilas näyttää valmiilta taistelemaan kanssasi."
+Sotilaan voimakkuus on 1.
+
+>> Vuorot
+
+Tietokoneen vuoron pelaaminen on toiminto.
+Tietokoneen vuoron pelaamisen komento on "pelaa tietokoneen vuoro".
+
+Tietokoneen vihollinen on ihminen.
+
+Tietokoneen vuoron pelaamisen aikana:
+	Tietokoneen vihollinen on nyt fokalisoija.
+	Toista jokaiselle tietokoneen ohjaamalle ihmiselle (T) tietokoneen vihollisen sijainnin henkilöjoukossa:
+		T fokalisoijana:
+			Hyökkää nyt tietokoneen vihollista vastaan.
+
+Huoneeseen siirtymisen jälkeen:
+	Jos fokalisoija on pelaajan ohjaama:
+		Pelaa tietokoneen vuoro.
+
+Ihmistä vastaan hyökkäämisen jälkeen:
+	Jos fokalisoija on pelaajan ohjaama:
+		Pelaa tietokoneen vuoro.
+
+>> Areena
+
+Areena on huone.
+"Hiekka peittää katsomoiden ympäröimän areenan maan."
+Areenalla on 2 sotilasta.
+
+Ennen pelin alkamista:
+	Pelaajan sijainti on nyt areena.
+	Pelaaja on nyt näkyvillä.
