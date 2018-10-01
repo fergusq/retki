@@ -973,6 +973,9 @@ class ForParser:
 			for clazz in kokonaisluku.superclasses():
 				grammar.parseGrammarLine(".EXPR-%d ::= ryhmän koko{$} -> val count" % (clazz.id,),
 					FuncOutput(lambda: 'getVar("_count")'))
+			# TODO PURKKAA:
+			grammar.parseGrammarLine(".COND ::= ryhmän koko{$} on .N -> val count = $1",
+				FuncOutput(lambda n: ('getVar("_count").extra["int"] == %s' % (repr(n),), "()"))) # TODO virhe modify-osassa
 		
 		block = parseBlock(file, grammar, report=report)
 		block_str = "lambda: (" + ", ".join(block) + ")"
@@ -1251,6 +1254,10 @@ def importFile(filename):
 	
 	with open(filename, "r") as file:
 		loadFile(file)
+
+pgl(".IMPORT-DEF ::= Tuo .* . -> import $1", FuncOutput(lambda file: importFile("".join(t.token for t in file))))
+pgl(".DEF ::= .IMPORT-DEF -> $1", identity)
+GRAMMAR.addCategoryName("IMPORT-DEF", "tuontikäsky")
 
 # Standardikirjasto
 
