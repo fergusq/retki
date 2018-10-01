@@ -623,10 +623,11 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 				pgl(".CLASS-PATTERN-%d ::= %s oleva{$} .CLASS-PATTERN-%d{$} -> %s" % (clazz.id, pattern, clazz.id, output_str), FuncOutput(func))
 				pgl(".CLASS-PATTERN-WITH-ADV-%d ::= .CLASS-PATTERN-%d %s -> %s" % (clazz.id, clazz.id, pattern, output_str),
 					FuncOutput(lambda *p: p[0].addCondition(create_condition(p[1:]))))
-				pgl(".COPY-DEF ::= %s on .EXPR-%d{yksikkö,nimento} . -> copy $* ~ %s" % (pattern, clazz.id, output_str),
-					FuncOutput(lambda *p: eval(p[-1]).createCopies(1, create_condition(p[:-1]))))
-				pgl(".COPY-DEF ::= %s on .N .EXPR-%d{yksikkö,osanto} . -> copy $* ~ %s" % (pattern, clazz.id, output_str),
-					FuncOutput(lambda *p: eval(p[-1]).createCopies(p[-2], create_condition(p[:-2]))))
+		
+		pgl(".COPY-DEF ::= %s on .EXPR-%d{yksikkö,nimento} . -> copy $* ~ %s" % (pattern, owner.id, output_str),
+			FuncOutput(lambda *p: eval(p[-1]).createCopies(1, create_condition(p[:-1]))))
+		pgl(".COPY-DEF ::= %s on .N .EXPR-%d{yksikkö,osanto} . -> copy $* ~ %s" % (pattern, owner.id, output_str),
+			FuncOutput(lambda *p: eval(p[-1]).createCopies(p[-2], create_condition(p[:-2]))))
 	
 	if owner.superclass:
 		for clazz in owner.superclass.superclasses():
@@ -941,6 +942,9 @@ def addIntCondition(op, pyop):
 
 for clazz in [yläkäsite, kokonaisluku]:
 	pgl('.EXPR-%d ::= .N -> $1' % (clazz.id,), FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
+	pgl('.EXPR-%d ::= satunnaisluku välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} -> rnd($1, $2)' % (
+		clazz.id, kokonaisluku.id, kokonaisluku.id
+	), FuncOutput(lambda start, end: 'createIntegerObj(random.randint(%s.extra["int"], %s.extra["int"]))' % (start, end)))
 	pgl('.EXPR-%d ::= .EXPR-%d{omanto} neliöjuuri{$} -> $1' % (clazz.id,kokonaisluku.id), FuncOutput(lambda arg: 'createIntegerObj(math.sqrt(' + arg + '.extra["int"]))'))
 	for op, pyop in [("+", "+"), ("-", "-"), ("–", "-"), ("−", "-"), ("*", "*"), ("/", "/")]:
 		addIntOperator(clazz, op, pyop)
@@ -1239,14 +1243,21 @@ def loadFile(file, report=True):
 
 # Tiedoston tuominen
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__)) # Hakemisto, jossa retken mukana olevat tiedostot ovat
+PATH = [SCRIPT_DIR]
 LOADED_FILES = []
 
 def importFile(filename):
-	# kokeillaan onko kyseessä viite retken mukana tulevaan kirjastoon
-	path = os.path.join(SCRIPT_DIR, filename + ".txt")
-	if os.path.isfile(path):
-		filename = path
+	# kokeillaan onko tiedosto missään hakuhakemistossa (mm. SCRIPT_DIR)
+	for directory in PATH:
+		path = os.path.join(directory, filename + ".txt")
+		if os.path.isfile(path):
+			filename = path
+			break
+	
+	if not os.path.isfile(filename):
+		sys.stderr.write("\rTiedostoa ei löytynyt: %s (hakuhakemistot: %s)\n" % (filename, repr(PATH)))
+		return
 	
 	if filename in LOADED_FILES:
 		return
@@ -1296,6 +1307,7 @@ def compileAll(file=sys.stdout):
 def compileFile(infile, outfile):
 	saveObjects()
 	loadStandardLibrary()
+	PATH.insert(0, os.path.dirname(os.path.realpath(infile.name)))
 	loadFile(infile)
 	compileAll(outfile)
 
