@@ -1,8 +1,10 @@
-> Kuvaukset
+>>> Tekstiseikkailukirjasto
+
+>> Kuvaukset
 
 Asian kuvaus on yleensä "Ei mikään kiinnostava asia.".
 
-> Esineet
+>> Esineet
 
 Esine on käsite.
 Esine voi olla kiinteä.
@@ -14,7 +16,7 @@ Esine on yleensä listattu.
 Esine on joko valaiseva tai valaisematon.
 Esine on yleensä valaisematon.
 
-> Huoneet
+>> Huoneet
 
 Huone on käsite.
 
@@ -29,14 +31,14 @@ Huone on yleensä valaistu.
 Seinä on suljettu huone.
 Seinän kuvaus on "Melko tavallinen seinä.".
 
-> Sisältäjä
+>> Sisältäjä
 
 Sisältäjä on esineen alakäsite.
 Sisältäjällä on sisältöjoukoksi kutsuttu joukko esineitä.
 Sisältäjä on joko tukeva tai ympäröivä.
 Sisältäjä on yleensä ympäröivä.
 
-> Ihminen, pelaaja
+>> Ihminen, pelaaja
 
 Ihminen on käsite.
 Ihminen on yleensä inhimillinen.
@@ -62,7 +64,7 @@ Tulkitse "sinä" pelaajana.
 Fokalisoija on ihminen.
 Fokalisoija on alussa pelaaja.
 
-> Fokalisoijalle sanominen
+>> Fokalisoijalle sanominen
 
 [Merkkijonon] fokalisoijalle sanominen on toiminto.
 Merkkijonon fokalisoijalle sanomisen komento on "sano fokalisoijalle [merkkijono]".
@@ -71,7 +73,7 @@ Merkkijonon fokalisoijalle sanomisen aikana:
 	Jos fokalisoija on pelaajan ohjaama:
 		Sano se.
 
-> Sisältäminen
+>> Sisältäminen
 
 Määritelmä. Kun esine (E) on "[sisältäjän (S)] varassa":
 	jokin seuraavista:
@@ -99,7 +101,7 @@ Määritelmä. Kun esine (E) on "[sisältäjän (S)] päällä":
 Määritelmä. Kun esine (E) on "[sisältäjällä (S)]":
 	E on S:n päällä
 
-> Huoneessa oleminen
+>> Huoneessa oleminen
 
 Määritelmä. Kun esine (E) on "[huoneessa (H)]":
 	jokin seuraavista:
@@ -157,7 +159,7 @@ Tarkoittaako pelaaja ihmistä:
 	Muuten:
 		varmasti ei
 
-> Avaaminen
+>> Avaaminen
 
 [Esineen] avautuminen on toiminto.
 Avautumisen komento on "[esine] avautuu nyt".
@@ -186,7 +188,7 @@ Ennen esineen avaamista:
 Esineen avaamisen aikana:
 	Se avautuu nyt.
 
-> Kuvaileminen
+>> Kuvaileminen
 
 [Asian] kuvaileminen on toiminto.
 Kuvailemisen komento on "kuvaile [asiaa]".
@@ -234,7 +236,7 @@ Ympäröivän sisältäjän kuvailemisen jälkeen:
 		Muulloin:
 			Sano "Sen sisällä on [ryhmän koko] [e:tä].[rivinvaihto]".
 
-> Esitteleminen
+>> Esitteleminen
 
 [Huoneen] esitteleminen on toiminto.
 Esittelemisen komento on "esittele [huone]".
@@ -246,7 +248,7 @@ Huoneen esittelemisen aikana:
 Pelin alkamisen jälkeen:
 	Esittele pelaajan sijainti.
 
-> Katseleminen
+>> Katseleminen
 
 Katseleminen on toiminto.
 Tulkitse "katsele" katselemisena.
@@ -254,7 +256,7 @@ Tulkitse "katsele" katselemisena.
 Katselemisen aikana:
 	Esittele pelaajan sijainti.
 
-> Suunnat
+>> Suunnat
 
 Suunta on käsite.
 Suunnalla on vastasuunnaksi kutsuttu suunta.
@@ -293,7 +295,7 @@ Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta
 	A:n naapurihuonejoukko sisältää B:n
 	B:n naapurihuonejoukko sisältää A:n
 
-> Ovi
+>> Ovi
 
 Ovi on esineen alakäsite.
 Ovi on yleensä avattava.
@@ -316,7 +318,7 @@ Oven avautumisen aikana:
 Oven avautumisen jälkeen:
 	Sano fokalisoijalle "[Se] avautuu.".
 
-> Liikkuminen
+>> Liikkuminen
 
 [Suuntaan] liikkuminen on toiminto.
 Liikkumisen komento on "liiku nyt [suuntaan]".
@@ -369,7 +371,7 @@ Huoneeseen (H) siirtymisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
 		Esittele H.
 
-> Ovesta meneminen
+>> Ovesta meneminen
 
 [Ovesta] meneminen on toiminto.
 Tulkitse "mene [ovesta]" ovesta menemisenä.
@@ -388,7 +390,7 @@ Ovesta (O) menemisen aikana:
 Ovesta menemisen jälkeen:
 	Sano fokalisoijalle "[Se] ei vie mihinkään.".
 
-> Katsominen
+>> Katsominen
 
 [Suuntaan] katsominen on toiminto.
 Tulkitse "katso [suuntaan]" suuntaan katsomisena.
@@ -412,7 +414,7 @@ Tulkitse "t [ihminen]" ihmisen katsomisena.
 Ihmisen katsomisen aikana:
 	Kuvaile häntä.
 
-> Ottaminen
+>> Ottaminen
 
 [Esineen] ottaminen on toiminto.
 Tulkitse "ota [esine]" ottamisena.
@@ -448,7 +450,7 @@ Tarkoittaako pelaaja esineen ottamista:
 	Muuten:
 		ehkä
 
-> Fokalisoijan esineluettelon tulostaminen
+>> Fokalisoijan esineluettelon tulostaminen
 
 Esineluettelon tulostaminen on toiminto.
 Esineluettelon tulostamisen komento on "tulosta esineluettelo".
@@ -470,7 +472,7 @@ Esineluettelon tulostamisen aikana:
 		Muulloin:
 			Sano "- [ryhmän koko] [e:tä].[rivinvaihto]".
 
-> Lukeminen
+>> Lukeminen
 
 Esine on joko kirjoitusta sisältämätön tai kirjoitusta sisältävä.
 Esine on yleensä kirjoitusta sisältämätön.
@@ -494,7 +496,7 @@ Kirjoitusta sisältävän esineen lukemisen aikana:
 	Sano "Luet [siihen] kirjoitetun tekstin:[rivinvaihto][rivinvaihto]".
 	Sano "[sen kirjoitus][rivinvaihto]".
 
-> Puhuminen
+>> Puhuminen
 
 [Ihmiselle] puhuminen on toiminto.
 Puhumisen komento on "puhu nyt [ihmiselle]".
@@ -521,7 +523,7 @@ Ennen piilossa olevalle ihmiselle asian kertomista:
 Ihmiselle asian kertomisen aikana:
 	Puhu nyt hänelle.
 
-> Sytyttäminen
+>> Sytyttäminen
 
 Esine on joko syttyvä tai syttymätön.
 Esine on yleensä syttymätön.
@@ -549,7 +551,7 @@ Ennen esineen sytyttämistä:
 		Sano fokalisoijalle "Sinulla ei ole sytytintä.".
 		Keskeytä toiminto.
 
-> Hyökkääminen
+>> Hyökkääminen
 
 [Ihmistä] vastaan hyökkääminen on toiminto.
 Ihmistä vastaan hyökkäämisen komento on "hyökkää nyt [ihmistä] vastaan".
