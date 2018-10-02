@@ -221,6 +221,10 @@ class RObject(Bits):
 		return self.data[field_name]
 	def set(self, field_name, val):
 		self.data[field_name] = val
+		if field_name == "nimi koodissa":
+			name = val.asString()
+			self.name = name
+			self.name_tokens = tokenize(name)
 	def getMap(self, field_name, key_val):
 		key = key_val.toKey()
 		if field_name not in self.data:
@@ -276,7 +280,7 @@ class RObject(Bits):
 		pushScope()
 		ans = []
 		if not group:
-			for val in self.data[field_name]:
+			for val in set(self.data[field_name]):
 				if pattern.matches(val):
 					putVar(var_name, val, to_scope_stack=True)
 					ans.append(f())
@@ -308,10 +312,11 @@ class RObject(Bits):
 					return True
 		popScope()
 		return False
-	def createCopies(self, n, condition):
+	def createCopies(self, n, condition=None):
 		for i in range(n):
 			obj = self.copy()
-			condition.doModify(obj)
+			if condition:
+				condition.doModify(obj)
 	def setExtra(self, name, data):
 		self.extra[name] = data
 		return self

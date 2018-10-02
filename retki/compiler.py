@@ -226,13 +226,17 @@ def defineClass(name, superclass):
 		for is_pre in [True, False]:
 			addMapFieldDefPattern(key_case, is_pre)
 	
-	pgl(".EXPR-%d ::= viimeksi luotu{$} .CLASS-PATTERN-%d{$} -> last created $1" % (rclass.id, rclass.id),
-		FuncOutput(lambda pattern: "searchLastObject(" + pattern.toPython() + ")"))
+	for clazz in rclass.superclasses():
+		pgl(".EXPR-%d ::= viimeksi luotu{$} .CLASS-PATTERN-%d{$} -> last created $1" % (clazz.id, rclass.id),
+			FuncOutput(lambda pattern: "searchLastObject(" + pattern.toPython() + ")"))
 
-	pgl(".EXPR-%d ::= satunnainen{$} .CLASS-PATTERN-%d{$} -> random $1" % (rclass.id, rclass.id),
-		FuncOutput(lambda pattern: "searchRandomObject(" + pattern.toPython() + ")"))
+		pgl(".EXPR-%d ::= satunnainen{$} .CLASS-PATTERN-%d{$} -> random $1" % (clazz.id, rclass.id),
+			FuncOutput(lambda pattern: "searchRandomObject(" + pattern.toPython() + ")"))
 	
 	GRAMMAR.addCategoryName("EXPR-%d" % (rclass.id,), name_str + "-tyyppinen lauseke")
+
+	pgl(".COPY-DEF ::= On .N .EXPR-%d{yksikkö,osanto} . -> copy $*" % (rclass.id, ),
+		FuncOutput(lambda n, obj: eval(obj).createCopies(n)))
 	
 	return rclass
 
@@ -743,9 +747,9 @@ def addParamPhrases(grammar, case, vtype, name, varname=None, plural=False):
 			), FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
 	else:
 		if not plural:
-			pronoun = "hän" if "inhimillinen" in vtype.bits else "se"
+			pronoun = "hän" if "inhimillinen" in vtype.allBits() else "se"
 		else:
-			pronoun = "he" if "inhimillinen" in vtype.bits else "he"
+			pronoun = "he" if "inhimillinen" in vtype.allBits() else "he"
 		for clazz in vtype.superclasses():
 			grammar.parseGrammarLine(".EXPR-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
 				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
@@ -942,7 +946,7 @@ def addIntCondition(op, pyop):
 
 for clazz in [yläkäsite, kokonaisluku]:
 	pgl('.EXPR-%d ::= .N -> $1' % (clazz.id,), FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
-	pgl('.EXPR-%d ::= satunnaisluku välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} -> rnd($1, $2)' % (
+	pgl('.EXPR-%d ::= satunnaisluku{$} välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} -> rnd($1, $2)' % (
 		clazz.id, kokonaisluku.id, kokonaisluku.id
 	), FuncOutput(lambda start, end: 'createIntegerObj(random.randint(%s.extra["int"], %s.extra["int"]))' % (start, end)))
 	pgl('.EXPR-%d ::= .EXPR-%d{omanto} neliöjuuri{$} -> $1' % (clazz.id,kokonaisluku.id), FuncOutput(lambda arg: 'createIntegerObj(math.sqrt(' + arg + '.extra["int"]))'))
@@ -1000,10 +1004,10 @@ class RepeatParser:
 		counter = getCounter()
 		varname = "i_" + str(counter)
 		
-		addParamPhrases(grammar, None, kokonaisluku, self.var, plural=self.group, varname=varname)
+		addParamPhrases(grammar, None, kokonaisluku, self.var, plural=False, varname=varname)
 		
 		block = parseBlock(file, grammar, report=report)
-		return '[%s for %s in range(%s, %s.extra["int"])]' % (
+		return '[%s for %s in range(%s, %s.extra["int"]+1)]' % (
 			", ".join(block), varname,
 			self.start + '.extra["int"]' if self.start else "1",
 			self.end
