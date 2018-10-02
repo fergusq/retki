@@ -558,7 +558,7 @@ Ihminen on joko ystävällismielinen tai vihamielinen.
 Ihminen on yleensä ystävällismielinen.
 
 Ennen piilossa olevaa ihmistä vastaan hyökkäämistä:
-	Sano "[Hän] ei ole paikalla.".
+	Sano fokalisoijalle "[Hän] ei ole paikalla.".
 	Keskeytä toiminto.
 
 Ennen ihmistä vastaan hyökkäämistä:
@@ -567,4 +567,4 @@ Ennen ihmistä vastaan hyökkäämistä:
 		Keskeytä toiminto.
 
 Ystävällismielistä ihmistä vastaan hyökkäämisen sijasta:
-	Sano "Et halua hyökätä [häntä] vastaan.".
+	Sano fokalisoijalle "Et halua hyökätä [häntä] vastaan.".
