@@ -105,7 +105,7 @@ class HTMLHighlighter:
 				<meta charset="utf8" />
 				<style>
 				body {
-					font-family: "Garamond", "EB Garamond", serif;
+					font-family: "Garamond", "EB Garamond", "Palatino", "Times", serif;
 					font-size: 22px;
 				}
 				.string {
