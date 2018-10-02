@@ -178,7 +178,7 @@ Ihmistä vastaan hyökkäämisen jälkeen:
 
 Määritelmä. Vihollinen on "valmiina", jos:
 	hän on kuollut
-	hänen nimensä koodissa on satunnaisen nimen nimi koodissa
+	hänen nimensä koodissa on "[satunnainen nimi]"
 
 Sotilas on vihollinen.
 "Sotilas näyttää valmiilta hyökkäämään kimppuusi."
@@ -216,3 +216,4 @@ Ennen pelin alkamista:
 
 Ennen pelin alkamista:
 	Sano "TYRMÄ[rivinvaihto][rivinvaihto]".
+
