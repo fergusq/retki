@@ -1,3 +1,12 @@
+> _______/| |\       ____           /| __  ____  __
+> \       | | \  /| /    \ |\      / | |/ /____\ \|
+>  \_,   /   \ \/ | | () | | \    /  |   / |  | \
+>    |  :     \   | |  __/ |  \  / | |  |  |__|  |
+>    |  |      \  | |  \   ||\ \/ /| |  |  .__,  |
+>    |  ,  2018 , | | | \  || \  / | |  |  |  |  |
+>    | /  Iikka \ | | |\ : |/  \/  | / /  /    \ |
+>    |/  Hauhio  \| |/  \|         |/ /  /      \|
+
 Tuo tekstiseikkailukirjasto.
 
 >> Nimet
@@ -27,6 +36,49 @@ Liisa on nimi.
 Annikki on nimi.
 Sofia on nimi.
 
+>> Aseet
+
+Ase on esineen alakäsite.
+Aseella on voimakkuudeksi kutsuttu kokonaisluku.
+Aseen voimakkuus on yleensä 0.
+
+Nyrkki on ase.
+Nyrkin voimakkuus on 2.
+
+Ihmisellä on kädessä olevaksi aseeksi kutsuttu ase.
+Ihmisen kädessä oleva ase on yleensä nyrkki.
+
+[Aseen] käteen ottaminen on toiminto.
+Aseen käteen ottamisen komento on "ota nyt [ase] käteen".
+Tulkitse "ota [ase] käteen" aseen käteen ottamisena.
+
+Ennen piilossa olevan aseen käteen ottamista:
+	Sano fokalisoijalle "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+
+Ennen aseen käteen ottamista:
+	Jos se ei ole fokalisoijan mukana:	
+		Sano fokalisoijalle "Sinulla ei ole [sitä].".
+		Keskeytä toiminto.
+
+Aseen käteen ottamisen aikana:
+	Fokalisoijan kädessä oleva ase on nyt se.
+
+Aseen käteen ottamisen jälkeen:
+	Sano fokalisoijalle "Otat [sen] käteesi.".
+
+Esineluettelon tulostamisen jälkeen:
+	Jos fokalisoijan kädessä oleva ase on nyrkki:
+		Jos fokalisoija on pelaajan ohjaama:
+			Sano "Sinulla ei ole mitään asetta kädessäsi.".
+		Muulloin:
+			Sano "[Fokalisoijalla] ei ole mitään asetta kädessään.".
+	Muulloin:
+		Jos fokalisoija on pelaajan ohjaama:
+			Sano "Sinulla on [fokalisoijan kädessä oleva ase] kädessäsi.".
+		Muulloin:
+			Sano "[Fokalisoijalla] on [fokalisoijan kädessä oleva ase] kädessään.".
+
 >> Taistelu
 
 Ihminen on joko elävä tai kuollut.
@@ -38,25 +90,45 @@ Ihmisen terveysluku on yleensä 10.
 Ihmisellä on voimakkuudeksi kutsuttu kokonaisluku.
 Ihmisen voimakkuus on yleensä 2.
 
+Ihmisellä on nopeudeksi kutsuttu kokonaisluku.
+Ihmisen nopeus on yleensä 2.
+
 Ihmisen kuvailemisen jälkeen:
 	Sano "[rivinvaihto]".
 	Sano "TERVEYS: [hänen terveyslukunsa].[rivinvaihto]".
 	Sano "VOIMAKKUUS: [hänen voimakkuutensa].[rivinvaihto]".
 
+Aiheutettu vahinko on kokonaisluku.
+Aiheutettu vahinko on alussa 0.
+
+Lyöntiheitto on kokonaisluku.
+Lyöntiheitto on alussa 0.
+
+Väistöheitto on kokonaisluku.
+Väistöheitto on alussa 0.
+
 Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
-	Vihollisen terveysluku on nyt (vihollisen terveysluku - satunnaisluku välillä 1:stä fokalisoijan voimakkuuteen).
+	Lyöntiheitto on nyt satunnaisluku välillä 1:stä (fokalisoijan voimakkuus + fokalisoijan kädessä olevan aseen voimakkuuteen).
+	Väistöheitto on nyt satunnaisluku välillä 1:sta vihollisen nopeuteen.
+	Jos lyöntiheitto on suurempi kuin väistöheitto:
+		Aiheutettu vahinko on nyt satunnaisluku välillä 1:stä (fokalisoijan voimakkuus + fokalisoijan kädessä olevan aseen voimakkuuteen).
+		Vihollisen terveysluku on nyt (vihollisen terveysluku - aiheutettu vahinko).
+	Muulloin:
+		Aiheutettu vahinko on nyt 0.
 	Jos vihollisen terveysluku on enintään 0:
 		Vihollinen on nyt kuollut.
 		Vihollinen on nyt piilossa.
 
 Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
-		Sano "Lyöt [vihollista] nyrkeilläsi!".
+		Sano "Lyöt [vihollista] [fokalisoijan kädessä olevalla aseella]!".
+		Sano "Aiheuttamasi vahinko: [aiheutettu vahinko].".
 	Muulloin:
 		Jos vihollinen on pelaajan ohjaama:
-			Sano "[Fokalisoija] lyö sinua nyrkeillään!".
+			Sano "[Fokalisoija] lyö sinua [fokalisoijan kädessä olevalla aseella]!".
 		Muulloin:
-			Sano "[Fokalisoija] lyö [vihollista] nyrkeillään!".
+			Sano "[Fokalisoija] lyö [vihollista] [fokalisoijan kädessä olevalla aseella]!".
+		Sano "Aiheutettu vahinko: [aiheutettu vahinko].".
 	
 	Jos vihollinen on pelaajan ohjaama:
 		Sano "Terveyslukusi: [vihollisen terveysluku].".
@@ -124,13 +196,23 @@ Vihollisen kuolleista herättämisen aikana:
 	Hän on nyt elävä.
 	Hän on nyt näkyvillä.
 
+>>> Kartta
+
 >> Areena
 
 Areena on huone.
 "Hiekka peittää katsomoiden ympäröimän areenan maan."
+
+Puukko on ase areenalla.
+Puukon voimakkuus on 6.
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt areena.
 	Pelaaja on nyt näkyvillä.
 	Toista 2 kertaa:
 		Herätä satunnainen kuollut vihollinen kuolleista.
+
+>>> Intro
+
+Ennen pelin alkamista:
+	Sano "TYRMÄ[rivinvaihto][rivinvaihto]".
