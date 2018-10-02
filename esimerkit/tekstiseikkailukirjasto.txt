@@ -46,6 +46,9 @@ Ihmisellä on esineluetteloksi kutsuttu joukko esineitä.
 Määritelmä. Kun esine on "[ihmisen (I)] mukana":
 	I:n esineluettelo sisältää sen
 
+Määritelmä. Kun esine "ei ole [ihmisen (I)] mukana":
+	I:n esineluettelo ei sisällä sitä
+
 Huoneella on henkilöjoukoksi kutsuttu joukko ihmisiä.
 
 Ihminen on joko tietokoneen ohjaama tai pelaajan ohjaama.
