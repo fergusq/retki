@@ -1,6 +1,36 @@
 Tuo tekstiseikkailukirjasto.
 
+>> Nimet
+
+Nimi on käsite.
+
+> Suomen suosituimmat miesten ja naisten nimet
+
+Maria on nimi.
+Juhani on nimi.
+Johannes on nimi.
+Olavi on nimi.
+Antero on nimi.
+Helena on nimi.
+Tapani on nimi.
+Johanna on nimi.
+Anneli on nimi.
+Kalevi on nimi.
+Tapio on nimi.
+Kaarina on nimi.
+Matti on nimi.
+Mikael on nimi.
+Marjatta on nimi.
+Ilmari on nimi.
+Anna on nimi.
+Liisa on nimi.
+Annikki on nimi.
+Sofia on nimi.
+
 >> Taistelu
+
+Ihminen on joko elävä tai kuollut.
+Ihminen on yleensä elävä.
 
 Ihmisellä on terveysluvuksi kutsuttu kokonaisluku.
 Ihmisen terveysluku on yleensä 10.
@@ -8,8 +38,16 @@ Ihmisen terveysluku on yleensä 10.
 Ihmisellä on voimakkuudeksi kutsuttu kokonaisluku.
 Ihmisen voimakkuus on yleensä 2.
 
+Ihmisen kuvailemisen jälkeen:
+	Sano "[rivinvaihto]".
+	Sano "TERVEYS: [hänen terveyslukunsa].[rivinvaihto]".
+	Sano "VOIMAKKUUS: [hänen voimakkuutensa].[rivinvaihto]".
+
 Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
 	Vihollisen terveysluku on nyt (vihollisen terveysluku - satunnaisluku välillä 1:stä fokalisoijan voimakkuuteen).
+	Jos vihollisen terveysluku on enintään 0:
+		Vihollinen on nyt kuollut.
+		Vihollinen on nyt piilossa.
 
 Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
@@ -24,15 +62,23 @@ Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 		Sano "Terveyslukusi: [vihollisen terveysluku].".
 	Muulloin:
 		Sano "[Vihollisen] terveysluku: [vihollisen terveysluku].".
+	
+	Jos vihollinen on kuollut:
+		Jos vihollinen on pelaajan ohjaama:
+			Sano "Olet kuollut.".
+			Lopeta peli.
+		Muulloin:
+			Sano "[Vihollinen] on kuollut.".
 
 >> Viholliset
 
 Vihollinen on ihmisen alakäsite.
 Vihollinen on yleensä vihamielinen.
 
-Sotilas on vihollinen.
-"Sotilas näyttää valmiilta taistelemaan kanssasi."
-Sotilaan voimakkuus on 1.
+> Pelaaja on myös vihamielinen, sillä viholliset voivat hyökätä häntä vastaan
+
+Ennen pelin alkamista:
+	Pelaaja on nyt vihamielinen.
 
 >> Vuorot
 
@@ -44,6 +90,7 @@ Tietokoneen vihollinen on ihminen.
 Tietokoneen vuoron pelaamisen aikana:
 	Tietokoneen vihollinen on nyt fokalisoija.
 	Toista jokaiselle tietokoneen ohjaamalle ihmiselle (T) tietokoneen vihollisen sijainnin henkilöjoukossa:
+		Sano "[rivinvaihto][rivinvaihto]".
 		T fokalisoijana:
 			Hyökkää nyt tietokoneen vihollista vastaan.
 
@@ -55,12 +102,35 @@ Ihmistä vastaan hyökkäämisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
 		Pelaa tietokoneen vuoro.
 
+>> Varataan sotilaita herätettäväksi kuolleista
+
+Määritelmä. Vihollinen on "valmiina", jos:
+	hän on kuollut
+	hänen nimensä koodissa on satunnaisen nimen nimi koodissa
+
+Sotilas on vihollinen.
+"Sotilas näyttää valmiilta hyökkäämään kimppuusi."
+
+Valmiina on 10 sotilasta.
+
+>> Herättäminen kuolleista
+
+[Vihollisen] kuolleista herättäminen on toiminto.
+Vihollisen kuolleista herättämisen komento on "herätä [vihollinen] kuolleista".
+
+Vihollisen kuolleista herättämisen aikana:
+	Hänen terveyslukunsa on nyt satunnaisluku välillä 4:stä 10:een.
+	Hänen voimakkuutensa on nyt satunnaisluku välillä 1:stä 3:een.
+	Hän on nyt elävä.
+	Hän on nyt näkyvillä.
+
 >> Areena
 
 Areena on huone.
 "Hiekka peittää katsomoiden ympäröimän areenan maan."
-Areenalla on 2 sotilasta.
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt areena.
 	Pelaaja on nyt näkyvillä.
+	Toista 2 kertaa:
+		Herätä satunnainen kuollut vihollinen kuolleista.
