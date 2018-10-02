@@ -274,6 +274,16 @@ class RObject(Bits):
 				return False
 		else:
 			return val in field
+	def clearSet(self, field_name):
+		if field_name not in self.data:
+			return
+		field = self.data[field_name]
+		field.clear()
+	def isSetEmpty(self, field_name):
+		if field_name not in self.data:
+			return
+		field = self.data[field_name]
+		return len(field) == 0
 	def forSet(self, field_name, var_name, pattern, f, group=False, count_var_name=None):
 		if field_name not in self.data:
 			return []

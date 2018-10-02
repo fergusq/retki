@@ -400,6 +400,9 @@ def defineListField(owner, name, vtype, case="nimento"):
 		("ei sisällä yhtäkään .PATTERN-%d{osanto}" % (vtype.id,), lambda x: x.toPython(), "!", "not", to_remove)
 	]:
 		addContainsPattern(*p)
+	
+	pgl(".COND ::= .EXPR-%d %s on tyhjä -> $1.%s.empty()" % (owner.id, pattern({"yksikkö", "nimento"}), name_str),
+		FuncOutput(lambda obj: ('%s.isSetEmpty(%s)' % (obj, repr(name_str)), '%s.clearSet(%s)' % (obj, repr(name_str)))))
 
 # Adjektiivit
 
@@ -1296,7 +1299,7 @@ def compileAll(file=sys.stdout):
 			print(code, file=file)
 	for key in GLOBAL_SCOPE.variables:
 		obj = GLOBAL_SCOPE.variables[key]
-		print('GLOBAL_SCOPE.variables[%s] = OBJECTS[%d]' % (repr(key), obj.id), file=file)
+		print('GLOBAL_SCOPE.variables[%s] = %s' % (repr(key), obj.toPythonRef()), file=file)
 	for key in ACTIONS:
 		print(ACTIONS[key].toPython(), file=file)
 	for listener in ACTION_LISTENERS:
