@@ -70,9 +70,13 @@ class HTMLHighlighter:
 		self.endParagraph()
 		self.buffer_stack[0] += "<h3>" + text + "</h3>\n"
 	
+	def pre(self, text):
+		self.endParagraph()
+		self.buffer_stack[0] += "<pre>" + text + "</pre>\n"
+	
 	def comment(self, text):
 		self.endParagraph()
-		self.buffer_stack[0] += "<p><em>" + text + "</em></p>"
+		self.buffer_stack[0] += '<p class="comment"><em>' + text + "</em></p>"
 	
 	def startString(self):
 		self.in_string = True
@@ -104,20 +108,32 @@ class HTMLHighlighter:
 			<head>
 				<meta charset="utf8" />
 				<style>
+				* {
+					box-sizing: border-box;
+				}
 				body {
 					font-family: "Garamond", "EB Garamond", "Palatino", "Times", serif;
 					font-size: 22px;
+					background-color: #ffe;
 				}
-				.string {
+				div.content {
+					box-shadow: 0px 1px 2px;
+					margin-left: auto;
+					margin-right: auto;
+					max-width: 70rem;
+					background-color: white;
+					padding: 10px;
+				}
+				span.string {
 					color: darkblue;
 				}
-				.interpolation {
+				span.interpolation {
 					color: #77f;
 				}
-				.disemph {
+				span.disemph {
 					color: lightgray;
 				}
-				.text {
+				span.text {
 					color: black;
 				}
 				@counter-style stmt-counter {
@@ -136,15 +152,28 @@ class HTMLHighlighter:
 				p {
 					margin-bottom: 0px;
 				}
+				pre {
+					font-family: "Fira Code", monospace;
+					line-height: 1em;
+				}
+				p.comment {
+					margin-left: 20px;
+					margin-right: 20px;
+					margin-bottom: initial;
+					padding: 5px;
+					background-color: #ffc;
+				}
 				</style>
 			</head>
-			<body>""" + self.buffer_stack[0] + """</body>
+			<body><div class="content">
+			""" + self.buffer_stack[0] + """
+			</div></body>
 		</html>
 		"""
 
-def takeWhitespace(string):
+def takeChars(string, chars):
 	ans = ""
-	while string[0] in " \t":
+	while string and string[0] in chars:
 		ans += string[0]
 		string = string[1:]
 	return ans
@@ -162,7 +191,14 @@ def parseFile(file):
 			
 			continue
 		
-		indent = takeWhitespace(line)
+		if lines:
+			prev_comment = takeChars(lines[-1], ">|")
+			comment = takeChars(line, ">|")
+			if comment and comment == prev_comment:
+				lines[-1] += "\n" + line[len(comment):]
+				continue
+		
+		indent = takeChars(line, " \t")
 		if len(indent) > len(indent_stack[-1]):
 			lines.append("<indent>")
 			indent_stack.append(indent)
@@ -182,13 +218,28 @@ def parseFile(file):
 def highlight(file):
 	lines = parseFile(file)
 	highlighter = HTMLHighlighter()
+	comment_styles = [
+	#        CODE   METHOD                    STRIP
+		(">>>", highlighter.largeHeading, True),
+		(">>",  highlighter.smallHeading, True),
+		(">|",  highlighter.pre,          False),
+		(">",   highlighter.comment,      True),
+	]
+	
 	for line in lines:
-		if line.startswith(">>>"):
-			highlighter.largeHeading(line.strip()[3:].strip())
-		elif line.startswith(">>"):
-			highlighter.smallHeading(line.strip()[2:].strip())
-		elif line.startswith(">"):
-			highlighter.comment(line.strip()[1:].strip())
+		cont = False
+		for code, method, strip in comment_styles:
+			if line.startswith(code):
+				line = line.strip()[len(code):]
+				if strip:
+					line = line.strip()
+				
+				method(line)
+				cont = True
+				break
+		
+		if cont:
+			continue		
 		elif line == "<break>":
 			highlighter.endParagraph()
 		elif line == "<indent>":
