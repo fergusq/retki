@@ -1,19 +1,20 @@
-> _______/| |\       ____           /| __  ____  __
-> \       | | \  /| /    \ |\      / | |/ /____\ \|
->  \_,   /   \ \/ | | () | | \    /  |   / |  | \
->    |  :     \   | |  __/ |  \  / | |  |  |__|  |
->    |  |      \  | |  \   ||\ \/ /| |  |  .__,  |
->    |  ,  2018 , | | | \  || \  / | |  |  |  |  |
->    | /  Iikka \ | | |\ : |/  \/  | / /  /    \ |
->    |/  Hauhio  \| |/  \|         |/ /  /      \|
+>| _______/| |\       ____           /| __  ____  __
+>| \       | | \  /| /    \ |\      / | |/ /____\ \|
+>|  \_,   /   \ \/ | | () | | \    /  |   / |  | \
+>|    |  :     \   | |  __/ |  \  / | |  |  |__|  |
+>|    |  |      \  | |  \   ||\ \/ /| |  |  .__,  |
+>|    |  ,  2018 , | | | \  || \  / | |  |  |  |  |
+>|    | /  Iikka \ | | |\ : |/  \/  | / /  /    \ |
+>|    |/  Hauhio  \| |/  \|         |/ /  /      \|
 
 Tuo tekstiseikkailukirjasto.
 
 >> Nimet
 
-Nimi on käsite.
+> Määritellään 20 nimeä, joista voidaan arpoa NPC-hahmoille nimiä.
+> Mukana on 10 suosituinta naisten nimeä ja 10 suosituinta miesten nimeä.
 
-> Suomen suosituimmat miesten ja naisten nimet
+Nimi on käsite.
 
 Maria on nimi.
 Juhani on nimi.
@@ -79,7 +80,7 @@ Esineluettelon tulostamisen jälkeen:
 		Muulloin:
 			Sano "[Fokalisoijalla] on [fokalisoijan kädessä oleva ase] kädessään.".
 
->> Taistelu
+>> Ominaisuudet
 
 Ihminen on joko elävä tai kuollut.
 Ihminen on yleensä elävä.
@@ -97,6 +98,12 @@ Ihmisen kuvailemisen jälkeen:
 	Sano "[rivinvaihto]".
 	Sano "TERVEYS: [hänen terveyslukunsa].[rivinvaihto]".
 	Sano "VOIMAKKUUS: [hänen voimakkuutensa].[rivinvaihto]".
+
+>> Taistelu
+
+> Taistelumekaniikka on yksinkertainen: hyökkääjä ja puolustaja arpovat luvut ja jos hyökääjän luku on suurempi, hyökkäys osuu.
+> Hyökkääjän luku perustuu hänen voimakkuuteensa ja aseen ominaisuuksiin, puolustajan luku nopeuteen.
+> Jos hyökkäys osuu, vahinko arvotaan samalla tavalla kuin edellinenkin hyökkääjän luku.
 
 Aiheutettu vahinko on kokonaisluku.
 Aiheutettu vahinko on alussa 0.
@@ -126,9 +133,16 @@ Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 	Muulloin:
 		Jos vihollinen on pelaajan ohjaama:
 			Sano "[Fokalisoija] lyö sinua [fokalisoijan kädessä olevalla aseella]!".
+			Jos aiheutettu vahinko on 0:
+				Sano "Väistät iskun.".
+			Muulloin:
+				Sano "Aiheutettu vahinko: [aiheutettu vahinko].".
 		Muulloin:
 			Sano "[Fokalisoija] lyö [vihollista] [fokalisoijan kädessä olevalla aseella]!".
-		Sano "Aiheutettu vahinko: [aiheutettu vahinko].".
+			Jos aiheutettu vahinko on 0:
+				Sano "[Vihollinen] väistää iskun.".
+			Muulloin:
+				Sano "Aiheutettu vahinko: [aiheutettu vahinko].".
 	
 	Jos vihollinen on pelaajan ohjaama:
 		Sano "Terveyslukusi: [vihollisen terveysluku].".
@@ -144,15 +158,31 @@ Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 
 >> Viholliset
 
+> Vihollinen on kaikkien tietokoneen ohjaamien vihamielisten hahmojen yläkäsite.
+> Myös pelaaja määritellään vihamieliseksi, jotta viholliset voivat hyökätä hänen kimppuunsa.
+
 Vihollinen on ihmisen alakäsite.
 Vihollinen on yleensä vihamielinen.
 
-> Pelaaja on myös vihamielinen, sillä viholliset voivat hyökätä häntä vastaan
+Vihollisella on terveyden alarajaksi kutsuttu kokonaisluku.
+Vihollisen terveyden alaraja on yleensä 4.
+
+Vihollisella on terveyden ylärajaksi kutsuttu kokonaisluku.
+Vihollisen terveyden yläraja on yleensä 10.
+
+Vihollisella on voimakkuuden alarajaksi kutsuttu kokonaisluku.
+Vihollisen voimakkuuden alaraja on yleensä 0.
+
+Vihollisella on voimakkuuden ylärajaksi kutsuttu kokonaisluku.
+Vihollisen voimakkuuden yläraja on yleensä 3.
 
 Ennen pelin alkamista:
 	Pelaaja on nyt vihamielinen.
 
 >> Vuorot
+
+> Tiettyjen toimintojen (hyökkääminen, liikkuminen, ottaminen) tekeminen vaihtaa vuoron tietokoneelle.
+> Tietokoneen vuorolla jokainen vihollinen hyökkää yksi kerrallaan pelaajaa vastaan.
 
 Tietokoneen vuoron pelaaminen on toiminto.
 Tietokoneen vuoron pelaamisen komento on "pelaa tietokoneen vuoro".
@@ -174,46 +204,92 @@ Ihmistä vastaan hyökkäämisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
 		Pelaa tietokoneen vuoro.
 
->> Varataan sotilaita herätettäväksi kuolleista
+Esineen ottamisen jälkeen:
+	Jos fokalisoija on pelaajan ohjaama:
+		Pelaa tietokoneen vuoro.
+
+> Huoneesta ei voi poistua ennen kuin viholliset on voitettu:
+
+Ennen huoneeseen siirtymistä:
+	Jos fokalisoija on pelaajan ohjaama:
+		Toista jokaiselle viholliselle (V) fokalisoijan sijainnin henkilöjoukossa:
+			Sano "[V] siirtyy eteesi ja estää sinua lähtemästä!".
+			Keskeytä toiminto.
+
+>> Herättäminen kuolleista
+
+> Retki-kielellä ei voi helposti luoda uusia olioita, joten on helpointa varata valmiiksi vihollisia.
+> Aluksi kaikki viholliset ovat kuolleita, ja näistä osa otetaan mukaan peliin pelaajaa vastaan.
+> Kun pelaaja tapaa vihollisia, nämä muuttuvat kuolleiksi ja voidaan taas ottaa myöhemmin mukaan johonkin toiseen kohtaan.
+> Prosessia, jossa kuolleita vihollisia otetaan mukaan peliin kutsutaan tässä "kuolleista herättämiseksi".
 
 Määritelmä. Vihollinen on "valmiina", jos:
 	hän on kuollut
 	hänen nimensä koodissa on "[satunnainen nimi]"
 
-Sotilas on vihollinen.
-"Sotilas näyttää valmiilta hyökkäämään kimppuusi."
-
-Valmiina on 10 sotilasta.
-
->> Herättäminen kuolleista
-
 [Vihollisen] kuolleista herättäminen on toiminto.
 Vihollisen kuolleista herättämisen komento on "herätä [vihollinen] kuolleista".
 
 Vihollisen kuolleista herättämisen aikana:
-	Hänen terveyslukunsa on nyt satunnaisluku välillä 4:stä 10:een.
-	Hänen voimakkuutensa on nyt satunnaisluku välillä 1:stä 3:een.
+	Hänen terveyslukunsa on nyt satunnaisluku välillä hänen terveyden alarajasta hänen terveyden ylärajaan.
+	Hänen voimakkuutensa on nyt satunnaisluku välillä hänen voimakkuuden alarajasta hänen voimakkuuden ylärajaan.
 	Hän on nyt elävä.
 	Hän on nyt näkyvillä.
 
->>> Kartta
+>>> Tarina
 
->> Areena
+>> Viholliset
 
-Areena on huone.
-"Hiekka peittää katsomoiden ympäröimän areenan maan."
+Kansalainen on vihollinen.
+"Äsken vielä kunnollisen kansalaisen silmiin on syttynyt verenhimoinen hohde."
 
-Puukko on ase areenalla.
+Valmiina on 10 kansalaista.
+
+>> Keskuspuisto
+
+Huone voi olla pelottava.
+
+Kahden hiekkatien risteys on pelottava huone.
+"Keskuspuiston korkea metsä varjostaa kahden hiekkatien risteystä."
+
+Metsä on kiinteä listaamaton esine kahden hiekkatien risteyksessä.
+"Keskuspuiston puut varjostavat matalan ilta-auringon ja jättävät sinut hämärään."
+
+Puukko on ase kahden hiekkatien risteyksessä.
+"Puukossasi on sininen kahva ja lyhyehkö mutta terävä kärki. Se lojuu keskellä risteystä vieressäsi."
 Puukon voimakkuus on 6.
 
-Ennen pelin alkamista:
-	Pelaajan sijainti on nyt areena.
-	Pelaaja on nyt näkyvillä.
-	Toista 2 kertaa:
-		Herätä satunnainen kuollut vihollinen kuolleista.
+Puukon ottamisen jälkeen:
+	Puukon kuvaus on nyt "Puukossasi on sininen kahva ja lyhyehkö mutta terävä kärki.".
+
+Pohjoinen hiekkatie on pelottava huone kahden hiekkatien risteyksestä pohjoiseen.
+Eteläinen hiekkatie on pelottava huone kahden hiekkatien risteyksestä etelään.
+Itäinen hiekkatie on pelottava huone kahden hiekkatien risteyksestä itään.
+
+Ennen pelottavaan huoneeseen siirtymistä:
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Katsoessasi [sille] näet useita vihaisia ihmisiä joiden silmissä kiiluu pelottava katse.".
+		Sano "Parempi olla menemättä sinne.".
+		Keskeytä toiminto.
 
 >>> Intro
 
 Ennen pelin alkamista:
 	Sano "TYRMÄ[rivinvaihto][rivinvaihto]".
+	Sano "On mitä parhain aika käydä varhaisillan juoksulenkillä, ajattelet ja vedät juoksukenkäsi jalkaan.".
+	Sano "Asut onneksi lähellä keskuspuistoa, jonka hiekkateillä liikkuminen on raitista ja piristävää.".
+	Sano "Ei kulu aikaakaan, kun puut ympäröivät jo sinut ja sulkevat sinut rauhoittavaan hämärään.".
+	Sano "[rivinvaihto][rivinvaihto]".
+	Sano "Olet juuri ohittamassa kahden hiekkatien välistä risteystä, kun vastaan tuleva ohikulkija kääntyy yllättäen sinua kohti ja lyö sinua kasvoihin.".
+	Sano "Vedät kuulokkeet yllättyneenä ja alat vaatimaan selitystä, kun kuulet takaasi ääntä.".
+	Sano "Käännyt ja näet toisen lenkkeilijän juoksevan sinua kohti vihaisen näköisenä.".
+	Sano "Tunnet olosi uhatuksi ja kaivat laukustasi puukon, jota kannat aina mukanasi turvallisuuden vuoksi.".
+	Sano "Ensimmäinen ohikulkija vääntää kuitenkin sen kädestäsi pois ja se putoaa maahan.".
+	Sano "[rivinvaihto][rivinvaihto]".
+
+Ennen pelin alkamista:
+	Pelaajan sijainti on nyt kahden hiekkatien risteys.
+	Pelaaja on nyt näkyvillä.
+	Toista 2 kertaa:
+		Herätä satunnainen kuollut vihollinen kuolleista.
 
