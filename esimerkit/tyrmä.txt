@@ -99,6 +99,18 @@ Ihmisen kuvailemisen jälkeen:
 	Sano "TERVEYS: [hänen terveyslukunsa].[rivinvaihto]".
 	Sano "VOIMAKKUUS: [hänen voimakkuutensa].[rivinvaihto]".
 
+>> Ruoka
+
+Ruoka-annos on esineen alakäsite.
+Ruoka-annos on yleensä syötävä.
+Ruoka-annoksella on ruoka-arvoksi kutsuttu kokonaisluku.
+
+Ruoka-annoksen syömisen aikana:
+	Fokalisoijan terveysluku on nyt (fokalisoijan terveysluku + sen ruoka-arvo).
+
+Ruoka-annoksen syömisen jälkeen:
+	Sano fokalisoijalle "Tunnet hyvinvointisi kasvavan.".
+
 >> Taistelu
 
 > Taistelumekaniikka on yksinkertainen: hyökkääjä ja puolustaja arpovat luvut ja jos hyökääjän luku on suurempi, hyökkäys osuu.
@@ -128,6 +140,7 @@ Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
 		Toista jokaiselle esineelle (E) vihollisen esineluettelossa:
 			Poista E vihollisen esineluettelosta.
 			E on nyt vihollisen sijainnissa.
+			> TODO: Siirrä viestin tulostaminen jälkeen-sääntöön
 			Jos vihollinen on pelaajan ohjaama:
 				Sano "Pudotat [e:n].".
 			Muulloin:	
@@ -138,7 +151,10 @@ Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
 Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
 		Sano "Lyöt [vihollista] [fokalisoijan kädessä olevalla aseella]!".
-		Sano "Aiheuttamasi vahinko: [aiheutettu vahinko].".
+		Jos aiheutettu vahinko on 0:
+			Sano "[Vihollinen] väistää iskun.".
+		Muulloin:
+			Sano "Aiheuttamasi vahinko: [aiheutettu vahinko].".
 	Muulloin:
 		Jos vihollinen on pelaajan ohjaama:
 			Sano "[Fokalisoija] lyö sinua [fokalisoijan kädessä olevalla aseella]!".
@@ -272,6 +288,8 @@ Pohjoisselli on huone tyrmän käytävästä pohjoiseen.
 
 Pohjoissellin ovi on ovi pohjoissellin ja tyrmän käytävän välissä.
 
+>> Vartijoiden huone
+
 Vartijoiden huone on huone tyrmän käytävästä itään.
 "Öljylampun valo tekee ikkunattomasta huoneesta yllättävän kodikkaan."
 
@@ -305,6 +323,13 @@ Tulkitse "avain" tyrmän avaimena.
 Päätysellin oven avaava avain on tyrmän avain.
 Pohjoissellin oven avaava avain on tyrmän avain.
 
+Ruokakomero on huone vartijoiden huoneesta etelään.
+"Ahdas, pieni huone, joka toimii vartijoiden ruokavarastona."
+
+Leipä on ruoka-annos ruokakomerossa.
+"Kuivanutta ruisleipää, joka on tarkoitettu palvelijoiden käyttöön."
+Leivän ruoka-arvo on 3.
+
 Tyrmän porrashuone on huone vartijoiden huoneesta pohjoiseen.
 "Valoa kajastaa huoneen keskellä olevien kierreportaiden yläpäästä."
 
@@ -315,7 +340,140 @@ Portaikko on yleensä lukitsematon.
 >> Pohjakerros
 
 Pohjakerroksen porrashuone on huone tyrmän porrashuoneesta ylös.
+"Huonetta hallitsevat portaat johtavat alas pimeään kellariin ja ylös yläkertaan."
 
 Alempi portaikko on listaamaton portaikko tyrmän porrashuoneen ja pohjakerroksen porrashuoneen välissä.
-Tulkitse "kierreporras" alempana portaikkona.
 Tulkitse "porras" alempana portaikkona.
+
+Aula on huone pohjakerroksen porrashuoneesta pohjoiseen.
+"Aula yhdistää kartanon itäisen ja läntisen siiven toisiinsa. Katseen vangitsevat yleellinen kattokruunu ja lattiaa peittävä kaunis kuvioitu matto."
+
+Kattokruunu on kiinteä listaamaton esine aulassa.
+"Kruunuun on kiinnitetty kahdeksan palavaa valkoista kynttilää."
+
+Matto on tylsä listaamaton esine aulassa.
+"Aulan mattoon on kuvioitu tyyliteltyjä puita ja jokia."
+
+Hovimestari on vihollinen aulassa.
+"Frakkiin pukeutunut herrasmies on valmis ohjaamaan sinut takaisin selliisi."
+Hovimestarin terveysluku on 50.
+Hovimestarin voimakkuus on 6.
+Hovimestarin nopeus on 3.
+
+>> Länsisiipi
+
+Läntinen käytävä on huone aulasta länteen.
+"..."
+Tulkitse "käytävä" läntisenä käytävänä.
+
+Ruokahuone on huone läntisestä käytävästä pohjoiseen.
+"..."
+
+Ruokapöytä on kiinteä tukeva sisältäjä ruokahuoneessa.
+"..."
+
+Keittiö on huone ruokahuoneesta länteen.
+"..."
+
+Ruokavarasto on huone ruokahuoneesta pohjoiseen.
+"..."
+
+Puutarha on huone keittiöstä länteen.
+"..."
+
+Keittiön ovi on ovi keittiön ja puutarhan välissä.
+"..."
+
+Piha on huone puutarhasta etelään.
+"..."
+
+Puutarhan aita on kiinteä listaamaton esine puutarhassa.
+"..."
+Tulkitse "aita" puutarhan aitana.
+Pihan aita on kiinteä listaamaton esine pihalla.
+"..."
+Tulkitse "aita" pihan aitana.
+
+Olohuone on huone läntisestä käytävästä länteen.
+"Epämukavan näköiset tuolit ja vanhanaikaiset maalaukset vahvistavat käsitystäsi kartanon omistajan huonosta tyylitajusta. Näet ikkunasta pihalle."
+
+Tuoli on tylsä listaamaton esine olohuoneessa.
+"Koristeellinen puutuoli samettipehmusteilla näyttää epämukavalta koriste-esineeltä."
+Tulkitse "puutuoli" tuolina.
+
+Maalaus on tylsä listaamaton esine olohuoneessa.
+"Muotokuvat esittävät kenties kartanon entisiä omistajia."
+Tulkitse "muotokuva" maalauksena.
+
+Ikkuna on kiinteä listaamaton esine olohuoneessa.
+"Näet ikkunasta pihalle."
+
+Siivouskomero on huone läntisestä käytävästä etelään.
+"Erinäiset siivoustarvikkeet täyttävät pienen komeron."
+
+Siivoustarvike on tylsä listaamaton esine siivouskomerossa.
+"Siivoustarvikkeet on järjestelty komeron seinille ja lattialle."
+
+>> Itäsiipi
+
+Itäinen käytävä on huone aulasta itään.
+"..."
+
+Toimisto on huone itäisestä käytävästä pohjoiseen.
+"..."
+
+Arkisto on huone itäisestä käytävästä etelään.
+"..."
+
+Varasto on huone itäisestä käytävästä itään.
+"..."
+
+>> Pohjoissiipi
+
+Pohjoinen käytävä on huone aulasta pohjoiseen.
+"..."
+
+Eteinen on huone pohjoisesta käytävästä pohjoiseen.
+"..."
+
+>> Yläkerros
+
+Yläkerroksen porrashuone on huone pohjakerroksen porrashuoneesta ylös.
+"Huoneen keskellä olevat portaat johtavat alempiin kerroksiin."
+
+Yläkerroksen aula on huone yläkerroksen porrashuoneesta pohjoiseen.
+"..."
+Tulkitse "aula" yläkerroksen aulana.
+
+>> Yläkerroksen länsisiipi
+
+Yläkerroksen läntinen käytävä on huone yläkerroksen aulasta länteen.
+"..."
+
+Kirjasto on huone yläkerroksen läntisestä käytävästä pohjoiseen.
+"..."
+
+Pesutupa on huone yläkerroksen läntisestä käytävästä etelään.
+"..."
+
+>> Yläkerroksen itäsiipi
+
+Yläkerroksen itäinen käytävä on huone yläkerroksen aulasta itään.
+"..."
+
+Iso makuuhuone on huone yläkerroksen itäisestä käytävästä pohjoiseen.
+"..."
+
+Pieni makuuhuone on huone yläkerroksen itäisestä käytävästä itään.
+"..."
+
+Vierashuone on huone yläkerroksen itäisestä käytävästä etelään.
+"..."
+
+>> Yläkerroksen pohjoissiipi
+
+Yläkerroksen pohjoinen käytävä on huone yläkerroksen aulasta pohjoiseen.
+"..."
+
+Pelihuone on huone yläkerroksen pohjoisesta käytävästä pohjoiseen.
+"..."
