@@ -75,8 +75,11 @@ class HTMLHighlighter:
 		self.buffer_stack[0] += "<pre>" + text + "</pre>\n"
 	
 	def comment(self, text):
-		self.endParagraph()
-		self.buffer_stack[0] += '<p class="comment"><em>' + text + "</em></p>"
+		if len(self.buffer_stack) == 3:
+			self.endParagraph()
+			self.buffer_stack[0] += '<p class="comment"><em>' + text + "</em></p>"
+		else:
+			self.buffer_stack[-1] += '<br/><span class="comment"><em>' + text + "</em></span>"
 	
 	def startString(self):
 		self.in_string = True
@@ -125,7 +128,7 @@ class HTMLHighlighter:
 					padding: 10px;
 				}
 				span.string {
-					color: darkblue;
+					color: blue;
 				}
 				span.interpolation {
 					color: #77f;
@@ -135,6 +138,10 @@ class HTMLHighlighter:
 				}
 				span.text {
 					color: black;
+				}
+				span.comment {
+					padding: 5px;
+					background-color: #ffc;
 				}
 				@counter-style stmt-counter {
 					system: extends decimal;
