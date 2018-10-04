@@ -265,16 +265,26 @@ Pohjoinen on suunta.
 Etelä on suunta.
 Länsi on suunta.
 Itä on suunta.
+Ylös-suunta on suunta.
+Alas-suunta on suunta.
 
 Pohjoisen vastasuunta on etelä.
 Etelän vastasuunta on pohjoinen.
 Lännen vastasuunta on itä.
 Idän vastasuunta on länsi.
+Ylös-suunnan vastasuunta on alas-suunta.
+Alas-suunnan vastasuunta on ylös-suunta.
 
 Tulkitse "p" pohjoisena.
 Tulkitse "e" etelänä.
 Tulkitse "l" läntenä.
 Tulkitse "i" itänä.
+Tulkitse "ylös" ylös-suuntana.
+Tulkitse "ylöspäin" ylös-suuntana.
+Tulkitse "y" ylös-suuntana.
+Tulkitse "alas" alas-suuntana.
+Tulkitse "alaspäin" alas-suuntana.
+Tulkitse "a" alas-suuntana.
 
 Ei-suunta on suunta.
 Ei-suunnan vastasuunta on ei-suunta.
@@ -294,6 +304,12 @@ Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta
 	A:n B:hen johtava suunta on tarkasteltavan suunnan vastasuunta
 	A:n naapurihuonejoukko sisältää B:n
 	B:n naapurihuonejoukko sisältää A:n
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] ylös":
+	A on B:stä ylös-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] alas":
+	A on B:stä alas-suuntaan
 
 >> Ovi
 
