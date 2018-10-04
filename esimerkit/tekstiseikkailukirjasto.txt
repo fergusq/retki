@@ -589,3 +589,24 @@ Ennen ihmistä vastaan hyökkäämistä:
 
 Ystävällismielistä ihmistä vastaan hyökkäämisen sijasta:
 	Sano fokalisoijalle "Et halua hyökätä [häntä] vastaan.".
+
+>> Syöminen
+
+[Esineen] syöminen on toiminto.
+Syömisen komento on "syö nyt [esine]".
+Tulkitse "syö [esine]" syömisenä.
+
+Esine on joko syötävä tai syömäkelvoton.
+Esine on yleensä syömäkelvoton.
+
+Ennen piilossa olevan esineen syömistä:
+	Sano fokalisoijalle "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+
+Ennen syömäkelvottoman esineen syömistä:
+	Sano fokalisoijalle "Et usko, että [sitä] kannattaa syödä.".
+	Keskeytä toiminto.
+
+Esineen syömisen jälkeen:
+	Sano fokalisoijalle "Syöt [sen].".
+
