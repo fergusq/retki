@@ -445,9 +445,19 @@ class RClass(Bits):
 			ans += subclass.subclasses()
 		return ans
 	def allBits(self):
-		ans = set()
+		bit_groups = []
 		for clazz in self.superclasses():
-			ans.update(clazz.bits)
+			for bg in clazz.bit_groups:
+				bit_groups.append(set(bg[1]))
+		
+		ans = set()
+		for clazz in reversed(self.superclasses()):
+			for bit in clazz.bits:
+				for bit_group in bit_groups:
+					if bit in bit_group:
+						ans -= bit_group
+						break
+				ans |= {bit}
 		return ans
 	def nameToCode(self, bits):
 		if self.name_tokens:
