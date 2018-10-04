@@ -161,7 +161,7 @@ class RObject(Bits):
 		for name in names:
 			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: (%s, %s.likeliness())))" % (
 				self.rclass.id,
-				nameToCode(name, bits={"$"}, rbits={"nimento", "yksikkö"}),
+				nameToCode(name, bits={"$"}, rbits={"nimento"}),
 				var, var
 			)
 		
