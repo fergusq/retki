@@ -115,14 +115,23 @@ Väistöheitto on kokonaisluku.
 Väistöheitto on alussa 0.
 
 Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
-	Lyöntiheitto on nyt satunnaisluku välillä 1:stä (fokalisoijan voimakkuus + fokalisoijan kädessä olevan aseen voimakkuuteen).
+	Lyöntiheitto on nyt satunnaisluku välillä 1:stä fokalisoijan voimakkuuteen.
 	Väistöheitto on nyt satunnaisluku välillä 1:sta vihollisen nopeuteen.
+	Sano "LH: [lyöntiheitto] VH: [väistöheitto]".
 	Jos lyöntiheitto on suurempi kuin väistöheitto:
 		Aiheutettu vahinko on nyt satunnaisluku välillä 1:stä (fokalisoijan voimakkuus + fokalisoijan kädessä olevan aseen voimakkuuteen).
 		Vihollisen terveysluku on nyt (vihollisen terveysluku - aiheutettu vahinko).
 	Muulloin:
 		Aiheutettu vahinko on nyt 0.
 	Jos vihollisen terveysluku on enintään 0:
+		Vihollisen kädessä oleva ase on nyt nyrkki.
+		Toista jokaiselle esineelle (E) vihollisen esineluettelossa:
+			Poista E vihollisen esineluettelosta.
+			E on nyt vihollisen sijainnissa.
+			Jos vihollinen on pelaajan ohjaama:
+				Sano "Pudotat [e:n].".
+			Muulloin:	
+				Sano "[Vihollinen] pudottaa [e:n].".
 		Vihollinen on nyt kuollut.
 		Vihollinen on nyt piilossa.
 
@@ -238,58 +247,75 @@ Vihollisen kuolleista herättämisen aikana:
 
 >>> Tarina
 
->> Viholliset
+Pelaajan voimakkuus on 4.
+Pelaajan nopeus on 5.
 
-Kansalainen on vihollinen.
-"Äsken vielä kunnollisen kansalaisen silmiin on syttynyt verenhimoinen hohde."
+>> Tyrmä
 
-Valmiina on 10 kansalaista.
-
->> Keskuspuisto
-
-Huone voi olla pelottava.
-
-Kahden hiekkatien risteys on pelottava huone.
-"Keskuspuiston korkea metsä varjostaa kahden hiekkatien risteystä."
-
-Metsä on kiinteä listaamaton esine kahden hiekkatien risteyksessä.
-"Keskuspuiston puut varjostavat matalan ilta-auringon ja jättävät sinut hämärään."
-
-Puukko on ase kahden hiekkatien risteyksessä.
-"Puukossasi on sininen kahva ja lyhyehkö mutta terävä kärki. Se lojuu keskellä risteystä vieressäsi."
-Puukon voimakkuus on 6.
-
-Puukon ottamisen jälkeen:
-	Puukon kuvaus on nyt "Puukossasi on sininen kahva ja lyhyehkö mutta terävä kärki.".
-
-Pohjoinen hiekkatie on pelottava huone kahden hiekkatien risteyksestä pohjoiseen.
-Eteläinen hiekkatie on pelottava huone kahden hiekkatien risteyksestä etelään.
-Itäinen hiekkatie on pelottava huone kahden hiekkatien risteyksestä itään.
-
-Ennen pelottavaan huoneeseen siirtymistä:
-	Jos fokalisoija on pelaajan ohjaama:
-		Sano "Katsoessasi [sille] näet useita vihaisia ihmisiä joiden silmissä kiiluu pelottava katse.".
-		Sano "Parempi olla menemättä sinne.".
-		Keskeytä toiminto.
-
->>> Intro
+Selli on huone.
+"Sellissä ei ole yhtään ikkunaa, mikä saa sinut vielä enemmän haluamaan pois."
 
 Ennen pelin alkamista:
-	Sano "TYRMÄ[rivinvaihto][rivinvaihto]".
-	Sano "On mitä parhain aika käydä varhaisillan juoksulenkillä, ajattelet ja vedät juoksukenkäsi jalkaan.".
-	Sano "Asut onneksi lähellä keskuspuistoa, jonka hiekkateillä liikkuminen on raitista ja piristävää.".
-	Sano "Ei kulu aikaakaan, kun puut ympäröivät jo sinut ja sulkevat sinut rauhoittavaan hämärään.".
-	Sano "[rivinvaihto][rivinvaihto]".
-	Sano "Olet juuri ohittamassa kahden hiekkatien välistä risteystä, kun vastaan tuleva ohikulkija kääntyy yllättäen sinua kohti ja lyö sinua kasvoihin.".
-	Sano "Vedät kuulokkeet yllättyneenä ja alat vaatimaan selitystä, kun kuulet takaasi ääntä.".
-	Sano "Käännyt ja näet toisen lenkkeilijän juoksevan sinua kohti vihaisen näköisenä.".
-	Sano "Tunnet olosi uhatuksi ja kaivat laukustasi puukon, jota kannat aina mukanasi turvallisuuden vuoksi.".
-	Sano "Ensimmäinen ohikulkija vääntää kuitenkin sen kädestäsi pois ja se putoaa maahan.".
-	Sano "[rivinvaihto][rivinvaihto]".
-
-Ennen pelin alkamista:
-	Pelaajan sijainti on nyt kahden hiekkatien risteys.
+	Pelaajan sijainti on nyt selli.
 	Pelaaja on nyt näkyvillä.
-	Toista 2 kertaa:
-		Herätä satunnainen kuollut vihollinen kuolleista.
 
+Tyrmän käytävä on huone sellistä pohjoiseen.
+"Käytävän kummallakin puolella on rivissä lukittuja sellejä, jotka kuitenkin ovat kaikki tyhjiä."
+
+Päätyselli on huone tyrmän käytävästä länteen.
+"..."
+
+Päätysellin ovi on ovi päätysellin ja tyrmän käytävän välissä.
+
+Pohjoisselli on huone tyrmän käytävästä pohjoiseen.
+"..."
+
+Pohjoissellin ovi on ovi pohjoissellin ja tyrmän käytävän välissä.
+
+Vartijoiden huone on huone tyrmän käytävästä itään.
+"Öljylampun valo tekee ikkunattomasta huoneesta yllättävän kodikkaan."
+
+Pöytä on kiinteä tukeva sisältäjä vartijoiden huoneessa.
+"Vanha puinen pöytä."
+
+Öljylamppu on valaiseva sytytin pöydän päällä.
+"Teräksisen öljylampun sisällä palaa kirkas tuli."
+Tulkitse "lamppu" öljylamppuna.
+Tulkitse "lyhty" öljylamppuna.
+
+Jaska on vihollinen vartijoiden huoneessa.
+"Jaska näyttää hieman pelottavalta, isokokoiselta mieheltä. Hänen vyöllään on puukko."
+Jaskan terveysluku on 10.
+Jaskan voimakkuus on 3.
+Jaskan nopeus on 1.
+
+Puukko on ase Jaskan mukana.
+"Puukahvainen puukko toimii hyvänä lähiaseena."
+Puukon voimakkuus on 3.
+
+Jaana on vihollinen vartijoiden huoneessa.
+"Jaanan ilkeä ilme varmistaa pelottaa sinua hieman. Hänen vyöllään on avain."
+Jaanan terveysluku on 8.
+Jaanan voimakkuus on 2.
+Jaanan nopeus on 1.
+
+Tyrmän avain on esine Jaanan mukana.
+"Metallinen, melko kevyt avain."
+Tulkitse "avain" tyrmän avaimena.
+Päätysellin oven avaava avain on tyrmän avain.
+Pohjoissellin oven avaava avain on tyrmän avain.
+
+Tyrmän porrashuone on huone vartijoiden huoneesta pohjoiseen.
+"Valoa kajastaa huoneen keskellä olevien kierreportaiden yläpäästä."
+
+Portaikko on oven alakäsite.
+Portaikko on yleensä ei-avattava.
+Portaikko on yleensä lukitsematon.
+
+>> Pohjakerros
+
+Pohjakerroksen porrashuone on huone tyrmän porrashuoneesta ylös.
+
+Alempi portaikko on listaamaton portaikko tyrmän porrashuoneen ja pohjakerroksen porrashuoneen välissä.
+Tulkitse "kierreporras" alempana portaikkona.
+Tulkitse "porras" alempana portaikkona.
