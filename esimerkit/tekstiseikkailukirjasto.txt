@@ -1,3 +1,13 @@
+> Retki
+> Copyright (c) 2018 Iikka Hauhio
+>
+> Tämä on vapaa ohjelmisto. Voit levittää ja/tai muokata sitä
+> Free Software Foundationin GNU General Public License -lisenssin
+> ehdoilla (version 3 tai myöhemmän).
+>
+> Jos et saanut kopiota lisenssistä ohjelmiston mukana, voit ladata
+> sen osoitteesta http://www.gnu.org/licenses/.
+
 >>> Tekstiseikkailukirjasto
 
 >> Kuvaukset
@@ -63,6 +73,12 @@ Tulkitse "sinä" pelaajana.
 
 Fokalisoija on ihminen.
 Fokalisoija on alussa pelaaja.
+
+Määritelmä. Kun esine on "mukana":
+	se on fokalisoijan mukana
+
+Määritelmä. Kun esine "ei ole mukana":
+	se ei ole fokalisoijan mukana
 
 >> Fokalisoijalle sanominen
 
@@ -192,14 +208,6 @@ Esineen avaamisen aikana:
 
 [Asian] kuvaileminen on toiminto.
 Kuvailemisen komento on "kuvaile [asiaa]".
-
-Ennen piilossa olevan esineen kuvailemista:
-	Sano "Et näe sellaista asiaa.".
-	Keskeytä toiminto.
-
-Ennen piilossa olevan ihmisen kuvailemista:
-	Sano "[Hän] ei ole täällä.".
-	Keskeytä toiminto.
 
 Asian kuvailemisen aikana:
 	Sano sen kuvaus.
@@ -418,6 +426,12 @@ Suuntaan (se suunta) katsomisen aikana:
 Tulkitse "katso [esinettä]" esineen katsomisena.
 Tulkitse "tutki [esinettä]" esineen katsomisena.
 Tulkitse "t [esine]" esineen katsomisena.
+Tulkitse "katso [esineen] sisälle" esineen katsomisena.
+Tulkitse "katso [esineen] sisään" esineen katsomisena.
+
+Ennen piilossa olevan esineen katsomista:
+	Sano "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
 
 Esineen katsomisen aikana:
 	Kuvaile sitä.
@@ -427,8 +441,34 @@ Tulkitse "katso [ihmistä]" ihmisen katsomisena.
 Tulkitse "tutki [ihmistä]" ihmisen katsomisena.
 Tulkitse "t [ihminen]" ihmisen katsomisena.
 
+Ennen piilossa olevan ihmisen katsomista:
+	Sano "[Hän] ei ole paikalla.".
+	Keskeytä toiminto.
+
 Ihmisen katsomisen aikana:
 	Kuvaile häntä.
+
+>> Alle ja taakse katsominen
+
+[Esineen] alle katsominen on toiminto.
+Tulkitse "katso [esineen] alle" esineen alle katsomisena.
+
+Ennen piilossa olevan esineen alle katsomista:
+	Sano "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+
+Esineen alle katsomisen aikana:
+	Sano "[Sen] alla ei ole mitään.".
+
+[Esineen] taakse katsominen on toiminto.
+Tulkitse "katso [esineen] taakse" esineen taakse katsomisena.
+
+Ennen piilossa olevan esineen taakse katsomista:
+	Sano "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+
+Esineen taakse katsomisen aikana:
+	Sano "[Sen] takana ei ole mitään.".
 
 >> Ottaminen
 
@@ -587,8 +627,9 @@ Ennen ihmistä vastaan hyökkäämistä:
 		Sano fokalisoijalle "Et voi hyökätä itseäsi vastaan.".
 		Keskeytä toiminto.
 
-Ystävällismielistä ihmistä vastaan hyökkäämisen sijasta:
-	Sano fokalisoijalle "Et halua hyökätä [häntä] vastaan.".
+Juuri ennen ystävällismielistä ihmistä vastaan hyökkäämistä:
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Et halua hyökätä [häntä] vastaan.".
 
 >> Syöminen
 

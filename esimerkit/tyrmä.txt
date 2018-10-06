@@ -184,7 +184,6 @@ Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 >> Viholliset
 
 > Vihollinen on kaikkien tietokoneen ohjaamien vihamielisten hahmojen yläkäsite.
-> Myös pelaaja määritellään vihamieliseksi, jotta viholliset voivat hyökätä hänen kimppuunsa.
 
 Vihollinen on ihmisen alakäsite.
 Vihollinen on yleensä vihamielinen.
@@ -200,9 +199,6 @@ Vihollisen voimakkuuden alaraja on yleensä 0.
 
 Vihollisella on voimakkuuden ylärajaksi kutsuttu kokonaisluku.
 Vihollisen voimakkuuden yläraja on yleensä 3.
-
-Ennen pelin alkamista:
-	Pelaaja on nyt vihamielinen.
 
 >> Vuorot
 
