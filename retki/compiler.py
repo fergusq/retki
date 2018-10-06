@@ -562,7 +562,7 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 	# make_call-funktiolla voi tehdä koodin, joka kutsuu ehtolausetta
 	make_call = lambda var, p: "evalOrCall(%s[%s], [%s])" % (var, repr(name_str), ", ".join(p))
 	
-	# tehdään ehtokomento ja muuttamiskomento
+	# tehdään ehtokomento, muuttamiskomento ja totuusmääritys
 	pre = "nyt" if custom_verb else ""
 	verb = "" if custom_verb else "on"
 	post = "" if custom_verb else "nyt"
@@ -572,6 +572,9 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 	
 	pgl(".COND ::= .EXPR-%d{nimento} %s %s -> $1~%s" % (owner.id, verb, pattern, name_str),
 		FuncOutput(lambda *p: ("(" + make_call("CHECKS", p) + ")[-2]", orTrue("(" + make_call("MODIFYS", p) + ")"))))
+	
+	pgl(".EXPR-TRUTH-DEF ::= .EXPR-%d{nimento} %s %s . -> $1~%s = True" % (owner.id, verb, pattern, name_str),
+		FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
 	
 	tmp_vars = ["_" + str(i) for i in range(len(params)+1)]
 	
@@ -666,6 +669,9 @@ def addConditionDefPattern(num_params, first_named, nameds):
 
 for num_params in [0,1,2]:
 	addConditionDefPatterns(num_params)
+
+pgl(".DEF ::= .EXPR-TRUTH-DEF -> $1", identity)
+GRAMMAR.addCategoryName("EXPR-TRUTH-DEF", "totuusmääritys")
 
 pgl(".DEF ::= .COND-DEF -> $1", identity)
 GRAMMAR.addCategoryName("COND-DEF", "ehtomääritys")
