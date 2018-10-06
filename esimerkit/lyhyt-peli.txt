@@ -15,19 +15,19 @@ Pihaan siirtymisen jälkeen:
 > Eteinen
 
 Eteinen on huone pihasta pohjoiseen.
-"Eteisessä ei ole juuri mitään mitään kiinnostavaa."
+"Olet eteisessä. Lattialla on räsymatto. Etelässä on ulko-ovi, jonka läpi näkee pihalle. Pohjoisessa on olohuone."
 
-Ulko-ovi on ovi eteisen ja pihan välissä.
+Ulko-ovi on listaamaton ovi eteisen ja pihan välissä.
 "Eteisen ulko-ovi on lukossa. Voit nähdä sen läpi pihalle."
 
-Räsymatto on tylsä esine eteisessä.
+Räsymatto on listaamaton tylsä esine eteisessä.
 "Räsymatto on hieman likainen."
 Tulkitse "matto" räsymattona.
 
 > Olohuone
 
 Olohuone on huone eteisestä pohjoiseen.
-"Olohuone tuntuu ahtaalta."
+"Olet ahtaassa olohuoneessa. Etelässä on talon eteinen. Idässä on pimeään huoneeseen johtava käytävä. Lännessä on talon ruokahuone."
 
 Sohva on kiinteä esine olohuoneessa.
 "Vanha punainen sohva."
@@ -66,7 +66,7 @@ Rojun katsomisen aikana:
 > Ruokahuone
 
 Ruokahuone on huone olohuoneesta länteen.
-"Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois."
+"Tämä osa taloa lienee ollut ruokailuhuone, mutta kaikki huonekalut on viety pois. Näet etelässä keittiön. Näet idässä olohuoneen."
 
 Itämainen matto on tylsä esine ruokahuoneessa.
 "Itämaiseen mattoon on kuvioitu kauniita muotoja."
@@ -89,7 +89,7 @@ Virtaselle puhumisen sijasta:
 > Takapiha
 
 Takapiha on huone ruokahuoneesta pohjoiseen.
-"Korkeat ylitsepääsemättömät aidat reunustavat heinän valtaamaa takapihaa."
+"Korkeat ylitsepääsemättömät aidat reunustavat heinän valtaamaa takapihaa. Pihan eteläisellä sivulla on talon seinä, jossa on ovi."
 
 Takaovi on ovi takapihan ja ruokahuoneen välissä.
 "Takaovi on tiukasti lukossa."
@@ -123,12 +123,12 @@ Tulkitse "pistooli" sytytinpistoolina.
 > Keittiö
 
 Keittiö on huone ruokahuoneesta etelään.
-"Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle."
+"Keittiön seinällä on työtaso. Voit nähdä ikkunasta pihalle. Näet pohjoisessa ruokahuoneen."
 
 Ikkuna on kiinteä listaamaton esine keittiössä.
 "Ikkuna on tahrainen ja hoitamaton. Näet sen läpi etupihalle."
 
-Työtaso on kiinteä tukeva sisältäjä keittiössä.
+Työtaso on kiinteä listaamaton tukeva sisältäjä keittiössä.
 "Tasolla on rasvatahroja, eikä sitä ole siivottu vähään aikaan."
 Tulkitse "taso" työtasona.
 
