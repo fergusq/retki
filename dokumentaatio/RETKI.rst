@@ -714,9 +714,12 @@ Ja seuraavat toiminnot::
 	                esineluettelon tulostaminen
 	        huoneen esitteleminen
 	    merkkijonon fokalisoijalle sanominen
+	ihmistä vastaan hyökkääminen
 	                katseleminen
 	       suuntaan katsominen
 	        esineen katsominen
+	   esineen alle katsominen
+	 esineen taakse katsominen
 	        ihmisen katsominen
 	ihmiselle asian kertominen
 	          asian kuvaileminen
@@ -728,6 +731,7 @@ Ja seuraavat toiminnot::
 	      ihmiselle puhuminen
 	     huoneeseen siirtyminen
 	        esineen sytyttäminen
+	        esineen syöminen
 
 Näistä ``merkkijonon fokalisoijalle sanominen``, ``huoneen esitteleminen``, ``asian kuvaileminen`` ja ``huoneeseen siirtyminen``
 ovat pelin sisäisesti käyttämä toimintoja ja kaikki muut ovat komentoja, joita pelaaja voi syöttää.
