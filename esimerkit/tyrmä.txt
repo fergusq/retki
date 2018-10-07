@@ -9,33 +9,55 @@
 
 Tuo tekstiseikkailukirjasto.
 
+>> Sukupuoli
+
+Sukupuoli on käsite.
+Nainen on sukupuoli.
+Mies on sukupuoli.
+"Määrittelemätön sukupuoli" on sukupuoli.
+
+Ihmisellä on sukupuoli.
+Ihmisen sukupuoli on yleensä "määrittelemätön sukupuoli".
+
 >> Nimet
 
 > Määritellään 20 nimeä, joista voidaan arpoa NPC-hahmoille nimiä.
 > Mukana on 10 suosituinta naisten nimeä ja 10 suosituinta miesten nimeä.
 
 Nimi on käsite.
+Nimellä on sukupuoli.
+Nimen sukupuoli on yleensä "määrittelemätön sukupuoli".
 
-Maria on nimi.
-Juhani on nimi.
-Johannes on nimi.
-Olavi on nimi.
-Antero on nimi.
-Helena on nimi.
-Tapani on nimi.
-Johanna on nimi.
-Anneli on nimi.
-Kalevi on nimi.
-Tapio on nimi.
-Kaarina on nimi.
-Matti on nimi.
-Mikael on nimi.
-Marjatta on nimi.
-Ilmari on nimi.
-Anna on nimi.
-Liisa on nimi.
-Annikki on nimi.
-Sofia on nimi.
+Naisen nimi on nimen alakäsite.
+Naisen nimen sukupuoli on yleensä nainen.
+Miehen nimi on nimen alakäsite.
+Miehen nimen sukupuoli on yleensä mies.
+
+Maria on naisen nimi.
+Juhani on miehen nimi.
+Johannes on miehen nimi.
+Olavi on miehen nimi.
+Antero on miehen nimi.
+Helena on naisen nimi.
+Tapani on miehen nimi.
+Johanna on naisen nimi.
+Anneli on naisen nimi.
+Kalevi on miehen nimi.
+Tapio on miehen nimi.
+Kaarina on naisen nimi.
+Matti on miehen nimi.
+Mikael on miehen nimi.
+Marjatta on naisen nimi.
+Ilmari on miehen nimi.
+Anna on naisen nimi.
+Liisa on naisen nimi.
+Annikki on naisen nimi.
+Sofia on naisen nimi.
+
+"Määrittelemätön nimi" on nimi.
+
+Ihmisellä on nimi.
+Ihmisen nimi on yleensä "määrittelemätön nimi".
 
 >> Aseet
 
@@ -212,7 +234,7 @@ Tietokoneen vihollinen on ihminen.
 
 Tietokoneen vuoron pelaamisen aikana:
 	Tietokoneen vihollinen on nyt fokalisoija.
-	Toista jokaiselle tietokoneen ohjaamalle ihmiselle (T) tietokoneen vihollisen sijainnin henkilöjoukossa:
+	Toista jokaiselle vihamieliselle tietokoneen ohjaamalle ihmiselle (T) tietokoneen vihollisen sijainnin henkilöjoukossa:
 		Sano "[rivinvaihto][rivinvaihto]".
 		T fokalisoijana:
 			Hyökkää nyt tietokoneen vihollista vastaan.
@@ -240,13 +262,19 @@ Ennen huoneeseen siirtymistä:
 >> Herättäminen kuolleista
 
 > Retki-kielellä ei voi helposti luoda uusia olioita, joten on helpointa varata valmiiksi vihollisia.
-> Aluksi kaikki viholliset ovat kuolleita, ja näistä osa otetaan mukaan peliin pelaajaa vastaan.
+> Aluksi kaikki geneeriset viholliset ovat kuolleita, ja näistä osa otetaan mukaan peliin pelaajaa vastaan.
 > Kun pelaaja tapaa vihollisia, nämä muuttuvat kuolleiksi ja voidaan taas ottaa myöhemmin mukaan johonkin toiseen kohtaan.
 > Prosessia, jossa kuolleita vihollisia otetaan mukaan peliin kutsutaan tässä "kuolleista herättämiseksi".
 
+Vihollinen voi olla geneerinen.
+
 Määritelmä. Vihollinen on "valmiina", jos:
 	hän on kuollut
-	hänen nimensä koodissa on "[satunnainen nimi]"
+	hän on geneerinen
+	hänen nimensä on satunnainen nimi
+	hänen nimensä koodissa on "[hänen nimensä]"
+	> TODO korjaa omistusliite:
+	hänen sukupuolensa on hänen nimen sukupuoli
 
 [Vihollisen] kuolleista herättäminen on toiminto.
 Vihollisen kuolleista herättämisen komento on "herätä [vihollinen] kuolleista".
@@ -265,24 +293,60 @@ Pelaajan nopeus on 5.
 >> Tyrmä
 
 Selli on huone.
-"Sellissä ei ole yhtään ikkunaa, mikä saa sinut vielä enemmän haluamaan pois."
+"Olet ikkunattomassa sellissä."
 
 Ennen pelin alkamista:
 	Pelaajan sijainti on nyt selli.
 	Pelaaja on nyt näkyvillä.
 
 Tyrmän käytävä on huone sellistä pohjoiseen.
-"Käytävän kummallakin puolella on rivissä lukittuja sellejä, jotka kuitenkin ovat kaikki tyhjiä."
+"Olet tyrmän käytävällä. Idässä on tyrmän uloskäynti. Muissa suunnissa on sellejä."
 
 Päätyselli on huone tyrmän käytävästä länteen.
-"..."
+"Olet ikkunattomassa sellissä."
 
-Päätysellin ovi on ovi päätysellin ja tyrmän käytävän välissä.
+Päätysellin ovi on listaamaton ovi päätysellin ja tyrmän käytävän välissä.
+
+Kasa luita on esine päätysellissä.
+"Kyseessä on ilmeisesti tyrmän entinen asukas."
+Tulkitse "kasa" kasana luita.
+Tulkitse "luu" kasana luita.
+
+Kasan luita ottamisen sijasta:
+	Sano fokalisoijalle "Pysyisit mielelläsi erossa vanhoista luista.".
+
+Tikari on ase.
+"Terävä kohokuvioitu ase, joka on vanhuudestaan huolimatta hyvin säilynyt."
+Tikarin voimakkuus on 5.
+
+Kasan luita alle katsomisen sijasta:
+	Jos tikari on piilossa:
+		Tikari on nyt näkyvillä.
+		Sano fokalisoijalle "Löydät luiden alta tikarin.".
+	Muulloin:
+		Sano fokalisoijalle "Luiden alla ei ole mitään kiinnostavaa.".
 
 Pohjoisselli on huone tyrmän käytävästä pohjoiseen.
-"..."
+"Olet ikkunattomassa sellissä."
 
-Pohjoissellin ovi on ovi pohjoissellin ja tyrmän käytävän välissä.
+Pohjoissellin ovi on listaamaton ovi pohjoissellin ja tyrmän käytävän välissä.
+
+Vanki on ihminen pohjoissellissä.
+"Vanki on puettu räsyisiin vaatteisiin. Hänen toinen jalkansa on kiinnitetty kahleella seinään."
+Vangin nimi on satunnainen nimi.
+Vangin nimi koodissa on "[vangin nimi]".
+Tulkitse "vanki" vankina.
+Tulkitse "[vangin sukupuoli]" vankina.
+
+Kahle on kiinteä avattava listaamaton esine pohjoissellissä.
+"Raskas metallinen kahle, jonka toinen pää on lukittu vangin jalkaan."
+
+Vangille puhumisen sijasta:
+	Sano fokalisoijalle "[Hän] käpertyy sikiöasentoon uskoen sinun olevan vartija.".
+
+Kahleen avautumisen jälkeen:
+	Sano fokalisoijalle "Vanki katselee hetken ympärilleen vapauduttuaan, ja rientää sitten avonaisesta ovesta ulos ja juoksee käytävään.".
+	Vanki on nyt piilossa.
 
 >> Vartijoiden huone
 
@@ -318,6 +382,7 @@ Tyrmän avain on esine Jaanan mukana.
 Tulkitse "avain" tyrmän avaimena.
 Päätysellin oven avaava avain on tyrmän avain.
 Pohjoissellin oven avaava avain on tyrmän avain.
+Kahleen avaava avain on tyrmän avain.
 
 Ruokakomero on huone vartijoiden huoneesta etelään.
 "Ahdas, pieni huone, joka toimii vartijoiden ruokavarastona."
@@ -356,10 +421,21 @@ Hovimestarin terveysluku on 50.
 Hovimestarin voimakkuus on 6.
 Hovimestarin nopeus on 3.
 
+Vangin ruumis on tylsä esine.
+"Tunnistat ruumiin vain vaivoin äskettäin vapauttamaksesi vangiksi."
+Vangin ruumiin nimi koodissa on "[Vangin] ruumis".
+Tulkitse "[vangin nimi]" vangin ruumiina.
+Tulkitse "vanki" vangin ruumiina.
+
+Kahleen avautumisen jälkeen:
+	Jos hovimestari on elävä:
+		Sano "Kuulet kiljaisun yläkerrasta.".
+		Vangin ruumis on nyt aulassa.
+
 >> Länsisiipi
 
 Läntinen käytävä on huone aulasta länteen.
-"..."
+"Olet talon läntisen siiven käytävällä."
 Tulkitse "käytävä" läntisenä käytävänä.
 
 Ruokahuone on huone läntisestä käytävästä pohjoiseen.
