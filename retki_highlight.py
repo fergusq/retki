@@ -163,7 +163,7 @@ class HTMLHighlighter:
 					font-family: "Fira Code", monospace;
 					line-height: 1em;
 				}
-				p.comment {
+				p.comment, pre {
 					margin-left: 20px;
 					margin-right: 20px;
 					margin-bottom: initial;
