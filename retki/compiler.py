@@ -32,16 +32,26 @@ def setGrammar(grammar):
 # Villikortit
 
 class AnyPattern:
-	def __init__(self, allow_empty):
+	def __init__(self, allow_empty, required_bits=set()):
 		self.allow_empty = allow_empty
 	def __repr__(self):
 		return "AnyPattern()"
 	def toCode(self):
-		return "<pattern that matches all strings without punctuation>"
+		if self.allow_empty:
+			return "<pattern that matches all strings without punctuation>"
+		else:
+			return "<pattern that matches all non-empty strings without punctuation>"
 	def match(self, grammar, tokens, bits):
+		bits_found = False
 		for token in tokens:
 			if token.token in [".", ",", ":", "!", "?", "[", "]"]:
 				return []
+			if any(altbits >= bits for _, altbits in token.alternatives):
+				bits_found = True
+		
+		if bits and not bits_found:
+			return []
+		
 		return [[lambda: tokens, " ".join([t.token for t in tokens])]]
 	def allowsEmptyContent(self):
 		return self.allow_empty
@@ -313,9 +323,10 @@ def defineField(owner, name, vtype, case="nimento"):
 		"$1.%s defaults $2" % (name_str,)
 	)
 
-pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .* , joka on .CLASS{nimento} . -> $1.$2 : $3", FuncOutput(defineField))
-pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .* kutsuttu .CLASS{nimento} . -> $1.$2 : $3", FuncOutput(lambda *x: defineField(*x, case="tulento")))
-pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .* kutsuttu joukko .CLASS{osanto,monikko} . -> $1.$2 : $3", FuncOutput(lambda *x: defineListField(*x, case="tulento")))
+pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .CLASS{nimento} . -> $1.$3 : $3", FuncOutput(lambda owner, vtype: defineField(owner, vtype.name_tokens, vtype)))
+pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .*{nimento} , joka on .CLASS{nimento} . -> $1.$2 : $3", FuncOutput(defineField))
+pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .*{tulento} kutsuttu .CLASS{nimento} . -> $1.$2 : $3", FuncOutput(lambda *x: defineField(*x, case="tulento")))
+pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .*{tulento} kutsuttu joukko .CLASS{osanto,monikko} . -> $1.$2 : $3", FuncOutput(lambda *x: defineListField(*x, case="tulento")))
 pgl(".DEF ::= .FIELD-DEF -> $1", identity)
 pgl(".DEF ::= .MAP-FIELD-DEF -> $1", identity)
 
@@ -712,9 +723,9 @@ def defineVariable(name, class_pattern):
 		pattern({"yksikkö", "nimento"}), vtype.id, name_str
 	), FuncOutput(lambda x: ('%s.equals(%s)' % (to_get(), x), orTrue(to_set(x)))))
 	
-	pgl(".ALIAS-DEF ::= tulkitse \" .* \" %s . -> $1 = %s" % (
-		pattern({"yksikkö", "olento"}), name_str
-	), FuncOutput(lambda alias: obj.addVariableAlias(alias)))
+	pgl(".ALIAS-DEF ::= tulkitse .EXPR-%d{nimento} %s . -> $1 = %s" % (
+		merkkijono.id, pattern({"yksikkö", "olento"}), name_str
+	), FuncOutput(lambda alias: obj.addVariableAlias(tokenize(eval(alias).extra["str"]))))
 	
 	pgl(".SELECTION-DEF ::= tarkoittaako pelaaja %s : -> does the player mean %s:" % (
 		pattern({"yksikkö", "olento"}), name_str
@@ -728,7 +739,7 @@ def defineVariable(name, class_pattern):
 		pattern({"yksikkö", "nimento"}), vtype.id, name_str
 	), FuncOutput(lambda x: setGlobalVar(name_str, eval(x))))
 
-pgl(".VARIABLE-DEF ::= .* on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
+pgl(".VARIABLE-DEF ::= .*{nimento} on .CLASS-PATTERN{nimento} . -> $1 : $2", FuncOutput(defineVariable))
 pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
 pgl(".DEF ::= .ALIAS-DEF -> $1", identity)
 pgl(".DEF ::= .VARIABLE-VALUE-DEF -> $1", identity)
