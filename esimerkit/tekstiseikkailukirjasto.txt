@@ -1,5 +1,6 @@
-> Retki
-> Copyright (c) 2018 Iikka Hauhio
+> Retki.
+> Copyright (c) 2018 Iikka Hauhio.
+> Kaikki oikeudet pidätetään.
 >
 > Tämä on vapaa ohjelmisto. Voit levittää ja/tai muokata sitä
 > Free Software Foundationin GNU General Public License -lisenssin
@@ -55,12 +56,6 @@ Ihminen on yleensä inhimillinen.
 Ihmisellä on sijainti, joka on huone.
 Ihmisellä on esineluetteloksi kutsuttu joukko esineitä.
 
-Määritelmä. Kun esine on "[ihmisen (I)] mukana":
-	I:n esineluettelo sisältää sen
-
-Määritelmä. Kun esine "ei ole [ihmisen (I)] mukana":
-	I:n esineluettelo ei sisällä sitä
-
 Huoneella on henkilöjoukoksi kutsuttu joukko ihmisiä.
 
 Ihminen on joko tietokoneen ohjaama tai pelaajan ohjaama.
@@ -73,6 +68,12 @@ Tulkitse "sinä" pelaajana.
 
 Fokalisoija on ihminen.
 Fokalisoija on alussa pelaaja.
+
+Määritelmä. Kun esine on "[ihmisen (I)] mukana":
+	I:n esineluettelo sisältää sen
+
+Määritelmä. Kun esine "ei ole [ihmisen (I)] mukana":
+	I:n esineluettelo ei sisällä sitä
 
 Määritelmä. Kun esine on "mukana":
 	se on fokalisoijan mukana
