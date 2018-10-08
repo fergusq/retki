@@ -79,7 +79,15 @@ class HTMLHighlighter:
 			self.endParagraph()
 			self.buffer_stack[0] += '<p class="comment"><em>' + text + "</em></p>"
 		else:
-			self.buffer_stack[-1] += '<br/><span class="comment"><em>' + text + "</em></span>"
+			self.buffer_stack[-2] += '<li class="no-bullet"><span class="comment"><em>' + text + "</em></span></li>"
+	
+	def ruleName(self, text):
+		if len(self.buffer_stack) == 3:
+			self.endParagraph()
+			self.buffer_stack[0] += '<p class="comment">(<em>' + text + "</em>)</p>"
+		else:
+			self.endLine()
+			self.buffer_stack[-2] += '<li class="no-bullet"><span class="rule-name">(<em>' + text + "</em>)</span></li>"
 	
 	def startString(self):
 		self.in_string = True
@@ -139,6 +147,9 @@ class HTMLHighlighter:
 				span.text {
 					color: black;
 				}
+				span.rule-name {
+					color: #478d5b;
+				}
 				span.comment {
 					padding: 5px;
 					background-color: #ffc;
@@ -158,6 +169,9 @@ class HTMLHighlighter:
 				}
 				p {
 					margin-bottom: 0px;
+				}
+				li.no-bullet {
+					list-style: none;
 				}
 				pre {
 					font-family: "Fira Code", monospace;
@@ -246,13 +260,15 @@ def highlight(file):
 				break
 		
 		if cont:
-			continue		
+			continue
 		elif line == "<break>":
 			highlighter.endParagraph()
 		elif line == "<indent>":
 			highlighter.indent()
 		elif line == "<dedent>":
 			highlighter.dedent()
+		elif line.startswith("(") and line.endswith(")"):
+			highlighter.ruleName(line[1:-1])
 		else:
 			highlighter.endLine()
 			if line.startswith("Määritelmä. "):
