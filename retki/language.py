@@ -678,13 +678,14 @@ ACTIONS = {}
 ACTIONS_BY_NAME = {}
 
 class RListener:
-	def __init__(self, action, params, priority, is_special_case, is_general_case, body):
+	def __init__(self, action, params, priority, is_special_case, is_general_case, body, name=None):
 		self.action = action
 		self.params = params
 		self.priority = priority
 		self.is_special_case = is_special_case
 		self.is_general_case = is_general_case
 		self.body = body
+		self.name = name
 		ACTION_LISTENERS.append(self)
 		action.listeners.append(self)
 	def toPython(self):
@@ -694,7 +695,8 @@ class RListener:
 			repr(self.priority), ', ',
 			repr(self.is_special_case), ', ',
 			repr(self.is_general_case), ', ',
-			'[', ", ".join(["lambda: " + cmd for cmd in self.body]) + ']'
+			'[', ", ".join(["lambda: " + cmd for cmd in self.body]), '], ',
+			repr(self.name),
 			')'
 		])
 	def run(self, args):

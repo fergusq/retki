@@ -787,8 +787,13 @@ class ListenerParser:
 		for i, (c, p, n) in enumerate(self.params):
 			addParamPhrases(grammar, "_" + str(i), p.type(), n)
 		grammar.parseGrammarLine(".CMD ::= keskeytä toiminto . -> stop", FuncOutput(lambda: 'ACTION_STACK[-1].bitOn("stop action")')) # suoritetaan isäntäscopessa
+		listener_name = None
+		def setListenerName(name):
+			nonlocal listener_name
+			listener_name = tokensToString(name)
+		grammar.parseGrammarLine(".CMD ::= ( .* ) -> listener name = $1", FuncOutput(setListenerName))
 		body = parseBlock(file, grammar, report=report)
-		return RListener(*self.args, body)
+		return RListener(*self.args, body, name=listener_name)
 
 def defineAction(name, params, pre, post):
 	name_str = (tokensToString(pre) + " " + name.token + " " + tokensToString(post)).lower().strip()
@@ -1153,7 +1158,9 @@ def parseBlock(reader, grammar, category="CMD", report=False):
 		if alternatives[0][1][-1] == ":":
 			ans.append(alternatives[0][0]().parse(reader, grammar, report=report))
 		else:
-			ans.append(alternatives[0][0]())
+			val = alternatives[0][0]()
+			if val is not None:
+				ans.append(val)
 	return ans
 
 # Tiedoston lataaminen
