@@ -495,6 +495,11 @@ Sijasta-kuuntelijat sisältävät ennen-lauseita tilannekohtaisempia sääntöj�
 Aikana-kuuntelija suorittaa toiminnon varsinaisen suorittamisen.
 Jälkeen-kuuntelijat ilmoittavat pelaajalle toiminnon lopputuloksesta.
 
+Kuuntelijalle voi antaa nimen suluissa koodin jälkeen.
+Ennen-kuuntelijoita kutsutaan usein "ehdoiksi" ja muita "säännöiksi".
+Kun kuuntelijaan viitataan muualla koodissa, nimen edessä on toiminnon nimi:
+esimerkiksi "esineen ottamisen näkyvyysehto".
+
 ::
 
 	[Esineen] ottaminen on toiminto.
@@ -503,20 +508,25 @@ Jälkeen-kuuntelijat ilmoittavat pelaajalle toiminnon lopputuloksesta.
 	Ennen piilossa olevan esineen ottamista:
 		Sano "Et näe mitään [sitä].".
 		Keskeytä toiminto.
+		(näkyvyysehto)
 
 	Ennen kiinteän esineen ottamista:
 		Sano "Et pystyisi liikuttamaan sitä.".
 		Keskeytä toiminto.
+		(epäkiinteysehto)
 
 	Tylsän esineen ottamisen sijasta:
 		Sano "Sinun ei tee mieli koskea mihinkään.".
+		(tylsän esineen poikkeussääntö)
 
 	Esineen ottamisen aikana:
 		Se on nyt piilossa.
 		Lisää se pelaajan esineluetteloon.
+		(perussääntö)
 
 	Esineen ottamisen jälkeen:
-		Sano "Sinulla on nyt [se].".
+		Sano fokalisoijalle "Sinulla on nyt [se].".
+		(raportointisääntö)
 
 Kuuntelijan sisällä voi käyttää toimintojen yhteydessä määriteltyjä komentoja, sekä seuraavia:
 
@@ -784,8 +794,6 @@ Kun huone luodaan, on tarkoitus pakottaa todeksi seuraava ehto::
 	Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)]":
 		B:n naapurihuone tarkasteltavassa suunnassa on A
 		A:n naapurihuone tarkasteltavan suunnan vastasuunnassa on B
-		B:n A:han johtava suunta on tarkasteltava suunta
-		A:n B:hen johtava suunta on tarkasteltavan suunnan vastasuunta
 		A:n naapurihuonejoukko sisältää B:n
 		B:n naapurihuonejoukko sisältää A:n
 
