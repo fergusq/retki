@@ -768,6 +768,7 @@ Ennen ihmistä vastaan hyökkäämistä:
 Juuri ennen ystävällismielistä ihmistä vastaan hyökkäämistä:
 	Jos fokalisoija on pelaajan ohjaama:
 		Sano "Et halua hyökätä [häntä] vastaan.".
+		Keskeytä toiminto.
 	(vihamielisyysehto)
 
 >> Syöminen
