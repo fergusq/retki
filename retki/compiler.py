@@ -857,7 +857,11 @@ def defineAction(name, params, pre, post):
 		command_pattern = "%s %s" % (
 			tokensToCode(pre),
 			" ".join([
-				".EXPR-%d{%s,yksikkö} %s" % (a_class.id, cmd_case, tokensToCode(post))
+				".EXPR-%d{%s} %s" % (
+					a_class.id,
+					cmd_case + (",yksikkö" if category != "PLAYER-CMD" else ""), # pelaaja voi viitata sanoihin sekä yksikössä että monikossa
+					tokensToCode(post)
+				)
 			for (_, a_class, _), (cmd_case, post) in zip(params, cmd_params)])
 		)
 		
