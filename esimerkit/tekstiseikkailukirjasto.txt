@@ -307,7 +307,7 @@ Huoneen esittelemisen aikana:
 
 Pelin alkamisen jälkeen:
 	Esittele pelaajan sijainti.
-	(pelin alkamisen sääntö)
+	(esittelysääntö)
 
 >> Katseleminen
 
@@ -326,9 +326,8 @@ Katselemisen aikana:
 > Määritellään pääilmansuunnat ja ylös/alas-akseli.
 > Huoneet on yhdistetty suuntien avulla verkoksi.
 > Tätä varten huoneella on kolme tietorakennetta:
-> naapurihuoneiden joukko,
-> kuvaus suunnista naapurihuoneiksi ja
-> kuvaus naapurihuoneista suunniksi.
+> naapurihuoneiden joukko ja
+> kuvaus suunnista naapurihuoneiksi.
 > ("Kuvaus" on hajautustaulu.)
 
 Suunta on käsite.
@@ -362,16 +361,11 @@ Ei-suunnan vastasuunta on ei-suunta.
 Kutakin suuntaa kohden huoneella voi olla naapurihuoneeksi siinä suunnassa kutsuttu huone.
 Huoneen naapurihuone suunnassa on yleensä seinä.
 
-Kutakin huonetta kohden huoneella voi olla siihen huoneeseen johtavaksi suunnaksi kutsuttu suunta.
-Huoneen huoneeseen johtava suunta on yleensä ei-suunta.
-
 Huoneella on naapurihuonejoukoksi kutsuttu joukko huoneita.
 
 Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)]":
 	B:n naapurihuone tarkasteltavassa suunnassa on A
 	A:n naapurihuone tarkasteltavan suunnan vastasuunnassa on B
-	B:n A:han johtava suunta on tarkasteltava suunta
-	A:n B:hen johtava suunta on tarkasteltavan suunnan vastasuunta
 	A:n naapurihuonejoukko sisältää B:n
 	B:n naapurihuonejoukko sisältää A:n
 
@@ -380,6 +374,12 @@ Määritelmä. Kun huone (A) on "[huoneesta (B)] ylös":
 
 Määritelmä. Kun huone (A) on "[huoneesta (B)] alas":
 	A on B:stä alas-suuntaan
+
+Määritelmä. Huone (A) on "[huoneen (B)] naapurihuone", jos:
+	B:n naapurihuonejoukko sisältää A:n
+
+Määritelmä. Huone (A) "ei ole [huoneen (B)] naapurihuone", jos:
+	B:n naapurihuonejoukko ei sisällä A:ta
 
 >> Ovi
 
@@ -414,18 +414,11 @@ Oven avautumisen jälkeen:
 
 > Määritellään toiminnot liikkumiselle ja siirtymiselle.
 > "Huoneeseen liikkuminen" ja "suuntaan liikkuminen" ovat pelaajalle näkyviä toimintoja,
-> jotka onnistuessaan kutsuvat "siirtymistä", joka siirtää fokalisoijan ehdottomasti annettuun huoneeseen.
-> (Vrt. avaaminen ja avautuminen)
+> jotka onnistuessaan kutsuvat "siirtymistä", joka siirtää fokalisoijan annettuun huoneeseen.
+> (Vrt. vähän kuin avaaminen ja avautuminen)
 
 [Huoneeseen] siirtyminen on toiminto.
 Siirtymisen komento on "siirry nyt [huoneeseen]".
-
-[Suuntaan] liikkuminen on toiminto.
-Liikkumisen komento on "liiku nyt [suuntaan]".
-Tulkitse "liiku [suuntaan]" liikkumisena.
-Tulkitse "mene [suuntaan]" liikkumisena.
-Tulkitse "[suuntaan]" liikkumisena.
-Tulkitse "[suunta]" liikkumisena.
 
 [Huoneeseen] liikkuminen on toiminto.
 Huoneeseen liikkumisen komento on "liiku nyt [huoneeseen]".
@@ -434,9 +427,22 @@ Tulkitse "liiku [huoneelle]" huoneeseen liikkumisena.
 Tulkitse "mene [huoneeseen]" huoneeseen liikkumisena.
 Tulkitse "mene [huoneelle]" huoneeseen liikkumisena.
 
-Huoneeseen (H) liikkumisen sijasta:
-	Liiku nyt fokalisoijan sijainnin H:hon johtavaan suuntaan.
+Ennen huoneeseen (H) liikkumista:
+	Jos H ei ole fokalisoijan sijainnin naapurihuone:
+		Sano fokalisoijalle "Et voi mennä sinne.".
+		Keskeytä toiminto.
+	(naapuruusehto)
+
+Huoneeseen (H) liikkumisen aikana:
+	Siirry nyt H:hon.
 	(perussääntö)
+
+[Suuntaan] liikkuminen on toiminto.
+Liikkumisen komento on "liiku nyt [suuntaan]".
+Tulkitse "liiku [suuntaan]" liikkumisena.
+Tulkitse "mene [suuntaan]" liikkumisena.
+Tulkitse "[suuntaan]" liikkumisena.
+Tulkitse "[suunta]" liikkumisena.
 
 Ei-suuntaan liikkumisen sijasta:
 	Sano "Et voi mennä sinne.".
@@ -676,9 +682,10 @@ Ennen piilossa olevalle ihmiselle puhumista:
 	Keskeytä toiminto.
 	(näkyvyysehto)
 
-Pelaajalle puhumisen sijasta:
-	Sano "Höpiset jotain yksin.".
-	(pelaajan poikkeussääntö)
+Ennen ihmiselle puhumista:
+	Jos fokalisoija on hän:
+		Sano "Höpiset jotain yksin.".
+	(epäitseysehto)
 
 Ihmiselle puhumisen aikana:
 	Sano "[Hän] ei näytä kiinnostuneelta höpinästäsi.".
