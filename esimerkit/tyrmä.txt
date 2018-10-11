@@ -158,15 +158,6 @@ Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
 	Muulloin:
 		Aiheutettu vahinko on nyt 0.
 	Jos vihollisen terveysluku on enintään 0:
-		Vihollisen kädessä oleva ase on nyt nyrkki.
-		Toista jokaiselle esineelle (E) vihollisen esineluettelossa:
-			Poista E vihollisen esineluettelosta.
-			E on nyt vihollisen sijainnissa.
-			> TODO: Siirrä viestin tulostaminen jälkeen-sääntöön
-			Jos vihollinen on pelaajan ohjaama:
-				Sano "Pudotat [e:n].".
-			Muulloin:	
-				Sano "[Vihollinen] pudottaa [e:n].".
 		Vihollinen on nyt kuollut.
 		Vihollinen on nyt piilossa.
 
@@ -202,6 +193,17 @@ Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 			Lopeta peli.
 		Muulloin:
 			Sano "[Vihollinen] on kuollut.".
+
+Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
+	Jos vihollinen on kuollut:
+		Vihollisen kädessä oleva ase on nyt nyrkki.
+		Toista jokaiselle esineelle (E) vihollisen esineluettelossa:
+			Poista E vihollisen esineluettelosta.
+			E on nyt fokalisoijan sijainnissa.
+			Jos vihollinen on pelaajan ohjaama:
+				Sano "Pudotat [e:n].".
+			Muulloin:
+				Sano "[Vihollinen] pudottaa [e:n].".
 
 >> Viholliset
 
@@ -335,6 +337,7 @@ Vanki on ihminen pohjoissellissä.
 "Vanki on puettu räsyisiin vaatteisiin. Hänen toinen jalkansa on kiinnitetty kahleella seinään."
 Vangin nimi on satunnainen nimi.
 Vangin nimi koodissa on "[vangin nimi]".
+Vangin sukupuoli on vangin nimen sukupuoli.
 Tulkitse "vanki" vankina.
 Tulkitse "[vangin sukupuoli]" vankina.
 
@@ -372,7 +375,7 @@ Puukko on ase Jaskan mukana.
 Puukon voimakkuus on 3.
 
 Jaana on vihollinen vartijoiden huoneessa.
-"Jaanan ilkeä ilme varmistaa pelottaa sinua hieman. Hänen vyöllään on avain."
+"Jaanan ilkeä ilme varmistaa, että sinua pelottaa. Hänen vyöllään on avain."
 Jaanan terveysluku on 8.
 Jaanan voimakkuus on 2.
 Jaanan nopeus on 1.
@@ -429,7 +432,7 @@ Tulkitse "vanki" vangin ruumiina.
 
 Kahleen avautumisen jälkeen:
 	Jos hovimestari on elävä:
-		Sano "Kuulet kiljaisun yläkerrasta.".
+		Sano "Kuulet hetken kuluttua kiljaisun yläkerrasta.".
 		Vangin ruumis on nyt aulassa.
 
 >> Länsisiipi
@@ -439,10 +442,11 @@ Läntinen käytävä on huone aulasta länteen.
 Tulkitse "käytävä" läntisenä käytävänä.
 
 Ruokahuone on huone läntisestä käytävästä pohjoiseen.
-"..."
+"Olet talon ruokahuoneessa. Tilaa hallitsee iso ruokapöytä."
 
-Ruokapöytä on kiinteä tukeva sisältäjä ruokahuoneessa.
+Ruokapöytä on kiinteä listaamaton tukeva sisältäjä ruokahuoneessa.
 "..."
+Tulkitse "pöytä" ruokapöytänä.
 
 Keittiö on huone ruokahuoneesta länteen.
 "..."
@@ -513,8 +517,12 @@ Eteinen on huone pohjoisesta käytävästä pohjoiseen.
 Yläkerroksen porrashuone on huone pohjakerroksen porrashuoneesta ylös.
 "Huoneen keskellä olevat portaat johtavat alempiin kerroksiin."
 
-Yläkerroksen aula on huone yläkerroksen porrashuoneesta pohjoiseen.
+Ylempi portaikko on listaamaton portaikko pohjakerroksen porrashuoneen ja yläkerroksen porrashuoneen välissä.
 "..."
+Tulkitse "porras" ylempänä portaikkona.
+
+Yläkerroksen aula on huone yläkerroksen porrashuoneesta pohjoiseen.
+"Olet yläkerroksen aulassa. Käytävät länteen, pohjoiseen ja itään johtavat talon kolmeen siipeen. Etelässä on porrashuone."
 Tulkitse "aula" yläkerroksen aulana.
 
 >> Yläkerroksen länsisiipi
