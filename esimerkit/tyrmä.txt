@@ -90,6 +90,10 @@ Aseen käteen ottamisen aikana:
 Aseen käteen ottamisen jälkeen:
 	Sano fokalisoijalle "Otat [sen] käteesi.".
 
+Aseen pudottamisen aikana:
+	Jos fokalisoijan kädessä oleva ase on se:
+		Fokalisoijan kädessä oleva ase on nyt nyrkki.
+
 Esineluettelon tulostamisen jälkeen:
 	Jos fokalisoijan kädessä oleva ase on nyrkki:
 		Jos fokalisoija on pelaajan ohjaama:
@@ -115,6 +119,9 @@ Ihmisen voimakkuus on yleensä 2.
 
 Ihmisellä on nopeudeksi kutsuttu kokonaisluku.
 Ihmisen nopeus on yleensä 2.
+
+Määritelmä. Ihminen on "kuolemassa", jos:
+	hänen terveyslukunsa on enintään 0
 
 Ihmisen kuvailemisen jälkeen:
 	Sano "[rivinvaihto]".
@@ -157,9 +164,6 @@ Ihmistä (vihollinen) vastaan hyökkäämisen aikana:
 		Vihollisen terveysluku on nyt (vihollisen terveysluku - aiheutettu vahinko).
 	Muulloin:
 		Aiheutettu vahinko on nyt 0.
-	Jos vihollisen terveysluku on enintään 0:
-		Vihollinen on nyt kuollut.
-		Vihollinen on nyt piilossa.
 
 Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
@@ -187,23 +191,23 @@ Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
 	Muulloin:
 		Sano "[Vihollisen] terveysluku: [vihollisen terveysluku].".
 	
-	Jos vihollinen on kuollut:
+	Jos vihollinen on kuolemassa:
 		Jos vihollinen on pelaajan ohjaama:
 			Sano "Olet kuollut.".
-			Lopeta peli.
 		Muulloin:
 			Sano "[Vihollinen] on kuollut.".
 
 Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
-	Jos vihollinen on kuollut:
+	Jos vihollinen on kuolemassa:
 		Vihollisen kädessä oleva ase on nyt nyrkki.
 		Toista jokaiselle esineelle (E) vihollisen esineluettelossa:
-			Poista E vihollisen esineluettelosta.
-			E on nyt fokalisoijan sijainnissa.
-			Jos vihollinen on pelaajan ohjaama:
-				Sano "Pudotat [e:n].".
-			Muulloin:
-				Sano "[Vihollinen] pudottaa [e:n].".
+			Vihollinen fokalisoijana:
+				Pudota nyt E.
+
+Ihmistä (vihollinen) vastaan hyökkäämisen jälkeen:
+	Jos vihollinen on kuolemassa:
+		Vihollinen on nyt kuollut.
+		Vihollinen on nyt piilossa.
 
 >> Viholliset
 
@@ -240,6 +244,8 @@ Tietokoneen vuoron pelaamisen aikana:
 		Sano "[rivinvaihto][rivinvaihto]".
 		T fokalisoijana:
 			Hyökkää nyt tietokoneen vihollista vastaan.
+	Jos pelaaja on kuollut:
+		Lopeta peli.
 
 Huoneeseen siirtymisen jälkeen:
 	Jos fokalisoija on pelaajan ohjaama:
@@ -415,7 +421,7 @@ Tulkitse "porras" alempana portaikkona.
 Aula on huone pohjakerroksen porrashuoneesta pohjoiseen.
 "Aula yhdistää kartanon itäisen, läntisen ja pohjoisen siiven toisiinsa. Katseen vangitsevat yleellinen kattokruunu ja lattiaa peittävä kaunis kuvioitu matto. Etelässä olevan oviaukon takana on porrashuone."
 
-Aukko on listaamaton ei-avattava ovi pohjakerroksen porrashuoneen ja aulan välissä.
+Aukko on listaamaton kiinteä esine pohjakerroksen porrashuoneessa.
 
 Kattokruunu on kiinteä listaamaton esine aulassa.
 "Kruunuun on kiinnitetty kahdeksan palavaa valkoista kynttilää."
