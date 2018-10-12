@@ -618,6 +618,35 @@ Tarkoittaako pelaaja esineen ottamista:
 	Muuten:
 		ehkä
 
+>> Pudottaminen
+
+[Esineen] pudottaminen on toiminto.
+Pudottamisen komento on "pudota nyt [esine]".
+Tulkitse "pudota [esine]" pudottamisena.
+
+Ennen piilossa olevan esineen pudottamista:
+	Sano fokalisoijalle "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+	(näkyvyysehto)
+
+Ennen esineen pudottamista:
+	Jos se ei ole mukana:
+		Sano fokalisoijalle "Et voi pudottaa [sitä], sillä se ei ole mukanasi.".
+		Keskeytä toiminto.
+	(mukanaoloehto)
+
+Esineen pudottamisen aikana:
+	Nyt se ei ole mukana.
+	Se on nyt näkyvillä.
+	(perussääntö)
+
+Esineen pudottamisen jälkeen:
+	Jos fokalisoija on pelaajan ohjaama:
+		Sano "Pudotat [sen].".
+	Muulloin:
+		Sano "[Fokalisoija] pudottaa [sen].".
+	(raportointisääntö)
+
 >> Fokalisoijan esineluettelon tulostaminen
 
 Esineluettelon tulostaminen on toiminto.
