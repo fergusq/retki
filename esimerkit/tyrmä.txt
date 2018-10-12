@@ -354,7 +354,7 @@ Kahleen avautumisen jälkeen:
 >> Vartijoiden huone
 
 Vartijoiden huone on huone tyrmän käytävästä itään.
-"Öljylampun valo tekee ikkunattomasta huoneesta yllättävän kodikkaan."
+"Öljylampun valo tekee ikkunattomasta huoneesta yllättävän kodikkaan. Etelässä on pieni ovi. Huoneen pohjoispuolella on porrashuone."
 
 Pöytä on kiinteä tukeva sisältäjä vartijoiden huoneessa.
 "Vanha puinen pöytä."
@@ -390,6 +390,9 @@ Kahleen avaava avain on tyrmän avain.
 Ruokakomero on huone vartijoiden huoneesta etelään.
 "Ahdas, pieni huone, joka toimii vartijoiden ruokavarastona."
 
+Pieni ovi on listaamaton ovi ruokakomeron ja vartijoiden huoneen välissä.
+"Näet pienen puisen oven."
+
 Leipä on ruoka-annos ruokakomerossa.
 "Kuivanutta ruisleipää, joka on tarkoitettu palvelijoiden käyttöön."
 Leivän ruoka-arvo on 3.
@@ -404,22 +407,31 @@ Portaikko on yleensä lukitsematon.
 >> Pohjakerros
 
 Pohjakerroksen porrashuone on huone tyrmän porrashuoneesta ylös.
-"Huonetta hallitsevat portaat johtavat alas pimeään kellariin ja ylös yläkertaan."
+"Huonetta hallitsevat portaat johtavat alas pimeään kellariin ja ylös yläkertaan. Pohjoisella seinällä on oviaukko, joka johtaa pohjakerrokseen."
 
 Alempi portaikko on listaamaton portaikko tyrmän porrashuoneen ja pohjakerroksen porrashuoneen välissä.
 Tulkitse "porras" alempana portaikkona.
 
 Aula on huone pohjakerroksen porrashuoneesta pohjoiseen.
-"Aula yhdistää kartanon itäisen ja läntisen siiven toisiinsa. Katseen vangitsevat yleellinen kattokruunu ja lattiaa peittävä kaunis kuvioitu matto."
+"Aula yhdistää kartanon itäisen, läntisen ja pohjoisen siiven toisiinsa. Katseen vangitsevat yleellinen kattokruunu ja lattiaa peittävä kaunis kuvioitu matto. Etelässä olevan oviaukon takana on porrashuone."
+
+Aukko on listaamaton ei-avattava ovi pohjakerroksen porrashuoneen ja aulan välissä.
 
 Kattokruunu on kiinteä listaamaton esine aulassa.
 "Kruunuun on kiinnitetty kahdeksan palavaa valkoista kynttilää."
+Tulkitse "kruunu" kattokruununa.
+Tulkitse "valkoinen kynttilä" kattokruununa.
+Tulkitse "kynttilä" kattokruununa.
 
-Matto on tylsä listaamaton esine aulassa.
+Aulan matto on tylsä listaamaton esine aulassa.
 "Aulan mattoon on kuvioitu tyyliteltyjä puita ja jokia."
+Tulkitse "matto" aulan mattona.
+Tulkitse "puu" aulan mattona.
+Tulkitse "joki" aulan mattona.
 
 Hovimestari on vihollinen aulassa.
 "Frakkiin pukeutunut herrasmies on valmis ohjaamaan sinut takaisin selliisi."
+Tulkitse "frakki" hovimestarina.
 Hovimestarin terveysluku on 50.
 Hovimestarin voimakkuus on 6.
 Hovimestarin nopeus on 3.
@@ -427,6 +439,7 @@ Hovimestarin nopeus on 3.
 Vangin ruumis on tylsä esine.
 "Tunnistat ruumiin vain vaivoin äskettäin vapauttamaksesi vangiksi."
 Vangin ruumiin nimi koodissa on "[Vangin] ruumis".
+Tulkitse "ruumis" vangin ruumiina.
 Tulkitse "[vangin nimi]" vangin ruumiina.
 Tulkitse "vanki" vangin ruumiina.
 
@@ -514,24 +527,53 @@ Eteinen on huone pohjoisesta käytävästä pohjoiseen.
 
 >> Yläkerros
 
-Yläkerroksen porrashuone on huone pohjakerroksen porrashuoneesta ylös.
-"Huoneen keskellä olevat portaat johtavat alempiin kerroksiin."
+Yläkerroksen porrashuone on pimeä huone pohjakerroksen porrashuoneesta ylös.
+"Huoneen keskellä olevat portaat johtavat alempiin kerroksiin. Pohjoisessa on yläkerran aula."
 
 Ylempi portaikko on listaamaton portaikko pohjakerroksen porrashuoneen ja yläkerroksen porrashuoneen välissä.
-"..."
 Tulkitse "porras" ylempänä portaikkona.
 
-Yläkerroksen aula on huone yläkerroksen porrashuoneesta pohjoiseen.
+Yläkerroksen aula on pimeä huone yläkerroksen porrashuoneesta pohjoiseen.
 "Olet yläkerroksen aulassa. Käytävät länteen, pohjoiseen ja itään johtavat talon kolmeen siipeen. Etelässä on porrashuone."
 Tulkitse "aula" yläkerroksen aulana.
 
 >> Yläkerroksen länsisiipi
 
-Yläkerroksen läntinen käytävä on huone yläkerroksen aulasta länteen.
-"..."
+Yläkerroksen läntinen käytävä on pimeä huone yläkerroksen aulasta länteen.
+"Olet läntisessä käytävässä. Idässä on kerroksen aula. Käytävän pohjoisella ja eteläisellä puolella on ovet."
 
-Kirjasto on huone yläkerroksen läntisestä käytävästä pohjoiseen.
-"..."
+Kirjasto on pimeä huone yläkerroksen läntisestä käytävästä pohjoiseen.
+"Olet talon kirjastossa. Huoneen seiniä peittävät kirjahyllyt täynnä erikokoisia kirjoja kirjoitettuna eri kielillä. Huoneen nurkassa on nojatuoli ja yhdellä seinällä kirjoituspöytä. Huoneen ainoa uloskäynti on etelässä."
+
+Kirjahylly on kiinteä listaamaton ympäröivä sisältäjä kirjastossa.
+"Huoneen seiniä peittävät kirjahyllyt täynnä erikokoisia kirjoja kirjoitettuna eri kielillä."
+Tulkitse "hylly" kirjahyllynä.
+
+Kirja on kirjoitusta sisältävä esine.
+"Kirja on kirjoitettu sinulle tuntemattomalla kielellä, mutta kuvista päätellen se on kaunokirja."
+Kirjahyllyssä on 53 kirjaa.
+
+Kirjan lukemisen sijasta:
+	Sano "Et ymmärrä kirjan kieltä, mutta päättelet sen olevan kaunokirja.".
+
+Nojatuoli on kiinteä listaamaton esine kirjastossa.
+"Nahkapäällysteinen nojatuoli näyttää kutsuvalta. Sen sylissä olisi varmasti mukava lukea kirjaa."
+
+Kirjoituspöytä on kiinteä listaamaton tukeva sisältäjä kirjastossa.
+"Kirjoituspöytä on uudehko. Pöydän edessä on puinen tuoli."
+Tulkitse "pöytä" kirjoituspöytänä.
+
+Kauppakirja on esine kirjoituspöydän päällä.
+"Valkoinen A4-arkki on kirjoitettu sinulle tuntemattomalla kielellä. Sen alareunassa on kaksi allekirjoitusta."
+Kauppakirjan nimi koodissa on "paperiarkki".
+Tulkitse "valkoinen paperiarkki" kauppakirjana.
+Tulkitse "arkki" kauppakirjana.
+Tulkitse "paperi" kauppakirjana.
+
+Kirjoituspöydän tuoli on tylsä listaamaton esine kirjastossa.
+"Kirjoituspöydän edessä on puinen tuoli."
+Tulkitse "puinen tuoli" kirjoituspöydän tuolina.
+Tulkitse "tuoli" kirjoituspöydän tuolina.
 
 Pesutupa on huone yläkerroksen läntisestä käytävästä etelään.
 "..."
