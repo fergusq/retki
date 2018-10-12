@@ -79,6 +79,7 @@ class HTMLHighlighter:
 			self.endParagraph()
 			self.buffer_stack[0] += '<p class="comment"><em>' + text + "</em></p>"
 		else:
+			self.endLine()
 			self.buffer_stack[-2] += '<li class="no-bullet"><span class="comment"><em>' + text + "</em></span></li>"
 	
 	def ruleName(self, text):
@@ -153,6 +154,7 @@ class HTMLHighlighter:
 				span.comment {
 					padding: 5px;
 					background-color: #ffc;
+					color: black;
 				}
 				@counter-style stmt-counter {
 					system: extends decimal;
