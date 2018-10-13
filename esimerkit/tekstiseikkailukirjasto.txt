@@ -714,6 +714,7 @@ Ennen piilossa olevalle ihmiselle puhumista:
 Ennen ihmiselle puhumista:
 	Jos fokalisoija on hän:
 		Sano "Höpiset jotain yksin.".
+		Keskeytä toiminto.
 	(epäitseysehto)
 
 Ihmiselle puhumisen aikana:
