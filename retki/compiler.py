@@ -535,20 +535,11 @@ class ForCondParser:
 def parseCondBlock(file, grammar, report=False):
 	return zip(*parseBlock(file, grammar, category="COND-STMT", report=report))
 
-# Käyttäjän määrittelemät ehtosäännöt
+# Parametrit
 
-def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *args, report=False):
-	
-	# parsitaan argumentit
-	args = list(args)
-	if first_named:
-		first_name = args[0]
-		del args[0]
-	else:
-		first_name = None
-	pre = args[0]
+def parseParameters(nameds, args):
 	params = []
-	i = 1
+	i = 0
 	j = 0
 	while i < len(args)-1:
 		#                      VTYPE,CASE, POST,      NAME
@@ -558,6 +549,34 @@ def defineCondition(grammar, file, custom_verb, nameds, first_named, owner, *arg
 			params.append((*args[i],   args[i+1], None))
 		i += 3 if nameds[j] else 2
 		j += 1
+	return params
+
+def addParameterPatterns(num_params):
+	for nameds in itertools.product(*[[False, True]]*num_params):
+		addParameterPattern(nameds)
+
+def addParameterPattern(nameds):
+	pattern = " ".join(["[ .CLASS-CASE %s ] .**" % ("" if not named else "( .* )",) for named in nameds])
+	pgl(".PARAMETERS-%d ::= %s -> $*" % (len(nameds), pattern), FuncOutput(lambda *p: parseParameters(nameds, p)))
+	GRAMMAR.addCategoryName("PARAMETERS-%d" % (len(nameds),), "%d-parametrinen hahmo" % (len(nameds),))
+
+for num_params in [1,2,3]:
+	addParameterPatterns(num_params)
+
+# Käyttäjän määrittelemät ehtosäännöt
+
+# args on joko [pre], [first_name, pre], [pre, params] tai [first_name, pre, params]
+def defineCondition(grammar, file, custom_verb, first_named, owner, *args, report=False):
+	
+	# parsitaan argumentit
+	args = list(args)
+	if first_named:
+		first_name = args[0]
+		del args[0]
+	else:
+		first_name = None
+	pre = args[0]
+	params = args[1] if len(args) >= 2 else []
 	
 	# luodaan nimi ja patterni
 	increaseCounter()
@@ -666,17 +685,17 @@ class ConditionParser:
 		return defineCondition(grammar, file, *self.args, report=report)
 
 def addConditionDefPatterns(num_params):
-	for first_named, *nameds in itertools.product(*[[False, True]]*(num_params+1)):
-		addConditionDefPattern(num_params, first_named, nameds)
+	addConditionDefPattern(num_params, False)
+	addConditionDefPattern(num_params, True)
 
-def addConditionDefPattern(num_params, first_named, nameds):
-	fname = "" if not first_named else "( .* )"
-	pattern = " ".join(["[ .CLASS-CASE %s ] .**" % ("" if not named else "( .* )",) for named in nameds])
+def addConditionDefPattern(num_params, first_named):
+	first_name = "" if not first_named else "( .* )"
+	parameters = "" if not num_params else ".PARAMETERS-%d" % (num_params,)
 	for prefix, postfix in [("Kun", ""), ("", ", jos")]:
-		pgl(".COND-DEF ::= Määritelmä . %s .CLASS{nimento} %s on \" .** %s \" %s : -> def $1~ $*:" % (prefix, fname, pattern, postfix),
-			FuncOutput(lambda *p: ConditionParser(False, nameds, first_named, *p)))
-		pgl(".COND-DEF ::= Määritelmä . %s .CLASS{nimento} %s \" .** %s \" %s : -> def $1~ $*:" % (prefix, fname, pattern, postfix),
-			FuncOutput(lambda *p: ConditionParser(True, nameds, first_named, *p)))
+		pgl(".COND-DEF ::= Määritelmä . %s .CLASS{nimento} %s on \" .** %s \" %s : -> def $1~ $*:" % (prefix, first_name, parameters, postfix),
+			FuncOutput(lambda *p: ConditionParser(False, first_named, *p)))
+		pgl(".COND-DEF ::= Määritelmä . %s .CLASS{nimento} %s \" .** %s \" %s : -> def $1~ $*:" % (prefix, first_name, parameters, postfix),
+			FuncOutput(lambda *p: ConditionParser(True, first_named, *p)))
 
 for num_params in [0,1,2]:
 	addConditionDefPatterns(num_params)
