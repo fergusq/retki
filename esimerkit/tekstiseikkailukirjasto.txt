@@ -613,7 +613,7 @@ Tarkoittaako pelaaja piilossa olevan esineen ottamista:
 	varmasti ei
 
 Tarkoittaako pelaaja esineen ottamista:
-	Jos pelaajan esineluettelo sisältää sen:
+	Jos se on pelaajan mukana:
 		tuskin
 	Muuten:
 		ehkä
@@ -646,6 +646,12 @@ Esineen pudottamisen jälkeen:
 	Muulloin:
 		Sano "[Fokalisoija] pudottaa [sen].".
 	(raportointisääntö)
+
+Tarkoittaako pelaaja esineen pudottamista:
+	Jos se ei ole pelaajan mukana:
+		tuskin
+	Muuten:
+		ehkä
 
 >> Fokalisoijan esineluettelon tulostaminen
 
