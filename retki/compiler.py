@@ -993,13 +993,16 @@ def addIntCondition(op, pyop):
 		FuncOutput(lambda a, b: ('(%s.extra["int"] %s %s.extra["int"])' % (a, pyop, b), '()'))) # TODO: virhe modify-osassa
 
 for clazz in [yläkäsite, kokonaisluku]:
-	pgl('.EXPR-%d ::= .N -> $1' % (clazz.id,), FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
+	pgl('.EXPR-%d ::= .N{$} -> $1' % (clazz.id,), FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
 	pgl('.EXPR-%d ::= satunnaisluku{$} välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} -> rnd($1, $2)' % (
 		clazz.id, kokonaisluku.id, kokonaisluku.id
 	), FuncOutput(lambda start, end: 'createIntegerObj(random.randint(%s.extra["int"], %s.extra["int"]))' % (start, end)))
 	pgl('.EXPR-%d ::= .EXPR-%d{omanto} neliöjuuri{$} -> $1' % (clazz.id,kokonaisluku.id), FuncOutput(lambda arg: 'createIntegerObj(math.sqrt(' + arg + '.extra["int"]))'))
 	for op, pyop in [("+", "+"), ("-", "-"), ("–", "-"), ("−", "-"), ("*", "*"), ("/", "/")]:
 		addIntOperator(clazz, op, pyop)
+
+pgl('.N-OR-EXPR ::= .N{$} -> $1', FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
+pgl('.N-OR-EXPR ::= ( .EXPR-%d{$} ) -> $1' % (kokonaisluku.id,), identity)
 
 for op, pyop in [
 	("=", "=="), ("on yhtä suuri kuin", "=="),
@@ -1009,6 +1012,36 @@ for op, pyop in [
 	("<=", "<="), ("on pienempi tai yhtä suuri kuin", "<="), ("on enintään", "<="),
 	(">=", ">="), ("on suurempi tai yhtä suuri kuin", ">="), ("on vähintään", ">=")]:
 	addIntCondition(op, pyop)
+
+# Monikot
+
+def addTuple(*args):
+	num_fields = (len(args)-2)//2
+	class_name = args[-1]
+	tupleclass = defineClass(class_name, yläkäsite)
+	tupleclass.primitive = "lambda obj: 'createTupleObj(\"" + tupleclass.name.replace("\\", "\\\\").replace("\"", "\\\"") + "\", ' + repr(obj.extra['tuple']) + ')'"
+	prefix = args[0]
+	code = tokensToCode(prefix)
+	for i in range(1, len(args)-1, 2):
+		field_name = args[i]
+		postfix = args[i+1]
+		pattern = lambda bits: nameToCode(field_name, bits, rbits={"nimento", "yksikkö"})
+		for clazz in kokonaisluku.superclasses():
+			pgl(".EXPR-%d ::= .EXPR-%d{omanto} %s -> $1.%s" % (clazz.id, tupleclass.id, pattern({"$"}), nameToCode(field_name)),
+				FuncOutput(lambda obj: obj + '[' + repr((i-1)//2) + ']'))
+		code += " .N-OR-EXPR " + tokensToCode(postfix)
+	for clazz in tupleclass.superclasses():
+		for det in ["", nameToCode(class_name) + " "]:
+			pgl(".EXPR-%d ::= %s%s -> ( %s )" % (clazz.id, det, code, ", ".join(["$%d" % i for i in range(1, num_fields)])),
+				FuncOutput(lambda *args: 'createTupleObj(' + ", ".join((repr(tupleclass.name),) + args) + ')'))
+
+for num_fields in [1, 2, 3]:
+	pgl('.TUPLE-DEF ::= " .** %s" on .* . -> %d-tuple $1' % (
+		"[ .* ] .** "*num_fields,
+		num_fields
+	), FuncOutput(addTuple))
+
+pgl(".DEF ::= .TUPLE-DEF -> $1", identity)
 
 # For-silmikka
 

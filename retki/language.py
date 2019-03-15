@@ -736,6 +736,11 @@ def createStringObj(x):
 def createIntegerObj(x):
 	return CLASSES["kokonaisluku"].newInstance().setExtra("int", x)
 
+# Monikon luominen
+
+def createTupleObj(c, *x):
+	return CLASSES[c].newInstance().setExtra("tuple", tuple(x))
+
 # Tulostaminen
 
 prev_was_newline = True
