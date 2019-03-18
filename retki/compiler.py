@@ -184,9 +184,10 @@ def orTrue(code):
 
 # Luokat
 
-def defineClass(name, superclass):
-	name_str = tokensToString(name)
-	name_code = nameToCode(name)
+def defineClass(name, superclass, name_rbits={"yksikkö", "nimento"}):
+	name_str = tokensToString(name, rbits=name_rbits)
+	name_code = nameToCode(name, rbits=name_rbits)
+	pattern = lambda bits: nameToCode(name, bits=bits, rbits=name_rbits)
 	
 	if name_str in CLASSES:
 		raise Exception("redefinition of class " + name_str)
@@ -217,7 +218,7 @@ def defineClass(name, superclass):
 	pgl(".CLASS ::= %s -> %s" % (name_code, name_str), FuncOutput(lambda: rclass))
 	
 	def addClassCasePhrase(case):
-		pgl(".CLASS-CASE-%d ::= %s -> $1:%s" % (rclass.id, nameToCode(name, bits={case}), case), FuncOutput(lambda: case))
+		pgl(".CLASS-CASE-%d ::= %s -> $1:%s" % (rclass.id, pattern({case}), case), FuncOutput(lambda: case))
 		GRAMMAR.addCategoryName("CLASS-CASE-%d" % (rclass.id,), name_str + "-käsitteen nimi "+case+"-muodossa")
 
 	for case in CASES:
@@ -225,10 +226,10 @@ def defineClass(name, superclass):
 	
 	def addMapFieldDefPattern(key_case, is_pre):
 		pgl(".MAP-FIELD-DEF ::= Kutakin %s kohden .CLASS{ulkoolento} voi olla %s se{%s} %s %s kutsuttu .CLASS{nimento} . -> $1.$2 : {$4}" % (
-			nameToCode(name, bits={"osanto", "yksikkö"}),
+			pattern({"osanto", "yksikkö"}),
 			".**" if is_pre else "",
 			key_case,
-			nameToCode(name, bits={key_case, "yksikkö"}),
+			pattern({key_case, "yksikkö"}),
 			".**" if not is_pre else ""
 		), FuncOutput(lambda *p: defineMapField(rclass, key_case, is_pre, *p, case="tulento")))
 	
@@ -1001,9 +1002,6 @@ for clazz in [yläkäsite, kokonaisluku]:
 	for op, pyop in [("+", "+"), ("-", "-"), ("–", "-"), ("−", "-"), ("*", "*"), ("/", "/")]:
 		addIntOperator(clazz, op, pyop)
 
-pgl('.N-OR-EXPR ::= .N{$} -> $1', FuncOutput(lambda s: 'createIntegerObj(' + str(s) + ')'))
-pgl('.N-OR-EXPR ::= ( .EXPR-%d{$} ) -> $1' % (kokonaisluku.id,), identity)
-
 for op, pyop in [
 	("=", "=="), ("on yhtä suuri kuin", "=="),
 	("/=", "!="), ("ei ole", "!="),
@@ -1015,11 +1013,11 @@ for op, pyop in [
 
 # Monikot
 
-def addTuple(*args):
+def addTuple(*args, case="nimento"):
 	num_fields = (len(args)-2)//2
 	class_name = args[-1]
-	tupleclass = defineClass(class_name, yläkäsite)
-	tupleclass.primitive = "lambda obj: 'createTupleObj(\"" + tupleclass.name.replace("\\", "\\\\").replace("\"", "\\\"") + "\", ' + repr(obj.extra['tuple']) + ')'"
+	tupleclass = defineClass(class_name, yläkäsite, name_rbits={"yksikkö", case})
+	tupleclass.primitive = "lambda obj: 'createTupleObj(\"" + tupleclass.name.replace("\\", "\\\\").replace("\"", "\\\"") + "\", ' + ', '.join([v.toPythonRef() for v in obj.extra['tuple']]) + ')'"
 	prefix = args[0]
 	code = tokensToCode(prefix)
 	for i in range(1, len(args)-1, 2):
@@ -1028,20 +1026,38 @@ def addTuple(*args):
 		pattern = lambda bits: nameToCode(field_name, bits, rbits={"nimento", "yksikkö"})
 		for clazz in kokonaisluku.superclasses():
 			pgl(".EXPR-%d ::= .EXPR-%d{omanto} %s -> $1.%s" % (clazz.id, tupleclass.id, pattern({"$"}), nameToCode(field_name)),
-				FuncOutput(lambda obj: obj + '[' + repr((i-1)//2) + ']'))
-		code += " .N-OR-EXPR " + tokensToCode(postfix)
+				FuncOutput(lambda obj: obj + '.extra["tuple"][' + repr((i-1)//2) + ']'))
+		code += " .EXPR-%d{nimento} %s" % (kokonaisluku.id, tokensToCode(postfix))
+
+	create = lambda *args: 'createTupleObj(' + ", ".join((repr(tupleclass.name),) + args) + ')'
+
+	def addTupleOperator(clazz, op, pyop):
+		pgl('.EXPR-%d ::= ( .EXPR-%d{nimento} %s .EXPR-%d{$} ) -> ($1 %s $2)' % (clazz.id, tupleclass.id, op, tupleclass.id, pyop),
+			FuncOutput(lambda a, b:
+				create(*[
+					'createIntegerObj(%s.extra["tuple"][%d].extra["int"] %s %s.extra["tuple"][%d].extra["int"])' % (a, i, pyop, b, i)
+					for i in range(1, num_fields)
+				])))
+	
 	for clazz in tupleclass.superclasses():
-		for det in ["", nameToCode(class_name) + " "]:
+		for op, pyop in [("+", "+"), ("-", "-")]:
+			addTupleOperator(clazz, op, pyop)
+		for det in ["", nameToCode(class_name, rbits={"yksikkö", case}) + " "]:
 			pgl(".EXPR-%d ::= %s%s -> ( %s )" % (clazz.id, det, code, ", ".join(["$%d" % i for i in range(1, num_fields)])),
-				FuncOutput(lambda *args: 'createTupleObj(' + ", ".join((repr(tupleclass.name),) + args) + ')'))
+				FuncOutput(create))
 
 for num_fields in [1, 2, 3]:
-	pgl('.TUPLE-DEF ::= " .** %s" on .* . -> %d-tuple $1' % (
+	pgl('.TUPLE-DEF ::= " .** %s" on merkintä .* . -> %d-tuple $1' % (
 		"[ .* ] .** "*num_fields,
 		num_fields
-	), FuncOutput(addTuple))
+	), FuncOutput(lambda *a: addTuple(*a, case="ulkotulento")))
+	pgl('.TUPLE-DEF ::= " .** %s" on .* merkintä . -> %d-tuple $1' % (
+		"[ .* ] .** "*num_fields,
+		num_fields
+	), FuncOutput(lambda *a: addTuple(*a, case="omanto")))
 
 pgl(".DEF ::= .TUPLE-DEF -> $1", identity)
+GRAMMAR.addCategoryName("TUPLE-DEF", "monikkomääritys")
 
 # For-silmikka
 
@@ -1088,7 +1104,7 @@ class RepeatParser:
 		addParamPhrases(grammar, None, kokonaisluku, self.var, plural=False, varname=varname)
 		
 		block = parseBlock(file, grammar, report=report)
-		return '[%s for %s in range(%s, %s.extra["int"]+1)]' % (
+		return '[(%s) for %s in map(createIntegerObj, range(%s, %s.extra["int"]+1))]' % (
 			", ".join(block), varname,
 			self.start + '.extra["int"]' if self.start else "1",
 			self.end
@@ -1097,7 +1113,7 @@ class RepeatParser:
 pgl(".CMD ::= toista .EXPR-%d{nimento} kertaa : -> repeat $1 times:" % (kokonaisluku.id,),
 	FuncOutput(RepeatParser))
 
-pgl(".CMD ::= toista jokaiselle kokonaisluvulle .* välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} : -> repeat $1 times:" % (
+pgl(".CMD ::= toista jokaiselle kokonaisluvulle ( .* ) välillä .EXPR-%d{sisaeronto} .EXPR-%d{sisatulento} : -> repeat $1 times:" % (
 	kokonaisluku.id, kokonaisluku.id
 ), FuncOutput(lambda var, start, end: RepeatParser(end, start=start, var=var)))
 

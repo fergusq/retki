@@ -374,6 +374,10 @@ class RObject(Bits):
 	def toKey(self):
 		if "str" in self.extra:
 			return self.extra["str"]
+		elif "int" in self.extra:
+			return self.extra["int"]
+		elif "tuple" in self.extra:
+			return tuple(v.toKey() for v in self.extra["tuple"])
 		else:
 			return self
 
