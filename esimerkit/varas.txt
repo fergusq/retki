@@ -1,0 +1,79 @@
+>>> VARAS, kirjoittanut Iikka Hauhio
+
+>> Piste
+
+"([x-komponentti]; [y-komponentti])" on merkintä pisteelle.
+
+>> Hahmot
+
+Hahmo on käsite.
+Hahmolla on merkiksi kutsuttu merkkijono.
+Hahmolla on nopeudeksi kutsuttu kokonaisluku.
+Hahmolla on sijainniksi kutsuttu piste.
+
+>> Pelaaja
+
+Pelaaja on hahmo.
+Pelaajan merkki on "@".
+Pelaajan sijainti on (2; 2).
+
+>> Suunta
+
+Suunta on käsite.
+Suunnalla on vastasuunnaksi kutsuttu suunta.
+Suunnalla on muutosvektoriksi kutsuttu piste.
+
+Määritelmä. Kun suunta (A) on "pois [suunnasta (B)]":
+	A:n vastasuunta on B
+	B:n vastasuunta on A
+	A:n muutosvektori on ((0; 0) - B:n muutosvektori)
+
+Määritelmä. Kun suunta (S) on "[pisteeseen (P)] osoittava":
+	S:n muutosvektori on P
+
+Pohjoinen on pisteeseen (0; 1) osoittava suunta.
+Etelä on suunta pois pohjoisesta.
+Itä on pisteeseen (1; 0) osoittava suunta.
+Länsi on suunta pois idästä.
+
+>> Ruutu
+
+Ruutu on käsite.
+Ruudulla on merkiksi kutsuttu merkkijono.
+Ruudun merkki on yleensä ".".
+Ruutu on joko käytetty tai käyttämätön.
+Ruutu on yleensä käyttämätön.
+
+Määritelmä. Kun ruutu on "pussissa":
+	se on käyttämätön
+
+Geneerinen ruutu on ruutu.
+Pussissa on 121 geneeristä ruutua.
+
+>> Pelilauta
+
+Pelilauta on käsite.
+Kutakin pistettä kohden pelilaudalla voi olla sitä pistettä vastaavaksi ruuduksi kutsuttu ruutu.
+
+[Pelilaudan] alustaminen on toiminto.
+Alustamisen komento on "alusta [pelilauta] nyt".
+Pelilaudan alustamisen aikana:
+	Toista jokaiselle kokonaisluvulle (X) välillä 0:sta 10:een:
+		Toista jokaiselle kokonaisluvulle (Y) välillä 0:sta 10:een:
+			Sen pistettä (X; Y) vastaava ruutu on nyt satunnainen pussissa oleva ruutu.
+			Sen pistettä (X; Y) vastaava ruutu on nyt käytetty.
+
+[Pelilaudan] piirtäminen on toiminto.
+Piirtämisen komento on "piirrä [pelilauta] nyt".
+Pelilaudan piirtämisen aikana:
+	Toista jokaiselle kokonaisluvulle (X) välillä 0:sta 10:een:
+		Toista jokaiselle kokonaisluvulle (Y) välillä 0:sta 10:een:
+			Sano sen pistettä (X; Y) vastaavan ruudun merkki.
+		Sano "[rivinvaihto]".
+
+Varkaan pelilauta on pelilauta.
+
+Pelin alkamisen jälkeen:
+	Alusta varkaan pelilauta nyt.
+	Varkaan pelilaudan pelaajan sijaintia vastaavan ruudun merkki on nyt pelaajan merkki.
+	Piirrä varkaan pelilauta nyt.
