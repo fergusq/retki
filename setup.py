@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='retki',
-	version='0.10',
+	version='0.11',
 	description='Finnish programming language inspired by Inform 7',
 	url='http://github.com/fergusq/retki',
 	author='Iikka Hauhio',
