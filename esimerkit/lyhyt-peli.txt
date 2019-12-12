@@ -72,10 +72,10 @@ Itämainen matto on tylsä esine ruokahuoneessa.
 "Itämaiseen mattoon on kuvioitu kauniita muotoja."
 Tulkitse "matto" itämaisena mattona.
 
-Virtanen on ihminen ruokahuoneessa.
+Virtanen on lähestyttävä ihminen ruokahuoneessa.
 "Neiti Virtanen on tämän talon omistaja. Hän mutisee jotain itsekseen."
 
-Virtaselle puhumisen sijasta:
+Virtaselle puhumisen aikana:
 	Sano "Neiti Virtanen ei näytä kuuntelevan sinua.[rivinvaihto][rivinvaihto]".
 	Jos Virtasen sijainti on ruokahuone:
 		Sano "'Koti, avain, takapiha, ruokalasi', hän sanoo ja kävelee olohuoneeseen.".

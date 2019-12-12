@@ -339,7 +339,7 @@ Pohjoisselli on huone tyrmän käytävästä pohjoiseen.
 
 Pohjoissellin ovi on listaamaton ovi pohjoissellin ja tyrmän käytävän välissä.
 
-Vanki on ihminen pohjoissellissä.
+Vanki on lähestyttävä ihminen pohjoissellissä.
 "Vanki on puettu räsyisiin vaatteisiin. Hänen toinen jalkansa on kiinnitetty kahleella seinään."
 Vangin nimi on satunnainen nimi.
 Vangin nimi koodissa on "[vangin nimi]".
@@ -350,7 +350,7 @@ Tulkitse "[vangin sukupuoli]" vankina.
 Kahle on kiinteä avattava listaamaton esine pohjoissellissä.
 "Raskas metallinen kahle, jonka toinen pää on lukittu vangin jalkaan."
 
-Vangille puhumisen sijasta:
+Vangille puhumisen aikana:
 	Sano fokalisoijalle "[Hän] käpertyy sikiöasentoon uskoen sinun olevan vartija.".
 
 Kahleen avautumisen jälkeen:

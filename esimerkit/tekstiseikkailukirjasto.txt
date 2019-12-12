@@ -121,6 +121,12 @@ Määritelmä. Kun esine "ei ole mukana":
 
 >> Sisältäminen
 
+Määritelmä. Kun sisältäjä (S) on "tyhjä":
+	S:n sisältöjoukko ei sisällä yhtäkään esinettä
+
+Määritelmä. Kun sisältäjä (S) "ei ole tyhjä":
+	S:n sisältöjoukko sisältää yhdenkin esineen
+
 Määritelmä. Kun esine (E) on "[sisältäjän (S)] varassa":
 	jokin seuraavista:
 		S:n sisältöjoukko sisältää E:n
@@ -233,7 +239,7 @@ Ennen ei-avattavan esineen avaamista:
 	Keskeytä toiminto.
 	(avattavuusehto)
 
-Ennen esineen avaamista:
+Juuri ennen esineen avaamista:
 	Jos fokalisoijan esineluettelo ei sisällä sen avaavaa avainta:
 		Sano fokalisoijalle "Sinulla ei ole oikeaa avainta.".
 		Keskeytä toiminto.
@@ -242,6 +248,28 @@ Ennen esineen avaamista:
 Esineen avaamisen aikana:
 	Se avautuu nyt.
 	(avautumissääntö)
+
+>> Listaaminen
+
+> Aputoiminto asioiden listaamiseksi huoneen kuvauksessa
+
+Listattavien asioiden määrä on kokonaisluku.
+Listattavien asioiden määrä on alussa yksi.
+
+[Asian] listaaminen on toiminto.
+Listaamisen komento on "listaa [asia]".
+
+Esineen listaamisen aikana:
+	Jos listattavien asioiden määrä on yksi:
+		Sano "Näet täällä [sen].".
+	Muulloin:
+		Sano "Näet täällä [listattavien asioiden määrä] [sitä].".
+
+Ihmisen listaamisen aikana:
+	Jos listattavien asioiden määrä on yksi:
+		Sano "[Hän] on täällä.".
+	Muulloin:
+		Sano "Näet täällä [listattavien asioiden määrä] [häntä].".
 
 >> Kuvaileminen
 
@@ -257,15 +285,11 @@ Asian kuvailemisen aikana:
 Huoneen kuvailemisen jälkeen:
 	Sano "[rivinvaihto][rivinvaihto]".
 	Toista jokaiselle ryhmälle samanlaisia listattuja esineitä (e) sen esinejoukossa:
-		Jos ryhmän koko on 1:
-			Sano "Näet täällä [e:n].".
-		Muulloin:
-			Sano "Näet täällä [ryhmän koko] [e:tä].".
+		Ryhmän koko listattavien asioiden määränä:
+			Listaa e.
 	Toista jokaiselle ryhmälle samanlaisia tietokoneen ohjaamia ihmisiä (i) sen henkilöjoukossa:
-		Jos ryhmän koko on 1:
-			Sano "[I] on täällä.".
-		Muulloin:
-			Sano "Täällä on [ryhmän koko] [i:tä].".
+		Ryhmän koko listattavien asioiden määränä:
+			Listaa i.
 	(esineiden listaamisen sääntö)
 
 Suljetun huoneen kuvailemisen jälkeen:
@@ -341,6 +365,12 @@ Pohjoinen on suunta.
 Etelä on suunta pois pohjoisesta.
 Länsi on suunta.
 Itä on suunta pois lännestä.
+
+Koillinen on suunta.
+Lounas on suunta pois koillisesta.
+Kaakko on suunta.
+Luode on suunta pois kaakosta.
+
 Ylös-suunta on suunta.
 Alas-suunta on suunta pois ylös-suunnasta.
 
@@ -348,6 +378,10 @@ Tulkitse "p" pohjoisena.
 Tulkitse "e" etelänä.
 Tulkitse "l" läntenä.
 Tulkitse "i" itänä.
+Tulkitse "ko" koillisena.
+Tulkitse "ka" kaakkona.
+Tulkitse "lo" lounaana.
+Tulkitse "lu" luoteena.
 Tulkitse "ylös" ylös-suuntana.
 Tulkitse "ylöspäin" ylös-suuntana.
 Tulkitse "y" ylös-suuntana.
@@ -400,6 +434,11 @@ Määritelmä. Kun ovi on "[huoneen (A)] ja [huoneen (B)] välissä":
 	sen huonejoukko sisältää B:n
 	A:n esinejoukko sisältää sen
 	B:n esinejoukko sisältää sen
+
+Määritelmä. Kun ovi on "yksisuuntaisesti [huoneen (A)] ja [huoneen (B)] välissä":
+	sen huonejoukko sisältää A:n
+	sen huonejoukko sisältää B:n
+	A:n esinejoukko sisältää sen
 
 Oven avautumisen aikana:
 	Se on nyt lukitsematon.
@@ -579,6 +618,7 @@ Esineen taakse katsomisen aikana:
 >> Ottaminen
 
 [Esineen] ottaminen on toiminto.
+Ottamisen komento on "ota nyt [esine]".
 Tulkitse "ota [esine]" ottamisena.
 
 Ennen piilossa olevan esineen ottamista:
@@ -708,6 +748,9 @@ Kirjoitusta sisältävän esineen lukemisen aikana:
 
 >> Puhuminen
 
+Ihminen on joko lähestyttävä tai ei-lähestyttävä.
+Ihminen on yleensä ei-lähestyttävä.
+
 [Ihmiselle] puhuminen on toiminto.
 Puhumisen komento on "puhu nyt [ihmiselle]".
 Tulkitse "puhu [ihmiselle]" puhumisena.
@@ -723,9 +766,9 @@ Ennen ihmiselle puhumista:
 		Keskeytä toiminto.
 	(epäitseysehto)
 
-Ihmiselle puhumisen aikana:
+Ennen ei-lähestyttävälle ihmiselle puhumista:
 	Sano "[Hän] ei näytä kiinnostuneelta höpinästäsi.".
-	(perussääntö)
+	(lähestyttävyysehto)
 
 [Ihmiselle] [asian] kertominen on toiminto.
 Tulkitse "kerro [ihmiselle] [asiasta]" kertomisena.
@@ -820,6 +863,9 @@ Tulkitse "syö [esine]" syömisenä.
 Esine on joko syötävä tai syömäkelvoton.
 Esine on yleensä syömäkelvoton.
 
+Tarkoittaako pelaaja syömäkelvottoman esineen syömistä:
+	tuskin
+
 Ennen piilossa olevan esineen syömistä:
 	Sano fokalisoijalle "Et näe sellaista asiaa.".
 	Keskeytä toiminto.
@@ -832,5 +878,33 @@ Ennen syömäkelvottoman esineen syömistä:
 
 Esineen syömisen jälkeen:
 	Sano fokalisoijalle "Syöt [sen].".
+	(raportointisääntö)
+
+>> Juominen
+
+> Juominen toimii täsmälleen samoin kuin syöminen.
+
+[Esineen] juominen on toiminto.
+Juomisen komento on "juo nyt [esine]".
+Tulkitse "juo [esine]" juomisena.
+
+Esine on joko juotava tai juomakelvoton.
+Esine on yleensä juomakelvoton.
+
+Tarkoittaako pelaaja juomakelvottoman esineen juomista:
+	tuskin
+
+Ennen piilossa olevan esineen juomista:
+	Sano fokalisoijalle "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+	(näkyvyysehto)
+
+Ennen juomakelvottoman esineen juomista:
+	Sano fokalisoijalle "Et usko, että [sitä] kannattaa juoda.".
+	Keskeytä toiminto.
+	(juotavuusehto)
+
+Esineen juomisen jälkeen:
+	Sano fokalisoijalle "Juot [sen].".
 	(raportointisääntö)
 
