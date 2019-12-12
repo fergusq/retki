@@ -18,6 +18,7 @@ import sys, readline
 import math
 import random
 from suomilog.finnish import tokenize
+from suomilog.patternparser import Token
 from .tokenutils import *
 
 # Bittiluokka
@@ -137,6 +138,7 @@ class RObject(Bits):
 		return RObject(
 			self.rclass, self.name, self.bits.copy(),
 			extra=self.extra.copy(), name_tokens=self.name_tokens, srules=self.selection_rules.copy(),
+			aliases=self.aliases.copy(),
 			data=data_copy
 		)
 	def toPythonRef(self):
