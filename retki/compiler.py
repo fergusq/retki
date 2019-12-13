@@ -892,7 +892,7 @@ def defineAction(name, params, pre, post):
 				cmd_post,
 				name.token
 			), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s], %s)' % (action.id, ", ".join(val), repr(in_scope))))
-		for cmd_post, in_scope in [(".", True), ("jos mahdollista .", False)]:
+		for cmd_post, in_scope in [(".", True), ("jos mahdollista .", False), (", jos mahdollista .", False)]:
 			addCommandPhrase(cmd_post, in_scope)
 		
 		if category == "PLAYER-CMD":
@@ -1020,13 +1020,21 @@ def addTuple(*args, case="nimento"):
 	tupleclass.primitive = "lambda obj: 'createTupleObj(\"" + tupleclass.name.replace("\\", "\\\\").replace("\"", "\\\"") + "\", ' + ', '.join([v.toPythonRef() for v in obj.extra['tuple']]) + ')'"
 	prefix = args[0]
 	code = tokensToCode(prefix)
+
+	def addFieldExpression(i, field_name):
+		for clazz in kokonaisluku.superclasses():
+			pgl(".EXPR-%d ::= .EXPR-%d{omanto} %s -> $1.%s" % (
+					clazz.id,
+					tupleclass.id,
+					nameToCode(field_name, {"$"}, rbits={"nimento", "yksikkö"}),
+					nameToCode(field_name)
+				),
+				FuncOutput(lambda obj: obj + '.extra["tuple"][' + repr((i-1)//2) + ']'))
+
 	for i in range(1, len(args)-1, 2):
 		field_name = args[i]
 		postfix = args[i+1]
-		pattern = lambda bits: nameToCode(field_name, bits, rbits={"nimento", "yksikkö"})
-		for clazz in kokonaisluku.superclasses():
-			pgl(".EXPR-%d ::= .EXPR-%d{omanto} %s -> $1.%s" % (clazz.id, tupleclass.id, pattern({"$"}), nameToCode(field_name)),
-				FuncOutput(lambda obj: obj + '.extra["tuple"][' + repr((i-1)//2) + ']'))
+		addFieldExpression(i, field_name)
 		code += " .EXPR-%d{nimento} %s" % (kokonaisluku.id, tokensToCode(postfix))
 
 	create = lambda *args: 'createTupleObj(' + ", ".join((repr(tupleclass.name),) + args) + ')'
