@@ -349,7 +349,7 @@ Katselemisen aikana:
 
 > Määritellään pääilmansuunnat ja ylös/alas-akseli.
 > Huoneet on yhdistetty suuntien avulla verkoksi.
-> Tätä varten huoneella on kolme tietorakennetta:
+> Tätä varten huoneella on kaksi tietorakennetta:
 > naapurihuoneiden joukko ja
 > kuvaus suunnista naapurihuoneiksi.
 > ("Kuvaus" on hajautustaulu.)
@@ -374,6 +374,9 @@ Luode on suunta pois kaakosta.
 Ylös-suunta on suunta.
 Alas-suunta on suunta pois ylös-suunnasta.
 
+Sisään-suunta on suunta.
+Ulos-suunta on suunta pois sisään-suunnasta.
+
 Tulkitse "p" pohjoisena.
 Tulkitse "e" etelänä.
 Tulkitse "l" läntenä.
@@ -388,6 +391,12 @@ Tulkitse "y" ylös-suuntana.
 Tulkitse "alas" alas-suuntana.
 Tulkitse "alaspäin" alas-suuntana.
 Tulkitse "a" alas-suuntana.
+Tulkitse "sisään" sisään-suuntana.
+Tulkitse "sisäänpäin" sisään-suuntana.
+Tulkitse "s" sisään-suuntana.
+Tulkitse "ulos" ulos-suuntana.
+Tulkitse "ulospäin" ulos-suuntana.
+Tulkitse "u" ulos-suuntana.
 
 Ei-suunta on suunta.
 Ei-suunnan vastasuunta on ei-suunta.
@@ -407,6 +416,36 @@ Määritelmä. Kun huone (A) on "[huoneesta (B)] ylös":
 	A on B:stä ylös-suuntaan
 
 Määritelmä. Kun huone (A) on "[huoneesta (B)] alas":
+	A on B:stä alas-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] ulos":
+	A on B:stä ulos-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] sisään":
+	A on B:stä sisään-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)] ulos":
+	A on B:stä ulos-suuntaan
+	A on B:stä tarkasteltavaan suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] [suuntaan (tarkasteltava suunta)] sisään":
+	A on B:stä sisään-suuntaan
+	A on B:stä tarkasteltavaan suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] ylös ulos":
+	A on B:stä ulos-suuntaan
+	A on B:stä ylös-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] ylös sisään":
+	A on B:stä sisään-suuntaan
+	A on B:stä ylös-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] alas ulos":
+	A on B:stä ulos-suuntaan
+	A on B:stä alas-suuntaan
+
+Määritelmä. Kun huone (A) on "[huoneesta (B)] alas sisään":
+	A on B:stä sisään-suuntaan
 	A on B:stä alas-suuntaan
 
 Määritelmä. Huone (A) on "[huoneen (B)] naapurihuone", jos:
@@ -429,6 +468,9 @@ Ovi on joko lukittu tai lukitsematon.
 Ovi on yleensä lukittu.
 Ovella on huonejoukoksi kutsuttu joukko huoneita.
 
+Ovi on joko automaattisesti lukittuva tai manuaalisesti lukittava.
+Ovi on yleensä manuaalisesti lukittava.
+
 Määritelmä. Kun ovi on "[huoneen (A)] ja [huoneen (B)] välissä":
 	sen huonejoukko sisältää A:n
 	sen huonejoukko sisältää B:n
@@ -441,8 +483,9 @@ Määritelmä. Kun ovi on "yksisuuntaisesti [huoneen (A)] ja [huoneen (B)] väli
 	A:n esinejoukko sisältää sen
 
 Oven avautumisen aikana:
-	Se on nyt lukitsematon.
-	Se on nyt ei-avattava.
+	Jos se on manuaalisesti lukittava:
+		Se on nyt lukitsematon.
+		Se on nyt ei-avattava.
 	(perussääntö)
 
 Oven avautumisen jälkeen:
@@ -508,6 +551,8 @@ Ennen huoneeseen (fokalisoijan määränpää) siirtymistä:
 			Sano fokalisoijalle "(avataan ensin [ovi])".
 			Avaa nyt ovi.
 			Sano fokalisoijalle "[rivinvaihto][rivinvaihto]".
+			Jos ovi on automaattisesti lukittuva:
+				Ovi on nyt lukittu.
 	(oven avaamissääntö)
 			
 Huoneeseen siirtymisen aikana:
@@ -521,6 +566,36 @@ Huoneeseen (H) siirtymisen jälkeen:
 		Esittele H.
 	(raportointisääntö)
 
+>> Erikoisia suuntia
+
+Ylös liikkuminen on toiminto.
+Tulkitse "mene ylös" ylös liikkumisena.
+Tulkitse "liiku ylös" ylös liikkumisena.
+
+Ylös liikkumisen sijasta:
+	Liiku nyt ylös-suuntaan.
+
+Alas liikkuminen on toiminto.
+Tulkitse "mene alas" alas liikkumisena.
+Tulkitse "liiku alas" alas liikkumisena.
+
+Alas liikkumisen sijasta:
+	Liiku nyt alas-suuntaan.
+
+Ulos liikkuminen on toiminto.
+Tulkitse "mene ulos" ulos liikkumisena.
+Tulkitse "liiku ulos" ulos liikkumisena.
+
+Ulos liikkumisen sijasta:
+	Liiku nyt ulos-suuntaan.
+
+Sisään liikkuminen on toiminto.
+Tulkitse "mene sisään" sisään liikkumisena.
+Tulkitse "liiku sisään" sisään liikkumisena.
+
+Sisään liikkumisen sijasta:
+	Liiku nyt sisään-suuntaan.
+
 >> Ovesta meneminen
 
 > Liikkuminen ovesta.
@@ -533,18 +608,23 @@ Ennen lukitusta ovesta menemistä:
 	Sano fokalisoijalle "(avataan ensin [se])".
 	Avaa nyt se.
 	Sano fokalisoijalle "[rivinvaihto][rivinvaihto]".
+	Jos se on automaattisesti lukittuva:
+		Se on nyt lukittu.
 	(oven avaamissääntö)
 
-Ovesta (O) menemisen aikana:
-	Toista jokaiselle huoneelle (naapurihuone) fokalisoijan sijainnin naapurihuonejoukossa:
-		Jos O on naapurihuoneessa:
-			Liiku nyt naapurihuoneeseen.
-			Keskeytä toiminto.
-	(perussääntö)
+Ovesta menemisen kohde on huone.
+Ovesta menemisen kohde on alussa seinä.
 
-Ovesta menemisen jälkeen:
-	Sano fokalisoijalle "[Se] ei vie mihinkään.".
-	(raportointisääntö)
+Ovesta (O) menemisen aikana:
+	Ovesta menemisen kohde on nyt seinä.
+	Toista jokaiselle huoneelle (naapurihuone) O:n huonejoukossa:
+		Jos fokalisoija ei ole naapurihuoneessa:
+			Ovesta menemisen kohde on nyt naapurihuone.
+	Jos ovesta menemisen kohde on seinä:
+		Sano fokalisoijalle "[O] ei vie mihinkään.".
+	Muulloin:
+		Liiku nyt ovesta menemisen kohteeseen.
+	(perussääntö)
 
 >> Katsominen
 
@@ -560,6 +640,7 @@ Suuntaan (se suunta) katsomisen aikana:
 [Esineen] katsominen on toiminto.
 Tulkitse "katso [esinettä]" esineen katsomisena.
 Tulkitse "tutki [esinettä]" esineen katsomisena.
+Tulkitse "tutki [esine]" esineen katsomisena.
 Tulkitse "tarkastele [esinettä]" esineen katsomisena.
 Tulkitse "t [esine]" esineen katsomisena.
 Tulkitse "katso [esineen] sisälle" esineen katsomisena.
@@ -577,6 +658,7 @@ Esineen katsomisen aikana:
 [Ihmisen] katsominen on toiminto.
 Tulkitse "katso [ihmistä]" ihmisen katsomisena.
 Tulkitse "tutki [ihmistä]" ihmisen katsomisena.
+Tulkitse "tutki [ihminen]" ihmisen katsomisena.
 Tulkitse "tarkastele [ihmistä]" ihmisen katsomisena.
 Tulkitse "t [ihminen]" ihmisen katsomisena.
 
