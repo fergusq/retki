@@ -23,11 +23,16 @@ from .language import *
 from .tokenutils import *
 
 GRAMMAR = Grammar()
-pgl = GRAMMAR.parseGrammarLine
+GRAMMAR_STACK = [GRAMMAR]
 
-def setGrammar(grammar):
-	global GRAMMAR
-	GRAMMAR = grammar
+def pgl(*a, **d):
+	GRAMMAR_STACK[-1].parseGrammarLine(*a, **d)
+
+def pushGrammar(grammar):
+	GRAMMAR_STACK.append(grammar)
+
+def popGrammar():
+	return GRAMMAR_STACK.pop()
 
 # Villikortit
 
@@ -182,6 +187,17 @@ GRAMMAR.patterns["N"] = [
 def orTrue(code):
 	return "(" + code + " or True)"
 
+# Nimiavaruudet
+
+def openNamespace():
+	pushGrammar(GRAMMAR_STACK[-1].copy())
+
+def closeNamespace():
+	popGrammar()
+
+pgl(".DEF ::= Avaa nimiavaruus . -> open namespace", FuncOutput(openNamespace))
+pgl(".DEF ::= Sulje nimiavaruus . -> close namespace", FuncOutput(closeNamespace))
+
 # Luokat
 
 def defineClass(name, superclass, name_rbits={"yksikkö", "nimento"}):
@@ -199,9 +215,9 @@ def defineClass(name, superclass, name_rbits={"yksikkö", "nimento"}):
 			rclass.fields[fname] = clazz.fields[fname].copy()
 	
 	pgl(".CLASS-PATTERN-%d ::= %s -> %s" % (rclass.id, name_code, name_str), FuncOutput(lambda: RPattern(rclass=rclass)))
-	GRAMMAR.addCategoryName("CLASS-PATTERN-WITH-ADV-%d" % (rclass.id,), name_str + "-käsitteen hahmo")
-	GRAMMAR.addCategoryName("CLASS-PATTERN-%d" % (rclass.id,), name_str + "-käsitteen hahmo")
-	GRAMMAR.addCategoryName("PATTERN-%d" % (rclass.id,), name_str + "-käsitteen hahmo")
+	GRAMMAR_STACK[-1].addCategoryName("CLASS-PATTERN-WITH-ADV-%d" % (rclass.id,), name_str + "-käsitteen hahmo")
+	GRAMMAR_STACK[-1].addCategoryName("CLASS-PATTERN-%d" % (rclass.id,), name_str + "-käsitteen hahmo")
+	GRAMMAR_STACK[-1].addCategoryName("PATTERN-%d" % (rclass.id,), name_str + "-käsitteen arvon hahmo")
 	
 	pgl(".CLASS-PATTERN ::= .CLASS-PATTERN-%d{$} -> $1" % (rclass.id,), identity)
 	pgl(".CLASS-PATTERN ::= .CLASS-PATTERN-WITH-ADV-%d{$} -> $1" % (rclass.id,), identity)
@@ -219,7 +235,9 @@ def defineClass(name, superclass, name_rbits={"yksikkö", "nimento"}):
 	
 	def addClassCasePhrase(case):
 		pgl(".CLASS-CASE-%d ::= %s -> $1:%s" % (rclass.id, pattern({case}), case), FuncOutput(lambda: case))
-		GRAMMAR.addCategoryName("CLASS-CASE-%d" % (rclass.id,), name_str + "-käsitteen nimi "+case+"-muodossa")
+		GRAMMAR_STACK[-1].addCategoryName("CLASS-CASE-%d" % (rclass.id,), name_str + "-käsitteen nimi "+case+"-muodossa")
+		pgl(".PATTERN-CASE-%d ::= .PATTERN-%d{%s,yksikkö} -> $1:%s" % (rclass.id, rclass.id, case, case), FuncOutput(lambda p: (p, case)))
+		GRAMMAR_STACK[-1].addCategoryName("PATTERN-CASE-%d" % (rclass.id,), name_str + "-käsitteen arvon hahmo "+case+"-muodossa")
 
 	for case in CASES:
 		addClassCasePhrase(case)
@@ -244,7 +262,7 @@ def defineClass(name, superclass, name_rbits={"yksikkö", "nimento"}):
 		pgl(".EXPR-%d ::= satunnainen{$} .CLASS-PATTERN-%d{$} -> random $1" % (clazz.id, rclass.id),
 			FuncOutput(lambda pattern: "searchRandomObject(" + pattern.toPython() + ")"))
 	
-	GRAMMAR.addCategoryName("EXPR-%d" % (rclass.id,), name_str + "-tyyppinen lauseke")
+	GRAMMAR_STACK[-1].addCategoryName("EXPR-%d" % (rclass.id,), name_str + "-tyyppinen lauseke")
 
 	pgl(".COPY-DEF ::= On .N .EXPR-%d{yksikkö,osanto} . -> copy $*" % (rclass.id, ),
 		FuncOutput(lambda n, obj: eval(obj).createCopies(n)))
@@ -255,17 +273,17 @@ pgl(".CLASS-DEF ::= .* on käsite . -> class $1 : asia", FuncOutput(lambda x: de
 pgl(".CLASS-DEF ::= .* on .CLASS{omanto} alakäsite . -> class $1 : $2", FuncOutput(defineClass))
 pgl(".DEF ::= .CLASS-DEF -> $1", identity)
 
-GRAMMAR.addCategoryName("CLASS-PATTERN", "käsitteen hahmo")
-GRAMMAR.addCategoryName("CLASS-DEF", "luokkamääritys")
-GRAMMAR.addCategoryName("CLASS", "luokan nimi")
+GRAMMAR_STACK[-1].addCategoryName("CLASS-PATTERN", "käsitteen hahmo")
+GRAMMAR_STACK[-1].addCategoryName("CLASS-DEF", "luokkamääritys")
+GRAMMAR_STACK[-1].addCategoryName("CLASS", "luokan nimi")
 
 # Sijamuodon tunnistamiseen käytettävät säännöt
 
 def addCasePhrases(case):
 	pgl(".CLASS-CASE ::= .CLASS{%s} -> $1:%s" % (case, case), FuncOutput(lambda cl: (cl, case)))
 	pgl(".EXPR-CASE ::= .EXPR{%s} -> $1:%s" % (case, case), FuncOutput(lambda ex: (ex, case)))
-	GRAMMAR.addCategoryName("CLASS-CASE", "luokan nimi "+case+"-muodossa")
-	GRAMMAR.addCategoryName("EXPR-CASE", "lauseke "+case+"-muodossa")
+	GRAMMAR_STACK[-1].addCategoryName("CLASS-CASE", "luokan nimi "+case+"-muodossa")
+	GRAMMAR_STACK[-1].addCategoryName("EXPR-CASE", "lauseke "+case+"-muodossa")
 
 for case in CASES:
 	addCasePhrases(case)
@@ -284,13 +302,13 @@ def definePolyparamField(name_str, field_id, owner, vtype, to_register, pattern,
 		field_id, owner.id, defa_pattern({"yksikkö", "nimento"}), vtype.id, set_defa_str_output
 	), FuncOutput(to_set_defa))
 	pgl(".DEF ::= .FIELD-DEFAULT-DEF-%d -> $1" % (field_id,), identity)
-	GRAMMAR.addCategoryName("FIELD-DEFAULT-DEF-%d" % (field_id,), name_str+"-kentän oletusarvomääritys")
+	GRAMMAR_STACK[-1].addCategoryName("FIELD-DEFAULT-DEF-%d" % (field_id,), name_str+"-kentän oletusarvomääritys")
 	
 	pgl(".FIELD-VALUE-DEF-%d ::= .EXPR-%d{omanto} %s on .EXPR-%d{nimento} . -> %s" % (
 		field_id, owner.id, pattern({"yksikkö", "nimento"}), vtype.id, set_str_output
 	), FuncOutput(lambda *p: eval(to_set(*p))))
 	pgl(".DEF ::= .FIELD-VALUE-DEF-%d -> $1" % (field_id,), identity)
-	GRAMMAR.addCategoryName("FIELD-VALUE-DEF-%d" % (field_id,), name_str+"-kentän arvon määritys")
+	GRAMMAR_STACK[-1].addCategoryName("FIELD-VALUE-DEF-%d" % (field_id,), name_str+"-kentän arvon määritys")
 	
 	pgl(".CMD ::= .EXPR-%d{omanto} %s on nyt .EXPR-%d{nimento} . -> %s" % (
 		owner.id, pattern({"yksikkö", "nimento"}), vtype.id, set_str_output
@@ -331,8 +349,8 @@ pgl(".FIELD-DEF ::= .CLASS{ulkoolento} on .*{tulento} kutsuttu joukko .CLASS{osa
 pgl(".DEF ::= .FIELD-DEF -> $1", identity)
 pgl(".DEF ::= .MAP-FIELD-DEF -> $1", identity)
 
-GRAMMAR.addCategoryName("FIELD-DEF", "kenttämääritys")
-GRAMMAR.addCategoryName("MAP-FIELD-DEF", "kuvauskenttämääritys")
+GRAMMAR_STACK[-1].addCategoryName("FIELD-DEF", "kenttämääritys")
+GRAMMAR_STACK[-1].addCategoryName("MAP-FIELD-DEF", "kuvauskenttämääritys")
 
 def defineMapField(key_class, key_case, is_pre, owner, name, vtype, case="nimento"):
 	name_str = "m"+str(key_class.id)+"-"+tokensToString(name, rbits={case, "yksikkö"})
@@ -473,28 +491,28 @@ def defineBit(owner, *names):
 	for name, name_str, name_code in zip(names, name_strs, name_codes):
 		addBitPhrases(name, name_str, name_code)
 	pgl(".DEF ::= .ENUM-DEFAULT-DEF-%d -> $1" % (counter,), identity)
-	GRAMMAR.addCategoryName("ENUM-DEFAULT-DEF-%d" % (counter,), "bitin oletusarvomääritys")
+	GRAMMAR_STACK[-1].addCategoryName("ENUM-DEFAULT-DEF-%d" % (counter,), "bitin oletusarvomääritys")
 
 pgl(".ENUM-DEF ::= .CLASS{nimento} voi olla .* . -> $1 has bit $2", FuncOutput(defineBit))
 pgl(".ENUM-DEF ::= .CLASS{nimento} on joko .* tai .* . -> $1 has bits $2==!$3", FuncOutput(defineBit))
 pgl(".ENUM-DEF ::= .CLASS{nimento} on joko .* , .* tai .* . -> $1 has bits $2==!($3|$4)", FuncOutput(defineBit))
 pgl(".DEF ::= .ENUM-DEF -> $1", identity)
 
-GRAMMAR.addCategoryName("ENUM-DEF", "bittikenttämääritys")
+GRAMMAR_STACK[-1].addCategoryName("ENUM-DEF", "bittikenttämääritys")
 
 # Ehdot
 
 pgl(".COND ::= .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y: ('(%s and %s)' % (x[0], y[0]), orTrue('(%s, %s)' % (x[1], y[1])))))
 pgl(".COND ::= .COND , .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y, z: ('(%s and %s and %s)' % (x[0], y[0], z[0]), orTrue('(%s, %s, %s)' % (x[1], y[1], z[1])))))
 
-GRAMMAR.addCategoryName("COND", "ehtolauseke")
+GRAMMAR_STACK[-1].addCategoryName("COND", "ehtolauseke")
 
 pgl(".COND-STMT ::= .COND -> $1", identity)
 
 pgl(".COND-STMT ::= kaikki seuraavista : -> every:", FuncOutput(lambda: CondReductionParser("and", lambda modifys: orTrue("(" + ", ".join(modifys) + ")"))))
 pgl(".COND-STMT ::= jokin seuraavista : -> some:", FuncOutput(lambda: CondReductionParser("or", lambda modifys: "(" + " or ".join(modifys) + ")")))
 
-GRAMMAR.addCategoryName("COND-STMT", "ehtolause")
+GRAMMAR_STACK[-1].addCategoryName("COND-STMT", "ehtolause")
 
 class CondReductionParser:
 	def __init__(self, operator, to_modify):
@@ -559,7 +577,7 @@ def addParameterPatterns(num_params):
 def addParameterPattern(nameds):
 	pattern = " ".join(["[ .CLASS-CASE %s ] .**" % ("" if not named else "( .* )",) for named in nameds])
 	pgl(".PARAMETERS-%d ::= %s -> $*" % (len(nameds), pattern), FuncOutput(lambda *p: parseParameters(nameds, p)))
-	GRAMMAR.addCategoryName("PARAMETERS-%d" % (len(nameds),), "%d-parametrinen hahmo" % (len(nameds),))
+	GRAMMAR_STACK[-1].addCategoryName("PARAMETERS-%d" % (len(nameds),), "%d-parametrinen hahmo" % (len(nameds),))
 
 for num_params in [1,2,3]:
 	addParameterPatterns(num_params)
@@ -702,13 +720,13 @@ for num_params in [0,1,2]:
 	addConditionDefPatterns(num_params)
 
 pgl(".DEF ::= .EXPR-TRUTH-DEF -> $1", identity)
-GRAMMAR.addCategoryName("EXPR-TRUTH-DEF", "totuusmääritys")
+GRAMMAR_STACK[-1].addCategoryName("EXPR-TRUTH-DEF", "totuusmääritys")
 
 pgl(".DEF ::= .COND-DEF -> $1", identity)
-GRAMMAR.addCategoryName("COND-DEF", "ehtomääritys")
+GRAMMAR_STACK[-1].addCategoryName("COND-DEF", "ehtomääritys")
 
 pgl(".DEF ::= .COPY-DEF -> $1", identity)
-GRAMMAR.addCategoryName("COPY-DEF", "kopiomääritys")
+GRAMMAR_STACK[-1].addCategoryName("COPY-DEF", "kopiomääritys")
 
 # Muuttujat
 
@@ -764,9 +782,9 @@ pgl(".DEF ::= .VARIABLE-DEF -> $1", identity)
 pgl(".DEF ::= .ALIAS-DEF -> $1", identity)
 pgl(".DEF ::= .VARIABLE-VALUE-DEF -> $1", identity)
 
-GRAMMAR.addCategoryName("VARIABLE-DEF", "muuttujamääritys")
-GRAMMAR.addCategoryName("ALIAS-DEF", "tulkintamääritys")
-GRAMMAR.addCategoryName("VARIABLE-VALUE-DEF", "muuttuja-arvomääritys")
+GRAMMAR_STACK[-1].addCategoryName("VARIABLE-DEF", "muuttujamääritys")
+GRAMMAR_STACK[-1].addCategoryName("ALIAS-DEF", "tulkintamääritys")
+GRAMMAR_STACK[-1].addCategoryName("VARIABLE-VALUE-DEF", "muuttuja-arvomääritys")
 
 class AsParser:
 	def __init__(self, variable, value):
@@ -867,7 +885,7 @@ def defineAction(name, params, pre, post):
 		addSelectionDefPattern(nameds)
 	
 	pgl(".DEF ::= .LISTENER-DEF-%d -> $1" % (action.id,), identity)
-	GRAMMAR.addCategoryName("LISTENER-DEF-%d" % (action.id,), "kuuntelijamääritys")
+	GRAMMAR_STACK[-1].addCategoryName("LISTENER-DEF-%d" % (action.id,), "kuuntelijamääritys")
 	
 	def defineCommand(category, pre, *cases_posts):
 		cmd_params = []
@@ -942,7 +960,7 @@ def defineAction(name, params, pre, post):
 	addCommandDefPhrase()
 	
 	pgl(".DEF ::= .COMMAND-DEF-%d -> $1" % (action.id,), identity)
-	GRAMMAR.addCategoryName("COMMAND-DEF-%d" % (action.id,), "komentomääritys")
+	GRAMMAR_STACK[-1].addCategoryName("COMMAND-DEF-%d" % (action.id,), "komentomääritys")
 
 def addActionDefPattern(num_params):
 	def transformArgs(args):
@@ -963,14 +981,14 @@ for num_params in [0,1,2]:
 	addActionDefPattern(num_params)
 
 pgl(".DEF ::= .ACTION-DEF -> $1", identity)
-GRAMMAR.addCategoryName("ACTION-DEF", "toimintomääritys")
+GRAMMAR_STACK[-1].addCategoryName("ACTION-DEF", "toimintomääritys")
 
 # Sisäänrakennetut luokat
 
 yläkäsite = defineClass(tokenize("yläkäsite"), None)
 
 pgl(".EXPR ::= .EXPR-%d{$} -> $1" % (yläkäsite.id,), identity)
-GRAMMAR.addCategoryName("EXPR", "lauseke")
+GRAMMAR_STACK[-1].addCategoryName("EXPR", "lauseke")
 
 asia = defineClass(tokenize("asia"), yläkäsite)
 
@@ -1065,7 +1083,7 @@ for num_fields in [1, 2, 3]:
 	), FuncOutput(lambda *a: addTuple(*a, case="omanto")))
 
 pgl(".DEF ::= .TUPLE-DEF -> $1", identity)
-GRAMMAR.addCategoryName("TUPLE-DEF", "monikkomääritys")
+GRAMMAR_STACK[-1].addCategoryName("TUPLE-DEF", "monikkomääritys")
 
 # For-silmikka
 
@@ -1161,7 +1179,7 @@ pgl(".CMD ::= sano .EXPR{nimento} . -> print($1)", FuncOutput(lambda x: 'say(' +
 
 pgl(".CMD ::= lopeta peli . -> end game", FuncOutput(lambda: 'endGame()'))
 
-GRAMMAR.addCategoryName("CMD", "komento")
+GRAMMAR_STACK[-1].addCategoryName("CMD", "komento")
 	
 # Valitsemiskomennot
 
@@ -1184,7 +1202,7 @@ def addSelectionValueCommand(phrase_pattern, english_name, value):
 for t in SELECTION_VALUES:
 	addSelectionValueCommand(*t)
 
-GRAMMAR.addCategoryName("SELECTION-CMD", "todennäköisyyslause")
+GRAMMAR_STACK[-1].addCategoryName("SELECTION-CMD", "todennäköisyyslause")
 
 class SelectionParser:
 	def __init__(self, obj):
@@ -1210,7 +1228,7 @@ class ActionSelectionParser:
 
 pgl(".SELECTION-DEF ::= tarkoittaako pelaaja .CLASS{osanto} : -> does the player mean $1:", FuncOutput(lambda clazz: SelectionParser(clazz)))
 pgl(".DEF ::= .SELECTION-DEF -> $1", identity)
-GRAMMAR.addCategoryName("SELECTION-DEF", "todennäköisyysmääritys")
+GRAMMAR_STACK[-1].addCategoryName("SELECTION-DEF", "todennäköisyysmääritys")
 
 # Komentojen jäsentäminen
 
@@ -1337,11 +1355,11 @@ def loadFile(file, report=True):
 			continue
 		del ERROR_STACK[:]
 		ERROR_STACK.append([])
-		a = GRAMMAR.matchAll(tokenize(line), "DEF", set())
+		a = GRAMMAR_STACK[-1].matchAll(tokenize(line), "DEF", set())
 		if len(a) == 1:
 			t = a[0][0]()
 			if a[0][1][-1] == ":":
-				t.parse(reader, GRAMMAR, report=True)
+				t.parse(reader, GRAMMAR_STACK[-1], report=True)
 		else:
 			sys.stderr.write("\rVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
 			for _, i in a:
@@ -1379,7 +1397,7 @@ def importFile(filename):
 
 pgl(".IMPORT-DEF ::= Tuo .* . -> import $1", FuncOutput(lambda file: importFile("".join(t.token for t in file))))
 pgl(".DEF ::= .IMPORT-DEF -> $1", identity)
-GRAMMAR.addCategoryName("IMPORT-DEF", "tuontikäsky")
+GRAMMAR_STACK[-1].addCategoryName("IMPORT-DEF", "tuontikäsky")
 
 # Standardikirjasto
 
@@ -1447,7 +1465,7 @@ def interactive():
 	readline.parse_and_bind('tab: complete')
 	
 	def printStatistics():
-		n_patterns = sum([len(category) for category in GRAMMAR.patterns.values()])
+		n_patterns = sum([len(category) for category in GRAMMAR_STACK[-1].patterns.values()])
 		print("Ladattu", n_patterns, "fraasia.")
 	
 	mode = ["DEF", "CMD", "PLAYER-CMD"]
@@ -1462,7 +1480,7 @@ def interactive():
 		if not line:
 			continue
 		if line == "/kielioppi":
-			GRAMMAR.print()
+			GRAMMAR_STACK[-1].print()
 			continue
 		elif line == "/käsitteet":
 			def printClass(clazz, indent):
@@ -1497,7 +1515,7 @@ def interactive():
 			cat = args[:args.index(" ")]
 			expr = args[args.index(" ")+1:]
 			print("Matching `%s' ~ .%s" % (expr, cat))
-			ints = GRAMMAR.matchAll(tokenize(expr), cat, set())
+			ints = GRAMMAR_STACK[-1].matchAll(tokenize(expr), cat, set())
 			for _, string in ints:
 				print(string)
 			continue
@@ -1533,7 +1551,7 @@ def interactive():
 			phrase_type = mode[mode_chars.index(line[0])+1]
 			line = line[1:]
 		silent = mode[0] == phrase_type == "PLAYER-CMD"
-		interpretations = GRAMMAR.matchAll(tokenize(line), phrase_type, set())
+		interpretations = GRAMMAR_STACK[-1].matchAll(tokenize(line), phrase_type, set())
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		elif len(interpretations) == 1:
