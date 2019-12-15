@@ -105,8 +105,7 @@ class RObject(Bits):
 	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None, aliases=None, data=None):
 		Bits.__init__(self, bits)
 		if not obj_id:
-			increaseCounter()
-			self.id = getCounter()
+			self.id = nextCounter("RObject")
 		else:
 			self.id = obj_id
 		if OBJECTS is not None and not rclass.primitive:
@@ -385,14 +384,23 @@ class RObject(Bits):
 
 # Luokat
 
+COUNTERS = {}
+
 class Counter:
-	counter = 0
+	def __init__(self):
+		self.counter = 0
+	
+	def __next__(self):
+		self.counter += 1
+		return self.counter
+	
+	def __iter__(self):
+		return self
 
-def increaseCounter():
-	Counter.counter += 1
-
-def getCounter():
-	return Counter.counter
+def nextCounter(name="default"):
+	if name not in COUNTERS:
+		COUNTERS[name] = Counter()
+	return next(COUNTERS[name])
 
 CLASSES = {}
 CLASSES_IN_ORDER = []
@@ -407,8 +415,7 @@ class RClass(Bits):
 		if class_id:
 			self.id = class_id
 		else:
-			increaseCounter()
-			self.id = getCounter()
+			self.id = nextCounter("RClass")
 		self.name = name
 		self.name_tokens = name_tokens
 		self.superclass = superclass
@@ -525,7 +532,7 @@ class RPattern:
 		return obj
 	def modify(self, obj):
 		if obj.rclass != self.rclass:
-			sys.stderr.write("Yritettiin muuttaa " + obj.asString() + " (" + obj.rclass.name + ") tyyppiin " + self.rclass.name)
+			sys.stderr.write("Yritettiin muuttaa " + obj.asString() + " (" + obj.rclass.name + ") tyyppiin " + self.rclass.name + "\n")
 		obj.bitsOff(self.my_bitsOff)
 		obj.bitsOn(self.my_bitsOn)
 		for cond in self.conditions:
@@ -627,9 +634,7 @@ def addAlias(name, alias):
 
 class RAction:
 	def __init__(self, name, a_id=None, srules=None):
-		if not a_id:
-			increaseCounter()
-		self.id = a_id or getCounter()
+		self.id = a_id or nextCounter("RAction")
 		self.name = name
 		
 		ACTIONS[self.id] = self

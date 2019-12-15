@@ -17,7 +17,7 @@
 import readline, os, sys, argparse, traceback, time
 import re
 import itertools
-from suomilog.patternparser import ERROR_STACK, setDebug, PatternRef, Grammar
+from suomilog.patternparser import ERROR_STACK, setDebug, PatternRef, Grammar, groupCauses
 from suomilog.finnish import tokenize, CASES
 from .language import *
 from .tokenutils import *
@@ -203,10 +203,12 @@ def orTrue(code):
 # Nimiavaruudet
 
 NAMESPACES = {}
+NAMESPACE_STACK = [""]
 
 def openNamespace(name=None):
 	if not name:
 		pushGrammar(Grammar())
+		NAMESPACE_STACK.append("anonymous-" + str(nextCounter("openNamespace")))
 		return
 	
 	name_str = tokensToString(name, rbits={"nimento"})
@@ -217,12 +219,14 @@ def openNamespace(name=None):
 		pgl(".NAMESPACE-DEF ::= Muista %s . -> remember %s" % (name_code, name_str), FuncOutput(lambda: rememberNamespace(name_str)))
 	
 	pushGrammar(NAMESPACES[name_str])
+	NAMESPACE_STACK.append(name_str)
 
 def rememberNamespace(name_str):
 	pushGrammar(NAMESPACES[name_str], new_frame=False)
 
 def closeNamespace():
 	popGrammar()
+	NAMESPACE_STACK.pop()
 
 pgl(".NAMESPACE-DEF ::= Avaa nimiavaruus . -> open namespace", FuncOutput(openNamespace))
 pgl(".NAMESPACE-DEF ::= Avaa nimiavaruus ( .* ) . -> open namespace $1", FuncOutput(openNamespace))
@@ -354,8 +358,7 @@ def definePolyparamField(name_str, field_id, owner, vtype, to_register, pattern,
 def defineField(owner, name, vtype, case="nimento"):
 	name_str = tokensToString(name, {"yksikkö", case})
 	
-	increaseCounter()
-	counter = getCounter()
+	counter = nextCounter("RField")
 	
 	pattern = lambda bits: nameToCode(name, bits, rbits={case, "yksikkö"})
 	
@@ -389,8 +392,7 @@ def defineMapField(key_class, key_case, is_pre, owner, name, vtype, case="niment
 	name_str = "m"+str(key_class.id)+"-"+tokensToString(name, rbits={case, "yksikkö"})
 	name_code = nameToCode(name, rbits={case, "yksikkö"})
 	
-	increaseCounter()
-	counter = getCounter()
+	counter = nextCounter("RField")
 	
 	def createKeyPattern(category):
 		return ".%s-%d{%s}" % (category, key_class.id, key_case)
@@ -417,8 +419,7 @@ def defineListField(owner, name, vtype, case="nimento"):
 	name_str = "l-"+tokensToString(name, {"yksikkö", case})
 	pattern = lambda bits: nameToCode(name, bits, rbits={case, "yksikkö"})
 	
-	increaseCounter()
-	counter = getCounter()
+	counter = nextCounter("RField")
 	
 	to_append = lambda val, obj: '%s.appendSet(%s, %s)' % (obj, repr(name_str), val)
 	to_remove = lambda val, obj: '%s.removeSet(%s, %s)' % (obj, repr(name_str), val)
@@ -478,8 +479,7 @@ def addBitClassPatternPhrase(clazz, name_code, name_str, name_set):
 		FuncOutput(lambda p: p.bitsOff(name_set-{name_str}).bitOn(name_str)))
 
 def defineBit(owner, *names):
-	increaseCounter()
-	counter = getCounter()
+	counter = nextCounter("defineBit")
 	
 	names = names
 	name_strs = []
@@ -631,11 +631,9 @@ def defineCondition(grammar, file, custom_verb, first_named, owner, *args, repor
 	params = args[1] if len(args) >= 2 else []
 	
 	# luodaan nimi ja patterni
-	increaseCounter()
-	
 	name_str = " ".join([tokensToString(pre)] + [
 		"- %s" % (tokensToString(post),) for _, _, post, _ in params
-	]) + "/" + str(getCounter())
+	]) + "/" + str(nextCounter("defineCondition"))
 	
 	pattern = " ".join([tokensToCode(pre)] + [
 		".EXPR-%d{%s} %s" % (vtype.id, case, tokensToCode(post)) for vtype, case, post, _ in params
@@ -769,6 +767,9 @@ GRAMMAR_STACK[-1].addCategoryName("COPY-DEF", "kopiomääritys")
 def defineVariable(name, class_pattern):
 	name_str = tokensToString(name)
 	pattern = lambda bits: nameToCode(name, bits, rbits={"yksikkö", "nimento"})
+	
+	if len(NAMESPACE_STACK) > 1:
+		name_str = NAMESPACE_STACK[-1] + "::" + name_str
 	
 	if name_str in GLOBAL_SCOPE.variables:
 		# muuttuja on jo olemassa
@@ -923,7 +924,7 @@ def defineAction(name, params, pre, post):
 	pgl(".DEF ::= .LISTENER-DEF-%d -> $1" % (action.id,), identity)
 	GRAMMAR_STACK[-1].addCategoryName("LISTENER-DEF-%d" % (action.id,), "kuuntelijamääritys")
 	
-	def defineCommand(category, pre, *cases_posts):
+	def defineCommand(category, pre, *cases_posts, is_reversed=False):
 		cmd_params = []
 		for i in range(0, len(cases_posts), 2):
 			cmd_params.append((cases_posts[i], cases_posts[i+1]))
@@ -945,17 +946,17 @@ def defineAction(name, params, pre, post):
 				command_pattern,
 				cmd_post,
 				name.token
-			), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s], %s)' % (action.id, ", ".join(val), repr(in_scope))))
+			), FuncOutput(lambda *val: 'ACTIONS[%d].run([%s], %s)' % (action.id, ", ".join(reversed(val) if is_reversed else val), repr(in_scope))))
 		for cmd_post, in_scope in [(".", True), ("jos mahdollista .", False), (", jos mahdollista .", False)]:
 			addCommandPhrase(cmd_post, in_scope)
 		
 		if category == "PLAYER-CMD":
 			action.addPlayerCommand(command_pattern)
 	
-	def addCommandDefPhrase():
+	def addCommandDefPhrase(is_reversed):
 		cmd_pattern = " ".join([
 			"[ .CLASS-CASE-%d ] .**" % (a_class.id,)
-		for _, a_class, _ in params])
+		for _, a_class, _ in (reversed(params) if is_reversed else params)])
 		
 		# Action patterneja ovat 1) pelkkä toiminnon nimi 2) toiminnon nimi + adpositiot 3) toiminnon nimi + adpositiot + parametrien tyypit
 		action_patterns = [
@@ -985,15 +986,19 @@ def defineAction(name, params, pre, post):
 				action_pattern.replace("CASE", "omanto"),
 				cmd_pattern,
 				name.token
-			), FuncOutput(lambda *p: defineCommand("CMD", *p)))
+			), FuncOutput(lambda *p: defineCommand("CMD", *p, is_reversed=is_reversed)))
 			pgl(".COMMAND-DEF-%d ::= tulkitse \" .** %s \" %s . -> def %s command" % (
 				action.id,
 				cmd_pattern,
 				action_pattern.replace("CASE", "olento"),
 				name.token
-			), FuncOutput(lambda *p: defineCommand("PLAYER-CMD", *p)))
+			), FuncOutput(lambda *p: defineCommand("PLAYER-CMD", *p, is_reversed=is_reversed)))
 	
-	addCommandDefPhrase()
+	# lisätään komentomääritykset (komento on, tulkitse)
+	# jos parametreja on kaksi ja niillä on eri tyyppi, salli myös parametrien määrittely eri päin
+	addCommandDefPhrase(False)
+	if len(params) == 2 and params[0][1] != params[1][1]:
+		addCommandDefPhrase(True)
 	
 	pgl(".DEF ::= .COMMAND-DEF-%d -> $1" % (action.id,), identity)
 	GRAMMAR_STACK[-1].addCategoryName("COMMAND-DEF-%d" % (action.id,), "komentomääritys")
@@ -1159,8 +1164,7 @@ class RepeatParser:
 	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		
-		increaseCounter()
-		counter = getCounter()
+		counter = getCounter("RepeatParser")
 		varname = "i_" + str(counter)
 		
 		addParamPhrases(grammar, None, kokonaisluku, self.var, plural=False, varname=varname)
@@ -1206,6 +1210,29 @@ class IfParser:
 			return "(%s and %s)" % (self.condition[0], block_str)
 
 pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
+
+# Kerran-lause
+
+class OnceParser:
+	def __init__(self):
+		pass
+	def parse(self, file, grammar, report=False):
+		block = parseBlock(file, grammar, category="CMD", report=report)
+		block_str = joinCodes(block)
+		
+		counter = nextCounter("OnceParser")
+		once_id = "once_" + str(counter)
+		
+		if file.peekline() and file.peekline().lower() in ["muulloin:", "muuten:"]:
+			file.accept("muulloin:", "muuten:")
+			else_block = parseBlock(file, grammar, category=self.category, report=report)
+			else_str = joinCodes(else_block)
+		else:
+			else_str = "()"
+
+		return "(%s if nextCounter(\"%s\") == 1 else %s)" % (block_str, once_id, else_str)
+
+pgl(".CMD ::= kerran : -> once:", FuncOutput(OnceParser))
 
 # Tulostaminen
 
@@ -1286,7 +1313,7 @@ def parseBlock(reader, grammar, category="CMD", report=False):
 			reader.skipToDedent()
 			for _, i in alternatives:
 				print(i)
-			for error in ERROR_STACK[-1]:
+			for error in groupCauses(ERROR_STACK[-1]):
 				error.print(finnish=True)
 			break
 		if alternatives[0][1][-1] == ":":
@@ -1400,7 +1427,7 @@ def loadFile(file, report=True):
 			sys.stderr.write("\nVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
 			for _, i in a:
 				print(i)
-			for error in ERROR_STACK[-1]:
+			for error in groupCauses(ERROR_STACK[-1]):
 				error.print(finnish=True)
 			
 	if report:
@@ -1539,7 +1566,7 @@ def interactive():
 			setDebug(3)
 			continue
 		elif line == "/virheet":
-			errors = ERROR_STACK[-1]
+			errors = groupCauses(ERROR_STACK[-1])
 			if len(errors) > 0:
 				print("Mahdollisia virheitä:")
 				for error in errors:
