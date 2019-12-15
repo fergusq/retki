@@ -1,5 +1,5 @@
 # Retki
-# Copyright (C) 2018 Iikka Hauhio
+# Copyright (C) 2019 Iikka Hauhio
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,16 +23,29 @@ from .language import *
 from .tokenutils import *
 
 GRAMMAR = Grammar()
+
 GRAMMAR_STACK = [GRAMMAR]
+STACK_FRAMES = [0]
 
 def pgl(*a, **d):
 	GRAMMAR_STACK[-1].parseGrammarLine(*a, **d)
 
-def pushGrammar(grammar):
-	GRAMMAR_STACK.append(grammar)
+def getCombinedGrammar():
+	combined_grammar = Grammar()
+	for grammar in GRAMMAR_STACK:
+		combined_grammar.update(grammar)
+	return combined_grammar
+
+def pushGrammar(grammar, new_frame=True):
+	if new_frame:
+		STACK_FRAMES.append(len(GRAMMAR_STACK))
+		GRAMMAR_STACK.append(grammar)
+	else:
+		GRAMMAR_STACK.insert(STACK_FRAMES[-1], grammar)
 
 def popGrammar():
-	return GRAMMAR_STACK.pop()
+	global GRAMMAR_STACK
+	GRAMMAR_STACK = GRAMMAR_STACK[:STACK_FRAMES.pop()]
 
 # Villikortit
 
@@ -189,14 +202,34 @@ def orTrue(code):
 
 # Nimiavaruudet
 
-def openNamespace():
-	pushGrammar(GRAMMAR_STACK[-1].copy())
+NAMESPACES = {}
+
+def openNamespace(name=None):
+	if not name:
+		pushGrammar(Grammar())
+		return
+	
+	name_str = tokensToString(name, rbits={"nimento"})
+	name_code = nameToCode(name, rbits={"nimento"})
+	
+	if name_str not in NAMESPACES:
+		NAMESPACES[name_str] = Grammar()
+		pgl(".NAMESPACE-DEF ::= Muista %s . -> remember %s" % (name_code, name_str), FuncOutput(lambda: rememberNamespace(name_str)))
+	
+	pushGrammar(NAMESPACES[name_str])
+
+def rememberNamespace(name_str):
+	pushGrammar(NAMESPACES[name_str], new_frame=False)
 
 def closeNamespace():
 	popGrammar()
 
-pgl(".DEF ::= Avaa nimiavaruus . -> open namespace", FuncOutput(openNamespace))
-pgl(".DEF ::= Sulje nimiavaruus . -> close namespace", FuncOutput(closeNamespace))
+pgl(".NAMESPACE-DEF ::= Avaa nimiavaruus . -> open namespace", FuncOutput(openNamespace))
+pgl(".NAMESPACE-DEF ::= Avaa nimiavaruus ( .* ) . -> open namespace $1", FuncOutput(openNamespace))
+pgl(".NAMESPACE-DEF ::= Sulje nimiavaruus . -> close namespace", FuncOutput(closeNamespace))
+
+pgl(".DEF ::= .NAMESPACE-DEF -> $1", identity)
+GRAMMAR_STACK[-1].addCategoryName("NAMESPACE-DEF", "nimiavaruuskäsky")
 
 # Luokat
 
@@ -1355,11 +1388,11 @@ def loadFile(file, report=True):
 			continue
 		del ERROR_STACK[:]
 		ERROR_STACK.append([])
-		a = GRAMMAR_STACK[-1].matchAll(tokenize(line), "DEF", set())
+		a = getCombinedGrammar().matchAll(tokenize(line), "DEF", set())
 		if len(a) == 1:
 			t = a[0][0]()
 			if a[0][1][-1] == ":":
-				t.parse(reader, GRAMMAR_STACK[-1], report=True)
+				t.parse(reader, getCombinedGrammar(), report=True)
 		else:
 			sys.stderr.write("\rVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
 			for _, i in a:
@@ -1481,6 +1514,7 @@ def interactive():
 			continue
 		if line == "/kielioppi":
 			GRAMMAR_STACK[-1].print()
+			print("Kielioppipinossa on %d kielioppi%s." % (len(GRAMMAR_STACK), "a" if len(GRAMMAR_STACK) != 1 else ""))
 			continue
 		elif line == "/käsitteet":
 			def printClass(clazz, indent):
@@ -1515,7 +1549,7 @@ def interactive():
 			cat = args[:args.index(" ")]
 			expr = args[args.index(" ")+1:]
 			print("Matching `%s' ~ .%s" % (expr, cat))
-			ints = GRAMMAR_STACK[-1].matchAll(tokenize(expr), cat, set())
+			ints = getCombinedGrammar().matchAll(tokenize(expr), cat, set())
 			for _, string in ints:
 				print(string)
 			continue
@@ -1551,7 +1585,7 @@ def interactive():
 			phrase_type = mode[mode_chars.index(line[0])+1]
 			line = line[1:]
 		silent = mode[0] == phrase_type == "PLAYER-CMD"
-		interpretations = GRAMMAR_STACK[-1].matchAll(tokenize(line), phrase_type, set())
+		interpretations = getCombinedGrammar().matchAll(tokenize(line), phrase_type, set())
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		elif len(interpretations) == 1:
