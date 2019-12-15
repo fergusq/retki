@@ -855,14 +855,39 @@ Ennen ei-lähestyttävälle ihmiselle puhumista:
 [Ihmiselle] [asian] kertominen on toiminto.
 Tulkitse "kerro [ihmiselle] [asiasta]" kertomisena.
 Tulkitse "kerro [ihmiselle] [asia]" kertomisena.
+Tulkitse "kerro [asiasta] [ihmiselle]" kertomisena.
+Tulkitse "kerro [asia] [ihmiselle]" kertomisena.
 
 Ennen piilossa olevalle ihmiselle asian kertomista:
 	Sano "[Hän] ei ole paikalla.".
 	Keskeytä toiminto.
-	(näkyvyysehto)
+	(ihmisen näkyvyysehto)
+
+Ennen ihmiselle piilossa olevan esineen kertomista:
+	Sano "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+	(esineen näkyvyysehto)
 
 Ihmiselle asian kertomisen aikana:
-	Puhu nyt hänelle.
+	Sano "Et tiedä, miten haluaisit kertoa [siitä].".
+	(perussääntö)
+
+[Ihmiseltä] [asiasta] kysyminen on toiminto.
+Tulkitse "kysy [ihmiseltä] [asiasta]" kysymisenä.
+Tulkitse "kysy [asiasta] [ihmiseltä]" kysymisenä.
+
+Ennen piilossa olevalta ihmiseltä asiasta kysymistä:
+	Sano "[Hän] ei ole paikalla.".
+	Keskeytä toiminto.
+	(ihmisen näkyvyysehto)
+
+Ennen ihmiseltä piilossa olevasta esineestä kysymistä:
+	Sano "Et näe sellaista asiaa.".
+	Keskeytä toiminto.
+	(esineen näkyvyysehto)
+
+Ihmiseltä asiasta kysymisen aikana:
+	Sano "Et tiedä, mitä haluaisit kysyä [siitä].".
 	(perussääntö)
 
 >> Sytyttäminen
