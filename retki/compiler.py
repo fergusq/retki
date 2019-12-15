@@ -536,7 +536,7 @@ GRAMMAR_STACK[-1].addCategoryName("ENUM-DEF", "bittikenttämääritys")
 # Ehdot
 
 pgl(".COND ::= .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y: ('(%s and %s)' % (x[0], y[0]), orTrue('(%s, %s)' % (x[1], y[1])))))
-pgl(".COND ::= .COND , .COND ja .COND -> $1 and $2", FuncOutput(lambda x, y, z: ('(%s and %s and %s)' % (x[0], y[0], z[0]), orTrue('(%s, %s, %s)' % (x[1], y[1], z[1])))))
+pgl(".COND ::= .COND , .COND ja .COND -> $1 and $2 and $3", FuncOutput(lambda x, y, z: ('(%s and %s and %s)' % (x[0], y[0], z[0]), orTrue('(%s, %s, %s)' % (x[1], y[1], z[1])))))
 
 GRAMMAR_STACK[-1].addCategoryName("COND", "ehtolauseke")
 
@@ -645,23 +645,26 @@ def defineCondition(grammar, file, custom_verb, first_named, owner, *args, repor
 	make_call = lambda var, p: "evalOrCall(%s[%s], [%s])" % (var, repr(name_str), ", ".join(p))
 	
 	# tehdään ehtokomento, muuttamiskomento ja totuusmääritys
+	# ne tehdään sekä globaaliin nimiavaruuteen (GRAMMAR_STACK[-1]) että ehtolauseen sisäiseen (grammar)
 	pre = "nyt" if custom_verb else ""
 	verb = "" if custom_verb else "on"
 	post = "" if custom_verb else "nyt"
 	
-	pgl(".CMD ::= %s .EXPR-%d{nimento} %s %s %s . -> $1~%s = True" % (pre, owner.id, verb, post, pattern, name_str),
-		FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
+	grammar = grammar.copy()
 	
-	pgl(".COND ::= .EXPR-%d{nimento} %s %s -> $1~%s" % (owner.id, verb, pattern, name_str),
-		FuncOutput(lambda *p: ("(" + make_call("CHECKS", p) + ")[-2]", orTrue("(" + make_call("MODIFYS", p) + ")"))))
-	
-	pgl(".EXPR-TRUTH-DEF ::= .EXPR-%d{nimento} %s %s . -> $1~%s = True" % (owner.id, verb, pattern, name_str),
-		FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
+	for g in [GRAMMAR_STACK[-1], grammar]:
+		g.parseGrammarLine(".CMD ::= %s .EXPR-%d{nimento} %s %s %s . -> $1~%s = True" % (pre, owner.id, verb, post, pattern, name_str),
+			FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
+
+		g.parseGrammarLine(".COND ::= .EXPR-%d{nimento} %s %s -> $1~%s" % (owner.id, verb, pattern, name_str),
+			FuncOutput(lambda *p: ("(" + make_call("CHECKS", p) + ")[-2]", orTrue("(" + make_call("MODIFYS", p) + ")"))))
+
+		g.parseGrammarLine(".EXPR-TRUTH-DEF ::= .EXPR-%d{nimento} %s %s . -> $1~%s = True" % (owner.id, verb, pattern, name_str),
+			FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
 	
 	tmp_vars = ["_" + str(i) for i in range(len(params)+1)]
 	
 	# parsitaan vartalo
-	grammar = grammar.copy()
 	addParamPhrases(grammar, tmp_vars[0], owner, first_name)
 	for (vtype, case, _, name), tmp_var in zip(params, tmp_vars[1:]):
 		addParamPhrases(grammar, tmp_var, vtype, name)
@@ -1268,7 +1271,7 @@ GRAMMAR_STACK[-1].addCategoryName("SELECTION-DEF", "todennäköisyysmääritys")
 def parseBlock(reader, grammar, category="CMD", report=False):
 	line = reader.nextline()
 	if line != "<indent>\0":
-		sys.stderr.write("Odotettiin sisennystä rivillä %d.\n" % (reader.linenum))
+		sys.stderr.write("\nOdotettiin sisennystä rivillä %d.\n" % (reader.linenum))
 		return []
 	ans = []
 	while True:
@@ -1279,7 +1282,7 @@ def parseBlock(reader, grammar, category="CMD", report=False):
 		ERROR_STACK.append([])
 		alternatives = grammar.matchAll(tokenize(line), category, set())
 		if len(alternatives) != 1:
-			sys.stderr.write("Virhe jäsennettäessä riviä %d: `%s' (%s, %d vaihtoehtoa).\n" % (reader.linenum, line, category, len(alternatives)))
+			sys.stderr.write("\nVirhe jäsennettäessä riviä %d: `%s' (%s, %d vaihtoehtoa).\n" % (reader.linenum, line, category, len(alternatives)))
 			reader.skipToDedent()
 			for _, i in alternatives:
 				print(i)
@@ -1394,7 +1397,7 @@ def loadFile(file, report=True):
 			if a[0][1][-1] == ":":
 				t.parse(reader, getCombinedGrammar(), report=True)
 		else:
-			sys.stderr.write("\rVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
+			sys.stderr.write("\nVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
 			for _, i in a:
 				print(i)
 			for error in ERROR_STACK[-1]:
