@@ -1,0 +1,10 @@
+--langdef=retki
+--langmap=retki:.txt
+--regex-retki=/^([^,.:]+) on ([^,.:]* )?(ala)?käsite\./\1/c,classes/
+--regex-retki=/^Määritelmä\. .*"([^"]+)"(, jos)?:/\1/f,conditions/
+--regex-retki=/^([^,.:"]+) on toiminto\./\1/f,actions/
+--regex-retki=/^([^,.:"]+) on ([^,.:]+) kutsuttu/\2/m,fields/
+--regex-retki=/^([^,.:"]+) on ([^,.:]+), joka/\2/m,fields/
+--regex-retki=/^([^,.:"]+) on ([^,.:]+ )?huone/\1/d,room/
+--regex-retki=/^Avaa nimiavaruus \(([^()]+)\)/\1/n,namespaces/
+--regex-retki=/^Avaa nimiavaruus\./nimetön/n,namespaces/
