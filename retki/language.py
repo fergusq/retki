@@ -17,6 +17,7 @@
 import sys, readline
 import math
 import random
+from collections import defaultdict
 from suomilog.finnish import tokenize
 from suomilog.patternparser import Token
 from .tokenutils import *
@@ -649,7 +650,11 @@ class RAction:
 			+ ", [" + ", ".join(["(" + toPython(p) + ", " + r + ")" for p, r in self.selection_rules]) + "])"
 		] + [
 			("GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', "
-			+ "FuncOutput(lambda *x: (lambda: ACTIONS[%d].run([p for p, _ in x]), ACTIONS[%d].likeliness([p for p, _ in x]) + sum([p for _, p in x]))))")
+			+ "FuncOutput(lambda *x: (lambda: "
+			+ "ACTIONS[%d].run([p for p, _ in x]), "
+			+ "ACTIONS[%d].likeliness([p for p, _ in x]) + sum([p for _, p in x]), "
+			+ "', '.join(p.asString() for p, _ in x)"
+			+ ")))")
 			% (pattern, self.id, self.id) for pattern in self.commands
 		])
 	def addPlayerCommand(self, pattern):
@@ -789,5 +794,29 @@ def playGame(grammar):
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		else:
-			sorted(interpretations, key=lambda i: i[1])[-1][0]()
+			# järjestetään tulkinnat todennäköisyyden mukaan
+			interpretations_by_probability = defaultdict(list)
+			for i in interpretations:
+				interpretations_by_probability[i[1]].append(i)
+			
+			# mikä on suurin todennäköisyys?
+			probability = sorted(interpretations_by_probability.keys())[-1]
+			alternatives = interpretations_by_probability[probability]
+			
+			# jos suurimmalla todennäköisyydellä on useita todennäköisiä tulkintoja: kerro käyttäjälle
+			# muussa tapauksessa: suorita jokin todennäköisin tulkinta
+			if probability >= 0 and len(alternatives) > 1:
+				alternatives_set = set(a[2] for a in alternatives)
+				
+				# useita tulkintoja on, mutta niiden merkkijonoesitys on sama...
+				# suoritetaan siis vain joku niistä, sillä niitä ei voi järkevästi erottaa toisistaan
+				if len(alternatives_set) == 1:
+					alternatives[0][0]()
+				else:
+					print("En osaa päättää seuraavien välillä:")
+					for i, a in enumerate(sorted(alternatives_set)):
+						print(str(i + 1) + ".", a)
+			else:
+				alternatives[0][0]()
 	print(print_buffer.strip())
+

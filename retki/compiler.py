@@ -937,7 +937,7 @@ def defineAction(name, params, pre, post):
 					cmd_case + (",yksikkö" if category != "PLAYER-CMD" else ""), # pelaaja voi viitata sanoihin sekä yksikössä että monikossa
 					tokensToCode(post)
 				)
-			for (_, a_class, _), (cmd_case, post) in zip(params, cmd_params)])
+			for (_, a_class, _), (cmd_case, post) in zip(reversed(params) if is_reversed else params, cmd_params)])
 		)
 		
 		def addCommandPhrase(cmd_post, in_scope):
