@@ -575,12 +575,18 @@ Tulkitse "liiku ylös" ylös liikkumisena.
 Ylös liikkumisen sijasta:
 	Liiku nyt ylös-suuntaan.
 
+Tarkoittaako pelaaja ylös liikkumista:
+	todennäköisesti
+
 Alas liikkuminen on toiminto.
 Tulkitse "mene alas" alas liikkumisena.
 Tulkitse "liiku alas" alas liikkumisena.
 
 Alas liikkumisen sijasta:
 	Liiku nyt alas-suuntaan.
+
+Tarkoittaako pelaaja alas liikkumista:
+	todennäköisesti
 
 Ulos liikkuminen on toiminto.
 Tulkitse "mene ulos" ulos liikkumisena.
@@ -589,12 +595,18 @@ Tulkitse "liiku ulos" ulos liikkumisena.
 Ulos liikkumisen sijasta:
 	Liiku nyt ulos-suuntaan.
 
+Tarkoittaako pelaaja ulos liikkumista:
+	todennäköisesti
+
 Sisään liikkuminen on toiminto.
 Tulkitse "mene sisään" sisään liikkumisena.
 Tulkitse "liiku sisään" sisään liikkumisena.
 
 Sisään liikkumisen sijasta:
 	Liiku nyt sisään-suuntaan.
+
+Tarkoittaako pelaaja sisään liikkumista:
+	todennäköisesti
 
 >> Ovesta meneminen
 
@@ -853,6 +865,7 @@ Ennen ei-lähestyttävälle ihmiselle puhumista:
 	(lähestyttävyysehto)
 
 [Ihmiselle] [asian] kertominen on toiminto.
+Kertomisen komento on "kerro nyt [ihmiselle] [asiasta]".
 Tulkitse "kerro [ihmiselle] [asiasta]" kertomisena.
 Tulkitse "kerro [ihmiselle] [asia]" kertomisena.
 Tulkitse "kerro [asiasta] [ihmiselle]" kertomisena.
@@ -873,6 +886,7 @@ Ihmiselle asian kertomisen aikana:
 	(perussääntö)
 
 [Ihmiseltä] [asiasta] kysyminen on toiminto.
+Kysymisen komento on "kysy nyt [ihmiseltä] [asiasta]".
 Tulkitse "kysy [ihmiseltä] [asiasta]" kysymisenä.
 Tulkitse "kysy [asiasta] [ihmiseltä]" kysymisenä.
 
