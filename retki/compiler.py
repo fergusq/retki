@@ -159,7 +159,10 @@ def createStringLiteralAlternative(string, string_tokens, alternative, capitaliz
 		for (expr_f, _), capitalized in zip(alternative, capitalizeds):
 			expr, case = expr_f()
 			subs.append("%s.asString(case=%s, capitalized=%s)" % (expr, repr(case), repr(capitalized)))
-		return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
+		if len(subs) > 0:
+			return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
+		else:
+			return repr(string)
 	return [
 		f,
 		string % tuple([p[1] for p in alternative])
@@ -1214,25 +1217,38 @@ pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
 # Kerran-lause
 
 class OnceParser:
-	def __init__(self):
-		pass
+	def __init__(self, loop=False):
+		self.loop = loop
 	def parse(self, file, grammar, report=False):
 		block = parseBlock(file, grammar, category="CMD", report=report)
 		block_str = joinCodes(block)
 		
 		counter = nextCounter("OnceParser")
 		once_id = "once_" + str(counter)
-		
-		if file.peekline() and file.peekline().lower() in ["muulloin:", "muuten:"]:
-			file.accept("muulloin:", "muuten:")
-			else_block = parseBlock(file, grammar, category=self.category, report=report)
-			else_str = joinCodes(else_block)
-		else:
-			else_str = "()"
 
-		return "(%s if nextCounter(\"%s\") == 1 else %s)" % (block_str, once_id, else_str)
+		code = "chooseByCounter(\"%s\", [lambda: %s, " % (once_id, block_str)
+		
+		while file.peekline() and file.peekline().lower() in ["sitten:"]:
+			file.accept("sitten:")
+			then_block = parseBlock(file, grammar, category="CMD", report=report)
+			then_str = joinCodes(then_block)
+			code += "lambda: %s, " % (then_str,)
+
+		if not self.loop and file.peekline() and file.peekline().lower() in ["muulloin:", "muuten:"]:
+			file.accept("muulloin:", "muuten:")
+			else_block = parseBlock(file, grammar, category="CMD", report=report)
+			else_str = joinCodes(else_block)
+			code += "], else_block=lambda: %s)" % (else_str,)
+		else:
+			if self.loop:
+				code += "], loop=True)"
+			else:
+				code += "])"
+
+		return code
 
 pgl(".CMD ::= kerran : -> once:", FuncOutput(OnceParser))
+pgl(".CMD ::= ensin : -> once:", FuncOutput(lambda *p: OnceParser(*p, loop=True)))
 
 # Tulostaminen
 

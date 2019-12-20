@@ -403,6 +403,20 @@ def nextCounter(name="default"):
 		COUNTERS[name] = Counter()
 	return next(COUNTERS[name])
 
+def resetCounter(name="default"):
+	COUNTERS[name] = Counter()
+
+def chooseByCounter(name, then_blocks, else_block=None, loop=False):
+	c = nextCounter(name)-1
+	if c < len(then_blocks):
+		then_blocks[c]()
+	else:
+		if else_block:
+			else_block()
+		if loop:
+			resetCounter(name)
+			then_blocks[nextCounter(name)-1]()
+
 CLASSES = {}
 CLASSES_IN_ORDER = []
 
