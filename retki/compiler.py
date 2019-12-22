@@ -18,7 +18,7 @@ import readline, os, sys, argparse, traceback, time
 import re
 import itertools
 from suomilog.patternparser import ERROR_STACK, setDebug, PatternRef, Grammar, groupCauses
-from suomilog.finnish import tokenize, CASES
+from suomilog.finnish import tokenize, CASES, addNounToDictionary
 from .language import *
 from .tokenutils import *
 
@@ -88,7 +88,7 @@ class WordPattern:
 	def toCode(self):
 		return "<pattern that matches any single token>"
 	def match(self, grammar, tokens, bits):
-		if len(tokens) != 1 or not any(altbits >= bits for _, altbits in tokens[0].alternatives):
+		if len(tokens) != 1 or bits and not any(altbits >= bits for _, altbits in tokens[0].alternatives):
 			return []
 		return [[lambda: tokens[0], tokens[0].token]]
 	def allowsEmptyContent(self):
@@ -237,6 +237,19 @@ pgl(".NAMESPACE-DEF ::= Sulje nimiavaruus . -> close namespace", FuncOutput(clos
 
 pgl(".DEF ::= .NAMESPACE-DEF -> $1", identity)
 GRAMMAR_STACK[-1].addCategoryName("NAMESPACE-DEF", "nimiavaruuskäsky")
+
+# Substantiivit
+
+NOUNS = []
+
+def addNoun(token):
+	addNounToDictionary(token.token)
+	NOUNS.append(token.token)
+
+pgl(".NOUN-DEF ::= \" .. \" on substantiivi . -> noun $1", FuncOutput(addNoun))
+
+pgl(".DEF ::= .NOUN-DEF -> $1", identity)
+GRAMMAR_STACK[-1].addCategoryName("NOUN-DEF", "substantiivimääritys")
 
 # Luokat
 
@@ -1489,7 +1502,10 @@ def compileAll(file=sys.stdout):
 	compiled_classes = [cl.toPython() for cl in CLASSES_IN_ORDER]
 	compiled_objects = [ob.toPython() for ob in getObjects()]
 	print("from suomilog.patternparser import Grammar, Token", file=file)
+	print("from suomilog.finnish import addNounToDictionary", file=file)
 	print("from retki.language import *", file=file)
+	for noun in NOUNS:
+		print("addNounToDictionary(%s)" % (repr(noun),), file=file)
 	print("OBJECTS = {}", file=file)
 	print("GRAMMAR = Grammar()", file=file)
 	for decl, _ in compiled_classes+compiled_objects:
