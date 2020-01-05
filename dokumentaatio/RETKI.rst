@@ -63,7 +63,7 @@ INTELLECTin valmistaneen Artificial Intelligence Corporation työntekijä Larry 
 
 Tiivistäen, Harris kuvailee kahta ongelmaa.
 Ensinnäkin käyttäjän voi olla vaikea ymmärtää sitä, minkälaisia kyselyitä järjestelmä hyväksyy ja minkälaisia ei.
-Viattomat muutokset kuten sanajärjestyksen muuttaminen voivat aiheuttaa virheen järjestelmässä.
+Viattomat muutokset, kuten sanajärjestyksen muuttaminen, voivat aiheuttaa virheen järjestelmässä.
 Käyttäjän on vaikea tai mahdoton ymmärtää mitä hän tekee väärin, varsinkin jos kielen käyttöohjeissa lukee pelkästään "kirjoita miten tuntuu luonnolliselta".
 Olen itse törmännyt vastaavaan ongelmaan Wolfram Alpha -järjestelmän kanssa.
 
