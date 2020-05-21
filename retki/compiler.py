@@ -1471,10 +1471,14 @@ LOADED_FILES = []
 def importFile(filename):
 	# kokeillaan onko tiedosto missään hakuhakemistossa (mm. SCRIPT_DIR)
 	for directory in PATH:
-		path = os.path.join(directory, filename + ".txt")
-		if os.path.isfile(path):
-			filename = path
-			break
+		for suffix in ["retki", "txt"]:
+			path = os.path.join(directory, filename + "." + suffix)
+			if os.path.isfile(path):
+				filename = path
+				break
+		else:
+			continue
+		break
 	
 	if not os.path.isfile(filename):
 		sys.stderr.write("\rTiedostoa ei löytynyt: %s (hakuhakemistot: %s)\n" % (filename, repr(PATH)))
