@@ -872,6 +872,7 @@ def addParamPhrases(grammar, case, vtype, name, varname=None, plural=False):
 class ListenerParser:
 	def __init__(self, args):
 		self.args = args
+		self.action = self.args[0]
 		self.params = self.args[1]
 	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
@@ -879,12 +880,17 @@ class ListenerParser:
 			addParamPhrases(grammar, "_" + str(i), p.type(), n)
 		grammar.parseGrammarLine(".CMD ::= keskeytä toiminto . -> stop", FuncOutput(lambda: 'ACTION_STACK[-1].bitOn("stop action")')) # suoritetaan isäntäscopessa
 		listener_name = None
+		listener_name_code = None
 		def setListenerName(name):
-			nonlocal listener_name
+			nonlocal listener_name, listener_name_code
 			listener_name = tokensToString(name)
+			listener_name_code = tokensToCode(name)
 		grammar.parseGrammarLine(".CMD ::= ( .* ) -> listener name = $1", FuncOutput(setListenerName))
 		body = parseBlock(file, grammar, report=report)
-		return RListener(*self.args, body, name=listener_name)
+		listener = RListener(*self.args, body, name=listener_name)
+		if listener_name_code:
+			pgl(".LISTENER-NAME-%d ::= %s{$} -> %s" % (self.action.id, listener_name_code, listener_name), FuncOutput(lambda: listener))
+		return listener
 
 def defineAction(name, params, pre, post):
 	name_str = (tokensToString(pre) + " " + name.token + " " + tokensToString(post)).lower().strip()
@@ -969,7 +975,7 @@ def defineAction(name, params, pre, post):
 		if category == "PLAYER-CMD":
 			action.addPlayerCommand(command_pattern)
 	
-	def addCommandDefPhrase(is_reversed):
+	def addCommandDefPhraseAndIgnorePhrase(is_reversed):
 		cmd_pattern = " ".join([
 			"[ .CLASS-CASE-%d ] .**" % (a_class.id,)
 		for _, a_class, _ in (reversed(params) if is_reversed else params)])
@@ -1009,14 +1015,22 @@ def defineAction(name, params, pre, post):
 				action_pattern.replace("CASE", "olento"),
 				name.token
 			), FuncOutput(lambda *p: defineCommand("PLAYER-CMD", *p, is_reversed=is_reversed)))
+			if not is_reversed:
+				pgl(".IGNORE-DEF-%d ::= %s .LISTENER-NAME-%d{osanto} ei sovelleta . -> ignore %s::$1" %(
+					action.id,
+					action_pattern.replace("CASE", "omanto"),
+					action.id,
+					name.token
+				), FuncOutput(lambda listener: listener.disable()))
 	
-	# lisätään komentomääritykset (komento on, tulkitse)
+	# lisätään komentomääritykset (komento on, tulkitse) sekä ei sovelleta -komento
 	# jos parametreja on kaksi ja niillä on eri tyyppi, salli myös parametrien määrittely eri päin
-	addCommandDefPhrase(False)
+	addCommandDefPhraseAndIgnorePhrase(False)
 	if len(params) == 2 and params[0][1] != params[1][1]:
-		addCommandDefPhrase(True)
+		addCommandDefPhraseAndIgnorePhrase(True)
 	
 	pgl(".DEF ::= .COMMAND-DEF-%d -> $1" % (action.id,), identity)
+	pgl(".DEF ::= .IGNORE-DEF-%d -> $1" % (action.id,), identity)
 	GRAMMAR_STACK[-1].addCategoryName("COMMAND-DEF-%d" % (action.id,), "komentomääritys")
 
 def addActionDefPattern(num_params):
@@ -1524,7 +1538,8 @@ def compileAll(file=sys.stdout):
 	for key in ACTIONS:
 		print(ACTIONS[key].toPython(), file=file)
 	for listener in ACTION_LISTENERS:
-		print(listener.toPython(), file=file)
+		if not listener.disabled:
+			print(listener.toPython(), file=file)
 	for var, dicti in [("CHECKS", CHECKS), ("MODIFYS", MODIFYS)]:
 		for key in dicti:
 			print('%s[%s] = %s' % (var, repr(key), dicti[key]), file=file)

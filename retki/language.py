@@ -684,7 +684,7 @@ class RAction:
 	def run(self, args, in_scope=False):
 		listeners = []
 		for listener in self.listeners:
-			if listener.action is self and allPatternsMatch(args, listener.params):
+			if listener.action is self and allPatternsMatch(args, listener.params) and not listener.disabled:
 				listeners.append(listener)
 		if not in_scope:
 			pushAction()
@@ -716,6 +716,7 @@ class RListener:
 		self.is_general_case = is_general_case
 		self.body = body
 		self.name = name
+		self.disabled = False
 		ACTION_LISTENERS.append(self)
 		action.listeners.append(self)
 	def toPython(self):
@@ -729,6 +730,8 @@ class RListener:
 			repr(self.name),
 			')'
 		])
+	def disable(self):
+		self.disabled = True
 	def run(self, args):
 		pushStackFrame(self.action.name)
 		for i, ((c, _, _), a) in enumerate(zip(self.params, args)):
