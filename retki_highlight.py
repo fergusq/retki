@@ -62,6 +62,14 @@ class HTMLHighlighter:
 		if len(self.buffer_stack) == 3:
 			self.endParagraph()
 	
+	def startNamespace(self):
+		self.endParagraph()
+		self.buffer_stack[0] += "<blockquote>\n"
+	
+	def endNamespace(self):
+		self.endParagraph()
+		self.buffer_stack[0] += "</blockquote>\n"
+	
 	def largeHeading(self, text):
 		self.endParagraph()
 		self.buffer_stack[0] += "<h2>" + text + "</h2>\n"
@@ -112,6 +120,9 @@ class HTMLHighlighter:
 	
 	def addStrongWord(self, word):
 		self.buffer_stack[-1] += "<strong>" + word + "</strong>"
+	
+	def addEmphasis(self, word):
+		self.buffer_stack[-1] += "<em>" + word + "</em>"
 	
 	def output(self):
 		self.endParagraph()
@@ -185,6 +196,11 @@ class HTMLHighlighter:
 					margin-bottom: initial;
 					padding: 5px;
 					background-color: #ffc;
+				}
+				blockquote {
+					margin-left: 0;
+					border-left: 1px solid gray;
+					padding-left: 1em;
 				}
 				</style>
 			</head>
@@ -271,6 +287,19 @@ def highlight(file):
 			highlighter.dedent()
 		elif line.startswith("(") and line.endswith(")"):
 			highlighter.ruleName(line[1:-1])
+		elif line.startswith("Avaa nimiavaruus"):
+			highlighter.endLine()
+			highlighter.addStrongWord("Avaa nimiavaruus")
+			line = line[17:]
+			if line.startswith("(") and line.endswith(")."):
+				highlighter.addCharacter(" (")
+				highlighter.addEmphasis(line[1:-2])
+				highlighter.addCharacter(")")
+			highlighter.addStrongWord(".")
+			highlighter.startNamespace()
+		elif line == "Sulje nimiavaruus.":
+			highlighter.endNamespace()
+			highlighter.addStrongWord("Sulje nimiavaruus.")
 		else:
 			highlighter.endLine()
 			if line.startswith("Määritelmä. "):
