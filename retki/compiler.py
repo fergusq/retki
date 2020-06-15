@@ -1159,16 +1159,16 @@ GRAMMAR_STACK[-1].addCategoryName("TUPLE-DEF", "monikkomääritys")
 # For-silmikka
 
 class ForParser:
-	def __init__(self, field_name, *args, group=False):
+	def __init__(self, field_name, *args, group=False, global_set=False):
 		self.field_name = field_name
 		self.args = args
 		self.group = group
+		self.global_set = global_set
 	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		
 		param_pattern = self.args[0]
-		param_name = None if len(self.args) == 2 else self.args[1]
-		obj = self.args[-1]
+		param_name = None if len(self.args) == 1 else self.args[1]
 		
 		addParamPhrases(grammar, "_val", param_pattern.type(), param_name, plural=self.group)
 		if self.group:
@@ -1182,9 +1182,24 @@ class ForParser:
 		block = parseBlock(file, grammar, report=report)
 		block_str = "lambda: (" + ", ".join(block) + ")"
 		
-		return '%s.forSet(%s, "_val", %s, %s, group=%s, count_var_name="_count")' % (
-			obj, repr(self.field_name), param_pattern.toPython(), block_str, repr(self.group)
-		)
+		if self.global_set:
+			return 'forSet(OBJECTS_IN_ORDER, "_val", %s, %s, %s, "_count")' % (
+				param_pattern.toPython(), block_str, repr(self.group)
+			)
+		else:
+			obj = self.args[-1]
+			return '%s.forSet(%s, "_val", %s, %s, group=%s, count_var_name="_count")' % (
+				obj, repr(self.field_name), param_pattern.toPython(), block_str, repr(self.group)
+			)
+
+for named_code in ["", "( .* )"]:
+	pgl(".CMD ::= toista jokaiselle .PATTERN-%d{ulkotulento} %s : -> for each $1:" % (
+		asia.id, named_code
+	), FuncOutput(lambda *p: ForParser(None, *p, global_set=True)))
+
+	pgl(".CMD ::= toista jokaiselle ryhmälle samanlaisia .PATTERN-%d{osanto,monikko} %s : -> for each $1:" % (
+		asia.id, named_code
+	), FuncOutput(lambda *p: ForParser(None, *p, group=True, global_set=True)))
 
 class RepeatParser:
 	def __init__(self, end, start=None, var=None):

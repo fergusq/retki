@@ -102,6 +102,32 @@ def searchRandomObject(pattern):
 	matching = list(filter(pattern.matches, OBJECTS_IN_ORDER))
 	return random.choice(matching)
 
+def forSet(objects, var_name, pattern, f, group, count_var_name):
+	pushScope()
+	ans = []
+	if not group:
+		for val in set(objects):
+			if pattern.matches(val):
+				putVar(var_name, val, to_scope_stack=True)
+				ans.append(f())
+	else:
+		# TODO
+		groups = []
+		for val in objects:
+			if pattern.matches(val):
+				for group in groups:
+					if group[0].equals(val):
+						group.append(val)
+						break
+				else:
+					groups.append([val])
+		for group in groups:
+				putVar(count_var_name, createIntegerObj(len(group)), to_scope_stack=True)
+				putVar(var_name, group[0], to_scope_stack=True)
+				ans.append(f())
+	popScope()
+	return ans
+
 class RObject(Bits):
 	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None, aliases=None, data=None):
 		Bits.__init__(self, bits)
@@ -289,30 +315,7 @@ class RObject(Bits):
 	def forSet(self, field_name, var_name, pattern, f, group=False, count_var_name=None):
 		if field_name not in self.data:
 			return []
-		pushScope()
-		ans = []
-		if not group:
-			for val in set(self.data[field_name]):
-				if pattern.matches(val):
-					putVar(var_name, val, to_scope_stack=True)
-					ans.append(f())
-		else:
-			# TODO
-			groups = []
-			for val in self.data[field_name]:
-				if pattern.matches(val):
-					for group in groups:
-						if group[0].equals(val):
-							group.append(val)
-							break
-					else:
-						groups.append([val])
-			for group in groups:
-					putVar(count_var_name, createIntegerObj(len(group)), to_scope_stack=True)
-					putVar(var_name, group[0], to_scope_stack=True)
-					ans.append(f())
-		popScope()
-		return ans
+		return forSet(self.data[field_name], var_name, pattern, f, group, count_var_name)
 	def onceSet(self, field_name, var_name, pattern, f):
 		if field_name not in self.data:
 			return False
