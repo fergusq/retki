@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='retki',
-	version='0.11',
+	version='0.12',
 	description='Finnish programming language inspired by Inform 7',
 	url='http://github.com/fergusq/retki',
 	author='Iikka Hauhio',
@@ -15,7 +15,7 @@ setup(
 	python_requires='>=3',
 	install_requires=['voikko', 'suomilog'],
 	package_data={
-		'retki': ['std.txt'],
+		'retki': ['std.txt', 'tekstiseikkailukirjasto.txt'],
 	},
 	entry_points={
 		'console_scripts': [
