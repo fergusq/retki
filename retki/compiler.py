@@ -1169,8 +1169,11 @@ class ForParser:
 		
 		param_pattern = self.args[0]
 		param_name = None if len(self.args) == 1 else self.args[1]
+
+		counter = nextCounter("ForParser")
+		varname = "val_" + str(counter)
 		
-		addParamPhrases(grammar, "_val", param_pattern.type(), param_name, plural=self.group)
+		addParamPhrases(grammar, varname, param_pattern.type(), param_name, plural=self.group)
 		if self.group:
 			for clazz in kokonaisluku.superclasses():
 				grammar.parseGrammarLine(".EXPR-%d ::= ryhmän koko{$} -> val count" % (clazz.id,),
@@ -1183,13 +1186,13 @@ class ForParser:
 		block_str = "lambda: (" + ", ".join(block) + ")"
 		
 		if self.global_set:
-			return 'forSet(OBJECTS_IN_ORDER, "_val", %s, %s, %s, "_count")' % (
-				param_pattern.toPython(), block_str, repr(self.group)
+			return 'forSet(OBJECTS_IN_ORDER, "%s", %s, %s, %s, "_count")' % (
+				varname, param_pattern.toPython(), block_str, repr(self.group)
 			)
 		else:
 			obj = self.args[-1]
-			return '%s.forSet(%s, "_val", %s, %s, group=%s, count_var_name="_count")' % (
-				obj, repr(self.field_name), param_pattern.toPython(), block_str, repr(self.group)
+			return '%s.forSet(%s, "%s", %s, %s, group=%s, count_var_name="_count")' % (
+				obj, repr(self.field_name), varname, param_pattern.toPython(), block_str, repr(self.group)
 			)
 
 for named_code in ["", "( .* )"]:
@@ -1209,7 +1212,7 @@ class RepeatParser:
 	def parse(self, file, grammar, report=False):
 		grammar = grammar.copy()
 		
-		counter = getCounter("RepeatParser")
+		counter = nextCounter("RepeatParser")
 		varname = "i_" + str(counter)
 		
 		addParamPhrases(grammar, None, kokonaisluku, self.var, plural=False, varname=varname)
