@@ -17,35 +17,35 @@
 import sys, readline
 import math
 import random
+from typing import Any, Callable, Iterable, Literal, NamedTuple, Self, Sequence, TypedDict, overload
 from collections import defaultdict
-from suomilog.finnish import tokenize
-from suomilog.patternparser import Token
+from suomilog.grammar import Output, Token
 from .tokenutils import *
 
 # Bittiluokka
 
 class Bits:
-	def __init__(self, bits=None):
+	def __init__(self, bits: set[str] | None = None):
 		self.bits = bits or set()
-	def bitOn(self, bit):
+	def bitOn(self, bit: str) -> Self:
 		self.bits.add(bit)
 		return self
-	def bitOff(self, bit):
+	def bitOff(self, bit: str) -> Self:
 		if bit in self.bits:
 			self.bits.remove(bit)
 		return self
-	def bitsOn(self, bits):
+	def bitsOn(self, bits: Iterable[str]) -> Self:
 		for bit in bits:
 			self.bitOn(bit)
 		return self
-	def bitsOff(self, bits):
+	def bitsOff(self, bits: Iterable[str]) -> Self:
 		for bit in bits:
 			self.bitOff(bit)
 		return self
 
 # Evaluominen
 
-def evalOrCall(f, p):
+def evalOrCall[T](f: Callable[..., T] | str, p: Any) -> T:
 	if isinstance(f, str):
 		return eval(f)(*p)
 	else:
@@ -53,18 +53,31 @@ def evalOrCall(f, p):
 
 # Ulostulo
 
-class FuncOutput:
-	def __init__(self, f):
+class RetkiOutput(NamedTuple):
+	func: Callable[[], Any]
+	str_output: str
+
+class FuncOutput(Output[RetkiOutput]):
+	def __init__(self, f: Callable[..., Any], str_template=""):
 		self.func = f
-	def eval(self, args):
-		return lambda: self.func(*[arg() for arg in args])
+		self.str_template = str_template
+	def eval(self, args) -> RetkiOutput:
+		str_output = self.str_template
+		for i, arg in enumerate(args):
+			str_output = str_output.replace(f"${i+1}", arg.str_output)
+
+		funcs = [arg.func for arg in args]
+		return RetkiOutput(
+			lambda: self.func(*[f() for f in funcs]),
+			str_output,
+		)
 
 identity = FuncOutput(lambda x: x)
 
-class SumOutput:
-	def __init__(self, f=lambda: 0):
+class SumOutput(Output[int]):
+	def __init__(self, f: Callable[[], int] = lambda: 0):
 		self.f = f
-	def eval(self, args):
+	def eval(self, args) -> int:
 		return sum(args) + self.f()
 
 # Pythoniksi muuntamista varten
@@ -81,30 +94,31 @@ def toPython(obj):
 
 # Olioluokka
 
-OBJECTS = None
+OBJECTS: dict[int, "RObject"] | None = None
 
 def saveObjects():
 	global OBJECTS
 	OBJECTS = {}
 
 def getObjects():
+	assert OBJECTS is not None
 	return OBJECTS.values()
 	
-OBJECTS_IN_ORDER = []
+OBJECTS_IN_ORDER: list["RObject"] = []
 
-def searchLastObject(pattern):
+def searchLastObject(pattern: "RPattern") -> "RObject | None":
 	for obj in reversed(OBJECTS_IN_ORDER):
 		if pattern.matches(obj):
 			return obj
 	return None
 
-def searchRandomObject(pattern):
+def searchRandomObject(pattern: "RPattern") -> "RObject":
 	matching = list(filter(pattern.matches, OBJECTS_IN_ORDER))
 	return random.choice(matching)
 
-def forSet(objects, var_name, pattern, f, group, count_var_name):
+def forSet[T](objects: Iterable["RObject"], var_name: str, pattern: "RPattern", f: Callable[[], T], group: bool, count_var_name: str | None) -> list[T]:
 	pushScope()
-	ans = []
+	ans: list[T] = []
 	if not group:
 		for val in set(objects):
 			if pattern.matches(val):
@@ -112,24 +126,67 @@ def forSet(objects, var_name, pattern, f, group, count_var_name):
 				ans.append(f())
 	else:
 		# TODO
-		groups = []
+		groups: list[list[RObject]] = []
 		for val in objects:
 			if pattern.matches(val):
-				for group in groups:
-					if group[0].equals(val):
-						group.append(val)
+				for group1 in groups:
+					if group1[0].equals(val):
+						group1.append(val)
 						break
 				else:
 					groups.append([val])
-		for group in groups:
-				putVar(count_var_name, createIntegerObj(len(group)), to_scope_stack=True)
-				putVar(var_name, group[0], to_scope_stack=True)
+		for group1 in groups:
+				if count_var_name:
+					putVar(count_var_name, createIntegerObj(len(group1)), to_scope_stack=True)
+				putVar(var_name, group1[0], to_scope_stack=True)
 				ans.append(f())
 	popScope()
 	return ans
 
+class ExtraDict(TypedDict, total=False):
+	int: int
+	str: str
+	tuple: tuple["RObject", ...]
+
+type MapFieldKey = int | str | tuple[MapFieldKey, ...] | "RObject"
+
+def keyToPythonRef(key: MapFieldKey) -> str:
+	if isinstance(key, int | str):
+		return str(key)
+	
+	elif isinstance(key, tuple):
+		return "(" + ", ".join(keyToPythonRef(k) for k in key) + ")"
+	
+	else:
+		return key.toPythonRef()
+
 class RObject(Bits):
-	def __init__(self, rclass, name, bits=None, obj_id=None, extra=None, name_tokens=None, srules=None, aliases=None, data=None):
+	id: int
+	rclass: "RClass"
+	name: str | None
+	name_tokens: list[Token] | None
+	aliases: list[list[Token]]
+	extra: ExtraDict
+	data: dict[str, "RObject"]
+	set_data: dict[str, set["RObject"]]
+	map_data: dict[str, dict[MapFieldKey, "RObject"]]
+
+	selection_rules: list[str]
+
+	def __init__(
+		self,
+		rclass: "RClass",
+		name: str | None,
+		bits: set[str] | None = None,
+		obj_id: int | None = None,
+		extra: ExtraDict | None = None,
+		name_tokens: list[Token] | None = None,
+		srules: list[str] | None = None,
+		aliases: list[list[Token]] | None = None,
+		data=None,
+		set_data=None,
+		map_data=None,
+	):
 		Bits.__init__(self, bits)
 		if not obj_id:
 			self.id = nextCounter("RObject")
@@ -141,6 +198,8 @@ class RObject(Bits):
 			OBJECTS_IN_ORDER.append(self)
 		self.rclass = rclass
 		self.data = data or {}
+		self.set_data = set_data or {}
+		self.map_data = map_data or {}
 		self.extra = extra or {}
 		self.name = name
 		self.name_tokens = name_tokens
@@ -151,21 +210,19 @@ class RObject(Bits):
 	def __repr__(self):
 		return self.asString()
 	def copy(self):
-		data_copy = {}
-		for key in self.data:
-			if isinstance(self.data[key], RObject):
-				data_copy[key] = self.data[key]
-			elif isinstance(self.data[key], dict):
-				data_copy[key] = self.data[key].copy()
-			elif isinstance(self.data[key], set):
-				data_copy[key] = self.data[key].copy()
-			else:
-				raise Exception("not implemented")
+		set_data_copy = {}
+		map_data_copy = {}
+		for key in self.set_data:
+			set_data_copy[key] = self.set_data[key].copy()
+		for key in self.map_data:
+			map_data_copy[key] = self.map_data[key].copy()
 		return RObject(
 			self.rclass, self.name, self.bits.copy(),
 			extra=self.extra.copy(), name_tokens=self.name_tokens, srules=self.selection_rules.copy(),
 			aliases=self.aliases.copy(),
-			data=data_copy
+			data=self.data.copy(),
+			set_data=set_data_copy,
+			map_data=map_data_copy,
 		)
 	def toPythonRef(self):
 		if self.rclass.primitive:
@@ -189,7 +246,7 @@ class RObject(Bits):
 		for name in names:
 			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: (%s, %s.likeliness())))" % (
 				self.rclass.id,
-				nameToCode(name, bits={"$"}, rbits={"nimento"}),
+				nameToCode(name, bits={"$"}, rbits={"+nom"}),
 				var, var
 			)
 		
@@ -209,19 +266,19 @@ class RObject(Bits):
 				'%s.data[%s] = %s' % (var, repr(key), self.data[key].toPythonRef()) for key in self.data if isinstance(self.data[key], RObject)
 			] + [
 				# karttakentät
-				'%s.data[%s] = {%s}' % (
+				'%s.map_data[%s] = {%s}' % (
 					var,
 					repr(key),
-					", ".join([keykey.toPythonRef() + ": " + self.data[key][keykey].toPythonRef() for keykey in self.data[key]])
+					", ".join([keyToPythonRef(keykey) + ": " + self.map_data[key][keykey].toPythonRef() for keykey in self.map_data[key]])
 				)
-				for key in self.data if isinstance(self.data[key], dict)
+				for key in self.map_data
 			] + [
 				# joukkokentät
-				'%s.data[%s] = {%s}' % (var, repr(key), ", ".join([val.toPythonRef() for val in self.data[key]]))
-				for key in self.data if isinstance(self.data[key], set)
+				'%s.set_data[%s] = {%s}' % (var, repr(key), ", ".join([val.toPythonRef() for val in self.set_data[key]]))
+				for key in self.set_data
 			])
 		)
-	def equals(self, obj):
+	def equals(self, obj: "RObject"):
 		if self.id == obj.id:
 			return True
 		if self.name != obj.name:
@@ -236,51 +293,53 @@ class RObject(Bits):
 		if self.extra != obj.extra:
 			return False
 		return True
-	def quickEquals(self, obj):
+	def quickEquals(self, obj: "RObject"):
 		return self.id == obj.id or self.rclass == obj.rclass and self.rclass.primitive and self.extra == obj.extra
-	def get(self, field_name):
+	def get(self, field_name: str):
 		if field_name not in self.data:
 			for clazz in self.rclass.superclasses():
-				if field_name in clazz.fields and clazz.fields[field_name].default_value:
-					self.data[field_name] = clazz.fields[field_name].default_value
+				defa = clazz.fields[field_name].default_value
+				if field_name in clazz.fields and defa:
+					self.data[field_name] = defa
 					break
 			else:
+				assert False
 				self.data[field_name] = None
 		return self.data[field_name]
-	def set(self, field_name, val):
+	def set(self, field_name: str, val: "RObject"):
 		self.data[field_name] = val
 		if field_name == "nimi koodissa":
 			name = val.asString()
 			self.name = name
 			self.name_tokens = tokenize(name)
-	def getMap(self, field_name, key_val):
+	def getMap(self, field_name: str, key_val: "RObject") -> "RObject | None":
 		key = key_val.toKey()
-		if field_name not in self.data:
-			self.data[field_name] = {}
-		if key not in self.data[field_name]:
+		if field_name not in self.map_data:
+			self.map_data[field_name] = {}
+		if key not in self.map_data[field_name]:
 			for clazz in self.rclass.superclasses():
 				if field_name in clazz.fields and clazz.fields[field_name]:
 					return clazz.fields[field_name].default_value
 			return None
-		return self.data[field_name][key]
-	def setMap(self, field_name, key_val, val):
+		return self.map_data[field_name][key]
+	def setMap(self, field_name: str, key_val: "RObject", val: "RObject"):
 		key = key_val.toKey()
 		if field_name not in self.data:
-			self.data[field_name] = {}
-		self.data[field_name][key] = val
-	def appendSet(self, field_name, val):
+			self.map_data[field_name] = {}
+		self.map_data[field_name][key] = val
+	def appendSet(self, field_name: str, val: "RObject | RPattern"):
 		if field_name not in self.data:
-			self.data[field_name] = set()
-		field = self.data[field_name]
+			self.set_data[field_name] = set()
+		field: set[RObject] = self.set_data[field_name]
 		if isinstance(val, RPattern):
 			if not self.containsSet(field_name, val):
 				field.add(val.newInstance(tokenize("uusi arvo")))
 		else:
 			field.add(val)
-	def removeSet(self, field_name, val):
-		if field_name not in self.data:
+	def removeSet(self, field_name: str, val: "RObject | RPattern"):
+		if field_name not in self.set_data:
 			return
-		field = self.data[field_name]
+		field: set[RObject] = self.set_data[field_name]
 		if isinstance(val, RPattern):
 			for obj in field:
 				if val.matches(obj):
@@ -288,10 +347,10 @@ class RObject(Bits):
 		else:
 			if val in field:
 				field.remove(val)
-	def containsSet(self, field_name, val):
-		if field_name not in self.data:
+	def containsSet(self, field_name: str, val: "RObject | RPattern") -> bool:
+		if field_name not in self.set_data:
 			return False
-		field = self.data[field_name]
+		field: set[RObject] = self.set_data[field_name]
 		if isinstance(val, RPattern):
 			if val.obj:
 				return val.obj in field and val.matches(val.obj)
@@ -302,51 +361,57 @@ class RObject(Bits):
 				return False
 		else:
 			return val in field
-	def clearSet(self, field_name):
-		if field_name not in self.data:
+	def clearSet(self, field_name: str):
+		if field_name not in self.set_data:
 			return
-		field = self.data[field_name]
+		field: set[RObject] = self.set_data[field_name]
 		field.clear()
-	def isSetEmpty(self, field_name):
-		if field_name not in self.data:
+	def isSetEmpty(self, field_name: str) -> bool | None:
+		if field_name not in self.set_data:
 			return
-		field = self.data[field_name]
+		field: set[RObject] = self.set_data[field_name]
 		return len(field) == 0
-	def forSet(self, field_name, var_name, pattern, f, group=False, count_var_name=None):
-		if field_name not in self.data:
+	def forSet(self, field_name: str, var_name: str, pattern: "RPattern", f: Callable[[], Any], group: bool = False, count_var_name: str | None = None):
+		if field_name not in self.set_data:
 			return []
-		return forSet(self.data[field_name], var_name, pattern, f, group, count_var_name)
-	def onceSet(self, field_name, var_name, pattern, f):
+		return forSet(self.set_data[field_name], var_name, pattern, f, group, count_var_name)
+	def onceSet(self, field_name: str, var_name: str, pattern: "RPattern", f: Callable[[], bool]) -> bool:
 		if field_name not in self.data:
 			return False
 		pushScope()
-		for val in self.data[field_name]:
+		for val in self.set_data[field_name]:
 			if pattern.matches(val):
 				putVar(var_name, val, to_scope_stack=True)
 				if f():
 					return True
 		popScope()
 		return False
-	def createCopies(self, n, condition=None):
+	def createCopies(self, n: int, condition: "RCondition | None" = None):
 		for i in range(n):
 			obj = self.copy()
 			if condition:
 				condition.doModify(obj)
+	@overload
+	def setExtra(self, name: Literal["int"], data: int): ...
+	@overload
+	def setExtra(self, name: Literal["str"], data: str): ...
+	@overload
+	def setExtra(self, name: Literal["tuple"], data: tuple["RObject", ...]): ...
 	def setExtra(self, name, data):
 		self.extra[name] = data
 		return self
-	def addSelectionRule(self, rule):
+	def addSelectionRule(self, rule: str):
 		self.selection_rules.append(rule)
-	def addVariableAlias(self, alias):
+	def addVariableAlias(self, alias: list[Token]):
 		self.aliases.append(alias)
-	def likeliness(self):
+	def likeliness(self) -> int:
 		ans = 0
 		for rule in self.selection_rules:
 			ans += evalOrCall(rule, [self])
 		return ans
-	def asString(self, case="nimento", capitalized=False):
+	def asString(self, case="+nom", capitalized=False):
 		do_lower = True
-		if case != "nimento":
+		if case != "+nom":
 			if self.name_tokens:
 				name_tokens = self.name_tokens
 			elif self.name:
@@ -376,7 +441,7 @@ class RObject(Bits):
 			return ans.lower()
 		else:
 			return ans
-	def toKey(self):
+	def toKey(self) -> MapFieldKey:
 		if "str" in self.extra:
 			return self.extra["str"]
 		elif "int" in self.extra:
@@ -388,7 +453,7 @@ class RObject(Bits):
 
 # Luokat
 
-COUNTERS = {}
+COUNTERS: dict[str, "Counter"] = {}
 
 class Counter:
 	def __init__(self):
@@ -401,30 +466,56 @@ class Counter:
 	def __iter__(self):
 		return self
 
-def nextCounter(name="default"):
+def nextCounter(name: str = "default") -> int:
 	if name not in COUNTERS:
 		COUNTERS[name] = Counter()
 	return next(COUNTERS[name])
 
-def resetCounter(name="default"):
+def resetCounter(name: str = "default") -> None:
 	COUNTERS[name] = Counter()
 
-def chooseByCounter(name, then_blocks, else_block=None, loop=False):
+def chooseByCounter(
+	name: str,
+	then_blocks: list[Callable[[], Any]],
+	else_block: Callable[[], Any] | None = None,
+	loop: bool = False
+):
 	c = nextCounter(name)-1
 	if c < len(then_blocks):
 		then_blocks[c]()
 	else:
-		if else_block:
+		if else_block is not None:
 			else_block()
 		if loop:
 			resetCounter(name)
 			then_blocks[nextCounter(name)-1]()
 
-CLASSES = {}
-CLASSES_IN_ORDER = []
+CLASSES: dict[str, "RClass"] = {}
+CLASSES_IN_ORDER: list["RClass"] = []
+
+type BitGroup = tuple[tuple[list[Token], ...], list[str], list[str]]
 
 class RClass(Bits):
-	def __init__(self, name, superclass, name_tokens, class_id=None, bit_groups=None, bits=None, primitive=None):
+	name: str
+	name_tokens: list[Token]
+	superclass: "RClass | None"
+	direct_subclasses: list["RClass"]
+	fields: dict[str, "RField"]
+	bit_groups: list[BitGroup]
+	attributePhraseAdders: list[Callable[["RClass", "RClass"], None]]
+	selection_rules: list[str]
+	primitive: str | None
+
+	def __init__(
+		self,
+		name: str,
+		superclass: "RClass | None",
+		name_tokens: list[Token],
+		class_id: int | None = None,
+		bit_groups: list[BitGroup] | None = None,
+		bits: set[str] | None = None,
+		primitive: str | None = None
+	):
 		Bits.__init__(self, bits)
 		
 		CLASSES[name] = self
@@ -444,7 +535,7 @@ class RClass(Bits):
 		self.selection_rules = []
 		self.primitive = primitive
 		
-		if superclass:
+		if self.superclass:
 			self.superclass.direct_subclasses.append(self)
 	def toPython(self):
 		sc = "None" if self.superclass is None else "CLASSES[" + repr(self.superclass.name) + "]"
@@ -456,32 +547,38 @@ class RClass(Bits):
 			),
 			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
 		)
-	def addField(self, name, field):
+	def addField(self, name: str, field: "RField"):
 		self.fields[name] = field
-	def addSelectionRule(self, rule):
+	def addSelectionRule(self, rule: str):
 		self.selection_rules.append(rule)
-	def newInstance(self, name=None, bitsOn=set(), bitsOff=set(), name_tokens=None):
+	def newInstance(
+		self,
+		name: str | None = None,
+		bitsOn: set[str] = set(),
+		bitsOff: set[str] = set(),
+		name_tokens: list[Token] | None = None
+	) -> RObject:
 		srules = []
 		for clazz in self.superclasses():
 			srules += clazz.selection_rules
 		return RObject(self, name, (self.allBits()|bitsOn)-bitsOff, name_tokens=name_tokens, srules=srules)
-	def superclasses(self):
+	def superclasses(self) -> list["RClass"]:
 		if self.superclass == None:
 			return [self]
 		else:
 			return [self] + self.superclass.superclasses()
-	def subclasses(self):
-		ans = [self]
+	def subclasses(self) -> list["RClass"]:
+		ans: list[RClass] = [self]
 		for subclass in self.direct_subclasses:
 			ans += subclass.subclasses()
 		return ans
-	def allBits(self):
-		bit_groups = []
+	def allBits(self) -> set[str]:
+		bit_groups: list[set[str]] = []
 		for clazz in self.superclasses():
 			for bg in clazz.bit_groups:
 				bit_groups.append(set(bg[1]))
 		
-		ans = set()
+		ans: set[str] = set()
 		for clazz in reversed(self.superclasses()):
 			for bit in clazz.bits:
 				for bit_group in bit_groups:
@@ -490,14 +587,21 @@ class RClass(Bits):
 						break
 				ans |= {bit}
 		return ans
-	def nameToCode(self, bits):
+	def nameToCode(self, bits: set[str]) -> str:
 		if self.name_tokens:
-			return nameToCode(self.name_tokens, rbits={"nimento", "yksikkö"}, bits=bits)
+			return nameToCode(self.name_tokens, rbits={"+nom", "+sg"}, bits=bits)
 		else:
 			return self.name + "{" + ",".join(bits) + "}"
 
 class RField:
-	def __init__(self, counter, name, vtype, defa=None, is_map=False):
+	def __init__(
+		self,
+		counter: int,
+		name: str,
+		vtype: RClass,
+		defa: RObject | None = None,
+		is_map: bool = False
+	):
 		self.id = counter
 		self.name = name
 		self.type = vtype
@@ -512,7 +616,14 @@ class RField:
 		return RField(self.id, self.name, self.type, None, self.is_map)
 
 class RPattern:
-	def __init__(self, rclass=None, bitsOn=None, bitsOff=None, conditions=None, obj=None):
+	def __init__(
+		self,
+		rclass: RClass | None = None,
+		bitsOn: set[str] | None = None,
+		bitsOff: set[str] | None = None,
+		conditions: list["RCondition"] | None = None,
+		obj: RObject | None = None
+	):
 		self.rclass = rclass
 		self.conditions = conditions or []
 		self.my_bitsOn = bitsOn or set()
@@ -524,38 +635,40 @@ class RPattern:
 		return ("RPattern(" + clazz + ", "
 			+ repr(self.my_bitsOn) + ", " + repr(self.my_bitsOff)
 			+ ", " + toPython(self.conditions) + ", " + obj + ")")
-	def addCondition(self, cond):
+	def addCondition(self, cond: "RCondition"):
 		self.conditions.append(cond)
 		return self
-	def bitOn(self, bit):
+	def bitOn(self, bit: str):
 		self.my_bitsOn.add(bit)
 		return self
-	def bitOff(self, bit):
+	def bitOff(self, bit: str):
 		self.my_bitsOff.add(bit)
 		return self
-	def bitsOff(self, bits):
+	def bitsOff(self, bits: Iterable[str]):
 		for bit in bits:
 			self.bitOff(bit)
 		return self
-	def newInstance(self, name):
+	def newInstance(self, name: list[Token]):
 		name_str = tokensToString(name)
 		if self.obj:
 			obj = self.obj
 			obj.bitsOff(self.my_bitsOff)
 			obj.bitsOn(self.my_bitsOn)
 		else:
+			assert self.rclass is not None
 			obj = self.rclass.newInstance(name=name_str, name_tokens=name, bitsOn=self.my_bitsOn, bitsOff=self.my_bitsOff)
 		for cond in self.conditions:
 			cond.doModify(obj)
 		return obj
-	def modify(self, obj):
+	def modify(self, obj: RObject):
+		assert self.rclass is not None
 		if obj.rclass != self.rclass:
 			sys.stderr.write("Yritettiin muuttaa " + obj.asString() + " (" + obj.rclass.name + ") tyyppiin " + self.rclass.name + "\n")
 		obj.bitsOff(self.my_bitsOff)
 		obj.bitsOn(self.my_bitsOn)
 		for cond in self.conditions:
 			cond.doModify(obj)
-	def matches(self, obj):
+	def matches(self, obj: RObject):
 		if self.obj:
 			if not obj == self.obj:
 				return False
@@ -570,29 +683,30 @@ class RPattern:
 		return self.rclass or (self.obj and self.obj.rclass) or CLASSES["asia"]
 
 class RCondition:
-	def __init__(self, var, check, modify):
+	def __init__(self, var, check: str | Callable[[RObject], bool], modify: str | Callable):
 		self.var = var
 		self.check = check
 		self.modify = modify
 	def toPython(self):
 		return "RCondition(" + repr(self.var) + ", lambda " + self.var + ": " + self.check + ", lambda " + self.var + ": " + self.modify + ")"
-	def doCheck(self, x):
+	def doCheck(self, x: RObject) -> bool:
 		if isinstance(self.check, str):
 			return eval(self.check, globals(), {self.var: x})
 		else:
 			return self.check(x)
-	def doModify(self, x):
+	def doModify(self, x: RObject):
 		if isinstance(self.modify, str):
 			return eval(self.modify, globals(), {self.var: x})
 		else:
 			return self.modify()
 
-CHECKS = {}
-MODIFYS = {}
+CHECKS: dict[str, str] = {}
+MODIFYS: dict[str, str] = {}
 
 # Näkyvyysalueet ja muuttujat
 
 class RScope(Bits):
+	variables: dict[str, RObject]
 	def __init__(self):
 		Bits.__init__(self)
 		self.variables = {}
@@ -601,16 +715,16 @@ class RScope(Bits):
 
 ALIASES = {}
 GLOBAL_SCOPE = RScope()
-SCOPE = []
-STACK = []
-STACK_NAMES = []
-ACTION_STACK = [RScope()]
+SCOPE: list[RScope] = []
+STACK: list[RScope] = []
+STACK_NAMES: list[str] = []
+ACTION_STACK: list[RScope] = [RScope()]
 
 def pushScope():
 	SCOPE.append(RScope())
 def popScope():
 	SCOPE.pop()
-def pushStackFrame(name):
+def pushStackFrame(name: str):
 	STACK.append(RScope())
 	STACK_NAMES.append(name)
 def popStackFrame():
@@ -622,12 +736,12 @@ def popAction():
 	ACTION_STACK.pop()
 def visibleScopes():
 	return [GLOBAL_SCOPE]+SCOPE+STACK[-1:]
-def getVar(name):
+def getVar(name: str):
 	for scope in reversed(visibleScopes()):
 		if name in scope.variables:
 			return scope.variables[name]
 	raise Exception("Muuttujaa ei löytynyt: " + name + "(" + repr(visibleScopes()) + ")\n")
-def setVar(name, val):
+def setVar(name: str, val: RObject):
 	scopes = visibleScopes()
 	for scope in reversed(scopes):
 		if name in scope.variables:
@@ -635,9 +749,9 @@ def setVar(name, val):
 			break
 	else:
 		scopes[-1].variables[name] = val
-def setGlobalVar(name, val):
+def setGlobalVar(name: str, val: RObject):
 	GLOBAL_SCOPE.variables[name] = val
-def putVar(name, val, to_scope_stack=False):
+def putVar(name: str, val: RObject, to_scope_stack=False):
 	if to_scope_stack:
 		stack = SCOPE
 	else:
@@ -651,7 +765,17 @@ def addAlias(name, alias):
 # Toiminnot
 
 class RAction:
-	def __init__(self, name, a_id=None, srules=None):
+	id: int
+	name: str
+	commands: list[str]
+	listeners: list["RListener"]
+	selection_rules: list[tuple[list[tuple[str, RPattern, Any]], str]]
+	def __init__(
+		self,
+		name: str,
+		a_id: int | None = None,
+		srules: list[tuple[list[tuple[str, RPattern, Any]], str]] | None = None
+	):
 		self.id = a_id or nextCounter("RAction")
 		self.name = name
 		
@@ -678,14 +802,14 @@ class RAction:
 		self.commands.append(pattern)
 	def addSelectionRule(self, params, rule):
 		self.selection_rules.append((params, rule))
-	def likeliness(self, args):
+	def likeliness(self, args: list[RObject]):
 		ans = 0
 		for params, rule in self.selection_rules:
 			if allPatternsMatch(args, params):
 				ans += evalOrCall(rule, args)
 		return ans
-	def run(self, args, in_scope=False):
-		listeners = []
+	def run(self, args: list[RObject], in_scope=False):
+		listeners: list[RListener] = []
 		for listener in self.listeners:
 			if listener.action is self and allPatternsMatch(args, listener.params) and not listener.disabled:
 				listeners.append(listener)
@@ -704,14 +828,23 @@ class RAction:
 		if not in_scope:
 			popAction()
 
-def allPatternsMatch(args, params):
+def allPatternsMatch(args: list[RObject], params: list[tuple[str, RPattern, Any]]):
 	return all([p.matches(obj) for obj, (_, p, _) in zip(args, params)])
 
-ACTIONS = {}
-ACTIONS_BY_NAME = {}
+ACTIONS: dict[int, RAction] = {}
+ACTIONS_BY_NAME: dict[str, RAction] = {}
 
 class RListener:
-	def __init__(self, action, params, priority, is_special_case, is_general_case, body, name=None):
+	def __init__(
+		self,
+		action: RAction,
+		params: list[tuple[str, RPattern, list[Token] | None]],
+		priority: int,
+		is_special_case: bool,
+		is_general_case: bool,
+		body: list[Callable | str],
+		name=None
+	):
 		self.action = action
 		self.params = params
 		self.priority = priority
@@ -729,13 +862,13 @@ class RListener:
 			repr(self.priority), ', ',
 			repr(self.is_special_case), ', ',
 			repr(self.is_general_case), ', ',
-			'[', ", ".join(["lambda: " + cmd for cmd in self.body]), '], ',
+			'[', ", ".join(["lambda: " + str(cmd) for cmd in self.body]), '], ',
 			repr(self.name),
 			')'
 		])
 	def disable(self):
 		self.disabled = True
-	def run(self, args):
+	def run(self, args: list[RObject]):
 		pushStackFrame(self.action.name)
 		for i, ((c, _, _), a) in enumerate(zip(self.params, args)):
 			putVar("_" + str(i), a)
@@ -751,13 +884,13 @@ class RListener:
 # jälkimmäinen sarake kertoo, syrjäytyvätkö tämäntyyppiset säännöt, jos toiseksi jälkimmäisessä sarakkeessa vastaava syrjäyttävä sääntö täsmää
 
 LISTENER_PRIORITIES = [
-#	 PRE            CASE      POST       PRI SPECIAL GENERAL
-	("ennen",       "osanto", "",        20, False,  True),
-	("juuri ennen", "osanto", "",        30, False,  True),
-	("",            "omanto", "sijasta", 40, True,   True),
-	("",            "omanto", "aikana",  50, False,  True),
-	("heti",        "omanto", "jälkeen", 60, False,  True),
-	("",            "omanto", "jälkeen", 80, False,  True),
+#	 PRE            CASE    POST       PRI SPECIAL GENERAL
+	("ennen",       "+par", "",        20, False,  True),
+	("juuri ennen", "+par", "",        30, False,  True),
+	("",            "+gen", "sijasta", 40, True,   True),
+	("",            "+gen", "aikana",  50, False,  True),
+	("heti",        "+gen", "jälkeen", 60, False,  True),
+	("",            "+gen", "jälkeen", 80, False,  True),
 ]
 
 ACTION_LISTENERS = []

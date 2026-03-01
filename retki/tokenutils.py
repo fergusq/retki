@@ -14,9 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from suomilog.finnish import inflect
+from collections import defaultdict
+from typing import AbstractSet
+import pypykko.utils as pykko
+from pypykko.tokenizer import text2tokens as pykko_tokenize
+from suomilog.finnish import inflect_nominal, baseformAndBits
+from suomilog.grammar import Token, match_bits
 
-def nameToBaseform(tokens, bits, rbits):
+def nameToBaseform(tokens: list[Token], bits, rbits):
 	ans = []
 	found = False
 	for token in reversed(tokens):
@@ -27,21 +32,56 @@ def nameToBaseform(tokens, bits, rbits):
 					found = True
 					break
 			else:
-				if rbits <= tbits and tbits & {"laatusana", "nimisana_laatusana", "agent", "asemosana", "lukusana"}:
+				if rbits <= tbits and tbits & {":adjective", "+part_ma", ":adjective", ":numeral", ":participle"}:
 					ans.append((bf, bits or {"$"}))
 					break
 		else:
-			ans.append((token.token, set()))
+			ans.append((token.surfaceform, set()))
 	return reversed(ans)
 
-def tokensToString(tokens, rbits={"nimento", "yksikkö"}):
+def tokensToString(tokens, rbits={"+nom", "+sg"}):
 	return " ".join([text for text, bits in nameToBaseform(tokens, {}, rbits)])
 
-def tokensToInflectedString(tokens, case, rbits={"nimento", "yksikkö"}):
-	return " ".join([inflect(text, case, "monikko" in rbits) if "$" in bit else text for text, bit in nameToBaseform(tokens, {}, rbits)])
+def tokensToInflectedString(tokens, case: str, rbits={"+nom", "+sg"}):
+	return " ".join([
+		list(inflect_nominal(text, ("+pl" if "+pl" in rbits else "+sg"), case) or {text})[0]
+		if "$" in bit else text
+		for text, bit in nameToBaseform(tokens, {}, rbits)
+	])
 
-def nameToCode(name, bits=None, rbits={"nimento", "yksikkö"}):
+def nameToCode(name, bits=None, rbits={"+nom", "+sg"}):
 	return " ".join([token + ("{" + ",".join(tbits) + "}" if tbits else "") for token, tbits in nameToBaseform(name, bits, rbits)])
 
 def tokensToCode(tokens):
 	return " ".join([token.toCode() for token in tokens])
+
+DICTIONARY: defaultdict[str, list[Token]] = defaultdict(list)
+
+def tokenize(text: str) -> list[Token]:
+	tokens: list[Token] = []
+	token: str
+	for token in pykko_tokenize(text):
+		if token.strip() == "":
+			continue
+
+		alternatives = []
+		for word in pykko.analyze(token):
+			baseform, bits = baseformAndBits(word)
+			if not (bits & {":proper", ":proper-pl"}) and baseform == baseform.capitalize():
+				baseform = baseform.lower()
+			alternatives.append((baseform, bits))
+
+		# Jos sana löytyy suomilogin omasta sanakirjasta, lisää myös sieltä vaihtoehdot
+		if token.lower() in DICTIONARY:
+			alternatives += DICTIONARY[token.lower()]
+
+		tokens.append(Token(token, alternatives))
+
+	return tokens
+
+def baseform(token: Token, bits: AbstractSet[str]) -> str | None:
+	for baseform, tbits in token.alternatives:
+		if match_bits(tbits, bits):
+			return baseform
+
+	return None
