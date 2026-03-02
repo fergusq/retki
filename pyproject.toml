@@ -1,0 +1,24 @@
+[project]
+name = "retki"
+version = "0.13.0"
+description = "Finnish programming language inspired by Inform 7"
+readme = "README.rst"
+requires-python = ">=3.14"
+license = "GPL-3.0-or-later"
+author = "Iikka Hauhio"
+author_email = "iikka.hauhio@gmail.com"
+dependencies = [
+    "pypykko>=0.3.0",
+    "suomilog>=1.1",
+]
+
+[project.scripts]
+retki = "retki.compiler:main"
+
+[build-system]
+requires = ["uv_build>=0.10.7,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "retki"
+module-root = ""
