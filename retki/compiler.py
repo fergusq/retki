@@ -20,20 +20,11 @@ import re
 import itertools
 from typing import AbstractSet, Any, TextIO
 import suomilog.grammar as g
-import suomilog.cykparser as cyk
 from suomilog.finnish import SINGULAR_AND_PLURAL_CASES, PLURAL_CASES
 from .language import *
 from .tokenutils import *
 
-type OutputT = RetkiOutput
-
-def matchAll(tokens: list[g.Token], grammar: g.Grammar[OutputT], root: str, bits: set[str]):
-	parser = cyk.CYKParser(grammar, root)
-	analyses = parser.parse(tokens)
-	analyses.print()
-	return list(analyses.get_output("." + root + "{" + ",".join(bits) + "}") or frozenset())
-
-GRAMMAR: g.Grammar[OutputT] = g.Grammar()
+GRAMMAR: g.Grammar[RetkiOutput] = g.Grammar()
 
 GRAMMAR_STACK = [GRAMMAR]
 STACK_FRAMES = [0]
@@ -49,10 +40,12 @@ def addRuleNameForStackTop(rule: str, name: str):
 def pgl(line: str, output: FuncOutput):
 	pgl_with(GRAMMAR_STACK[-1], line, output)
 
-def pgl_with(grammar: g.Grammar[OutputT], line: str, output: FuncOutput):
+def pgl_with(grammar: g.Grammar[RetkiOutput], line: str, output: FuncOutput):
+	#print(line)
 	if " -> " in line:
 		output.str_template = line[line.index(" -> ")+4:]
 		line = line[:line.index(" -> ")]
+
 	grammar.parse_grammar_line(line, output, default_output=None)
 
 def getCombinedGrammar():
@@ -74,12 +67,12 @@ def popGrammar():
 
 # Villikortit
 
-class AnyPattern(g.BaseRule[OutputT]):
-	def __init__(self, allow_empty, bits: AbstractSet[str] = frozenset()):
+class AnyPattern(g.BaseRule[RetkiOutput]):
+	def __init__(self, allow_empty: bool, bits: AbstractSet[str] = frozenset()):
 		self.allow_empty = allow_empty
 		self.bits = frozenset() | bits
 	def __repr__(self):
-		return "AnyPattern()"
+		return f"AnyPattern({self.allow_empty}, {self.bits})"
 	def to_code(self):
 		if self.allow_empty:
 			return "<pattern that matches all strings without punctuation>"
@@ -98,10 +91,10 @@ class AnyPattern(g.BaseRule[OutputT]):
 			return []
 
 		return [RetkiOutput(lambda: tokens, " ".join([t.surfaceform for t in tokens]))]
-	def allowsEmptyContent(self):
+	def allows_empty_content(self):
 		return self.allow_empty
-	def expand_bits(self, name: str, grammar: g.Grammar[OutputT], bits: AbstractSet[str], extended=None):
-		return AnyPattern(self.bits | bits)
+	def expand_bits(self, name: str, grammar: g.Grammar[RetkiOutput], bits: AbstractSet[str], extended=None):
+		return AnyPattern(self.allow_empty, self.bits | bits)
 
 GRAMMAR.rules["*"] = [
 	AnyPattern(False)
@@ -111,11 +104,11 @@ GRAMMAR.rules["**"] = [
 	AnyPattern(True)
 ]
 
-class WordPattern(g.BaseRule[OutputT]):
+class WordPattern(g.BaseRule[RetkiOutput]):
 	def __init__(self, bits: AbstractSet[str] = frozenset()):
 		self.bits = frozenset() | bits
 	def __repr__(self):
-		return "WordPattern()"
+		return f"WordPattern({self.bits})"
 	def to_code(self):
 		return "<pattern that matches any single token>"
 	def match(self, grammar, tokens, bits):
@@ -124,21 +117,23 @@ class WordPattern(g.BaseRule[OutputT]):
 			return []
 
 		return [RetkiOutput(lambda: tokens[0], tokens[0].surfaceform)]
-	def allowsEmptyContent(self):
+	def allows_empty_content(self):
 		return False
-	def expand_bits(self, name: str, grammar: g.Grammar[OutputT], bits: AbstractSet[str], extended=None):
+	def expand_bits(self, name: str, grammar: g.Grammar[RetkiOutput], bits: AbstractSet[str], extended=None):
 		return WordPattern(self.bits | bits)
 
 GRAMMAR.rules["."] = [
 	WordPattern()
 ]
 
-class StringContentPattern(g.BaseRule[OutputT]):
-	def __init__(self, create_alternative, bits: AbstractSet[str] = frozenset()):
-		self.create_alternative = create_alternative
+class StringContentPattern(g.BaseRule[RetkiOutput]):
+	def __init__(
+		self,
+		bits: AbstractSet[str] = frozenset()
+	):
 		self.bits = frozenset() | bits
 	def __repr__(self):
-		return "StringContentPattern()"
+		return f"StringContentPattern({self.bits})"
 	def to_code(self):
 		return "<pattern that matches all strings without quote marks>"
 	def match(self, grammar, tokens, bits):
@@ -150,7 +145,7 @@ class StringContentPattern(g.BaseRule[OutputT]):
 		string_tokens = [[]]
 		subs = []
 		current_subs: list[Token] | None = None
-		capitalizeds = []
+		capitalizeds: list[bool] = []
 		quote = False
 		for token in tokens:
 			if current_subs is not None:
@@ -185,28 +180,27 @@ class StringContentPattern(g.BaseRule[OutputT]):
 		string = string.strip()
 		ans: list[RetkiOutput] = []
 		for alternative in itertools.product(*subs):
-			ans.append(self.create_alternative(string, string_tokens, alternative, capitalizeds))
+			ans.append(self.create_alternative(string, alternative, capitalizeds))
 		return ans
-	def allowsEmptyContent(self):
+	def allows_empty_content(self):
 		return True
-	def expand_bits(self, name: str, grammar: g.Grammar[OutputT], bits: AbstractSet[str], extended=None):
-		return StringContentPattern(self.create_alternative, self.bits | bits)
+	def expand_bits(self, name: str, grammar: g.Grammar[RetkiOutput], bits: AbstractSet[str], extended=None):
+		return StringContentPattern(self.bits | bits)
+	def create_alternative(self, string: str, alternative: Sequence[RetkiOutput], capitalizeds: Sequence[bool]) -> RetkiOutput:
+		def f():
+			subs = []
+			for output, capitalized in zip(alternative, capitalizeds):
+				expr, case = output.func()
+				subs.append("%s.asString(case=%s, capitalized=%s)" % (expr, repr(case), repr(capitalized)))
+			if len(subs) > 0:
+				return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
+			else:
+				return repr(string)
 
-def createStringLiteralAlternative(string, string_tokens, alternative, capitalizeds) -> RetkiOutput:
-	def f():
-		subs = []
-		for (expr_f, _), capitalized in zip(alternative, capitalizeds):
-			expr, case = expr_f()
-			subs.append("%s.asString(case=%s, capitalized=%s)" % (expr, repr(case), repr(capitalized)))
-		if len(subs) > 0:
-			return "(" + repr(string) + " % (" + ", ".join(subs) + ("," if len(alternative) == 1 else "") + "))"
-		else:
-			return repr(string)
-
-	return RetkiOutput(f, string % tuple([p[1] for p in alternative]))
+		return RetkiOutput(f, string % tuple([p.str_output for p in alternative]))
 
 GRAMMAR.rules["STR-CONTENT"] = [
-	StringContentPattern(createStringLiteralAlternative)
+	StringContentPattern()
 ]
 
 addRuleName("STR-CONTENT", "merkkijono")
@@ -226,13 +220,13 @@ class NumberPattern(g.BaseRule):
 		for bf, altbits in tokens[0].alternatives:
 			if bits <= altbits:
 				if bf in CARDINALS:
-					return [[lambda: CARDINALS.index(bf), bf]]
+					return [RetkiOutput(lambda: CARDINALS.index(bf), bf)]
 				elif re.fullmatch(r"[0-9]+", bf):
-					return [[lambda: int(bf), bf]]
+					return [RetkiOutput(lambda: int(bf), bf)]
 		return []
 	def allowsEmptyContent(self):
 		return False
-	def expand_bits(self, name: str, grammar: g.Grammar[OutputT], bits: AbstractSet[str], extended=None):
+	def expand_bits(self, name: str, grammar: g.Grammar[RetkiOutput], bits: AbstractSet[str], extended=None):
 		return NumberPattern(self.bits | bits)
 
 GRAMMAR.rules["N"] = [
@@ -284,7 +278,7 @@ addRuleNameForStackTop("NAMESPACE-DEF", "nimiavaruuskäsky")
 NOUNS: list[str] = []
 
 def addNoun(token: g.Token):
-	#addNounToDictionary(token.surfaceform)
+	addNounToDictionary(token.surfaceform)
 	NOUNS.append(token.surfaceform)
 
 pgl(".NOUN-DEF ::= \" .. \" on substantiivi . -> noun $1", FuncOutput(addNoun))
@@ -301,7 +295,7 @@ def defineClass(name: list[g.Token], superclass: RClass | None, name_rbits: set[
 	
 	if name_str in CLASSES:
 		raise Exception("redefinition of class " + name_str)
-	
+
 	rclass = RClass(name_str, superclass, name)
 	
 	for clazz in reversed(superclass.superclasses()) if superclass else []:
@@ -569,13 +563,13 @@ def defineBit(owner: RClass, *names: list[g.Token]):
 	name_strs = []
 	name_codes = []
 	for name in names:
-		name_strs.append(tokensToString(name, {"+sg", "+nom"}))
-		name_codes.append(nameToCode(name, rbits={"+sg", "+nom"}))
+		name_strs.append(tokensToString(name, {"+sg", "+nom", "adjectival"}))
+		name_codes.append(nameToCode(name, rbits={"+sg", "+nom", "adjectival"}))
 	name_set = set(name_strs)
 	owner.bit_groups.append((names, name_strs, name_codes))
 	
 	def addBitPhrases(name: list[g.Token], name_str: str, name_code: str):
-		name_code_nominative = nameToCode(name, bits={"+sg", "+nom"}, rbits={"+sg", "+nom"})
+		name_code_nominative = nameToCode(name, bits={"+sg", "+nom"}, rbits={"+sg", "+nom", "adjectival"})
 		
 		pgl(".ENUM-DEFAULT-DEF-%d ::= .CLASS-%d{+nom} on yleensä %s . -> $1 defaults %s" % (
 			counter, owner.id, name_code_nominative, name_str
@@ -635,7 +629,7 @@ class CondReductionParser:
 	def __init__(self, operator: str, to_modify: Callable[[tuple[str, ...]], str]):
 		self.operator = operator
 		self.to_modify = to_modify
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False):
 		checks, modifys = parseCondBlock(file, grammar, report=report)
 		return "(" + (" " + self.operator + " ").join(checks) + ")", self.to_modify(modifys)
 
@@ -645,7 +639,7 @@ class ForCondParser:
 		self.reduce = reduce
 		self.loop = loop
 		self.args = args
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False) -> tuple[str, ...]:
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False) -> tuple[str, ...]:
 		grammar = grammar.copy()
 		
 		param_pattern: RPattern = self.args[0]
@@ -668,7 +662,7 @@ class ForCondParser:
 
 # Ehtosäännön vartalo
 
-def parseCondBlock(file, grammar: g.Grammar[OutputT], report=False):
+def parseCondBlock(file, grammar: g.Grammar[RetkiOutput], report=False):
 	return zip(*parseBlock(file, grammar, category="COND-STMT", report=report))
 
 # Parametrit
@@ -703,7 +697,7 @@ for num_params in [1,2,3]:
 
 # args on joko [pre], [first_name, pre], [pre, params] tai [first_name, pre, params]
 def defineCondition(
-	grammar: g.Grammar[OutputT],
+	grammar: g.Grammar[RetkiOutput],
 	file,
 	custom_verb: bool,
 	first_named: bool,
@@ -714,13 +708,24 @@ def defineCondition(
 	
 	# parsitaan argumentit
 	args = list(args)
+	first_name: list[g.Token] | None
 	if first_named:
 		first_name = args[0]
 		del args[0]
 	else:
 		first_name = None
-	pre = args[0]
-	params = args[1] if len(args) >= 2 else []
+
+	pre: list[g.Token] = args[0]
+
+	#                  vtype   case post           name
+	params: list[tuple[RClass, str, list[g.Token], list[g.Token]]] = args[1] if len(args) >= 2 else []
+	
+	# adjektiivisuus päätellään viimeisen sanan perusteella
+	if len(pre) == 0 and (len(params) == 0 or len(params[-1][2]) == 0):
+		is_adjective = False
+	else:
+		last_token = pre[-1] if len(params) == 0 or len(params[-1][2]) == 0 else params[-1][2][-1]
+		is_adjective = "adjectival" in tokenBits(last_token) and "+nom" in tokenBits(last_token)
 	
 	# luodaan nimi ja patterni
 	name_str = " ".join([tokensToString(pre)] + [
@@ -742,14 +747,14 @@ def defineCondition(
 	
 	grammar = grammar.copy()
 	
-	for g in [GRAMMAR_STACK[-1], grammar]:
-		pgl_with(g, ".CMD ::= %s .EXPR-%d{+nom} %s %s %s . -> $1~%s = True" % (prec, owner.id, verbc, postc, pattern, name_str),
+	for gr in [GRAMMAR_STACK[-1], grammar]:
+		pgl_with(gr, ".CMD ::= %s .EXPR-%d{+nom} %s %s %s . -> $1~%s = True" % (prec, owner.id, verbc, postc, pattern, name_str),
 			FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
 
-		pgl_with(g, ".COND ::= .EXPR-%d{+nom} %s %s -> $1~%s" % (owner.id, verbc, pattern, name_str),
+		pgl_with(gr, ".COND ::= .EXPR-%d{+nom} %s %s -> $1~%s" % (owner.id, verbc, pattern, name_str),
 			FuncOutput(lambda *p: ("(" + make_call("CHECKS", p) + ")[-2]", orTrue("(" + make_call("MODIFYS", p) + ")"))))
 
-		pgl_with(g, ".EXPR-TRUTH-DEF ::= .EXPR-%d{+nom} %s %s . -> $1~%s = True" % (owner.id, verbc, pattern, name_str),
+		pgl_with(gr, ".EXPR-TRUTH-DEF ::= .EXPR-%d{+nom} %s %s . -> $1~%s = True" % (owner.id, verbc, pattern, name_str),
 			FuncOutput(lambda *p: "(" + make_call("MODIFYS", p) + ")"))
 	
 	tmp_vars = ["_" + str(i) for i in range(len(params)+1)]
@@ -778,13 +783,6 @@ def defineCondition(
 	# ohjelma ei osaa päätellä käyttäjän antaman verbin partisiippimuotoa
 	if custom_verb:
 		return
-	
-	# adjektiivisuus päätellään viimeisen sanan perusteella
-	if len(pre) == 0 and (len(params) == 0 or len(params[-1][2]) == 0):
-		is_adjective = False
-	else:
-		last_token = pre[-1] if len(params) == 0 else params[-1][2][-1]
-		is_adjective = ("laatusana" in last_token.bits() or "nimisana_laatusana" in last_token.bits()) and "+nom" in last_token.bits()
 	
 	create_condition = lambda p: RCondition(
 		"_obj", "(" + make_call("CHECKS", ("_obj",)+p) + ")[-2]", "(" + make_call("MODIFYS", ("_obj",)+p) + ")"
@@ -826,7 +824,7 @@ def defineCondition(
 class ConditionParser:
 	def __init__(self, *p):
 		self.args = p
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False):
 		return defineCondition(grammar, file, *self.args, report=report)
 
 def addConditionDefPatterns(num_params: int):
@@ -919,7 +917,7 @@ class AsParser:
 	def __init__(self, variable: str, value: str):
 		self.variable = variable
 		self.value = value
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False) -> str:
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False) -> str:
 		block = parseBlock(file, grammar, report=report)
 		block_str = joinCodes(block)
 		return "(pushScope(), putVar(%s, %s, to_scope_stack=True), %s, popScope())" % (repr(self.variable), self.value, block_str)
@@ -927,8 +925,8 @@ class AsParser:
 # Apufunktio
 
 def addParamPhrases(
-	grammar: g.Grammar[OutputT],
-	case: str | None,
+	grammar: g.Grammar[RetkiOutput],
+	param_id: str | None,
 	vtype: RClass,
 	name: list[g.Token] | None,
 	varname: str | None = None,
@@ -938,7 +936,7 @@ def addParamPhrases(
 		for clazz in vtype.superclasses():
 			pgl_with(grammar, ".EXPR-%d ::= %s -> %s param" % (
 				clazz.id, nameToCode(name, rbits={"+sg", "+nom"}), vtype.name
-			), FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
+			), FuncOutput(lambda: varname or ('getVar(' + repr(param_id) + ')')))
 	else:
 		if not plural:
 			pronoun = "hän" if "inhimillinen" in vtype.allBits() else "se"
@@ -946,9 +944,9 @@ def addParamPhrases(
 			pronoun = "he" if "inhimillinen" in vtype.allBits() else "he"
 		for clazz in vtype.superclasses():
 			pgl_with(grammar, ".EXPR-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
-				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
+				FuncOutput(lambda: varname or ('getVar(' + repr(param_id) + ')')))
 			pgl_with(grammar, ".PATTERN-%d ::= %s{$} -> %s param" % (clazz.id, pronoun, vtype.name),
-				FuncOutput(lambda: varname or ('getVar(' + repr(case) + ')')))
+				FuncOutput(lambda: varname or ('getVar(' + repr(param_id) + ')')))
 
 # Toiminnot
 
@@ -966,7 +964,7 @@ class ListenerParser:
 		self.priority = priority
 		self.is_special_case = is_special_case
 		self.is_general_case = is_general_case
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False) -> RListener:
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False) -> RListener:
 		grammar = grammar.copy()
 		for i, (c, p, n) in enumerate(self.params):
 			addParamPhrases(grammar, "_" + str(i), p.type(), n)
@@ -1036,11 +1034,11 @@ def defineAction(
 		is_special_case: bool,
 		is_general_case: bool
 	):
-		pgl(".LISTENER-DEF-%d ::= %s %s %s %s{-minen,%s} %s %s : -> def %s($1):" % (
+		pgl(".LISTENER-DEF-%d ::= %s %s %s %s{+inf4,%s} %s %s : -> def %s($1):" % (
 			action.id,
 			p_pre,
 			signature_pattern(nameds),
-			tokensToCode(pre), baseform(name, {"-minen"}), p_case, tokensToCode(post), p_post,
+			tokensToCode(pre), baseform(name, {"+inf4"}), p_case, tokensToCode(post), p_post,
 			name.surfaceform
 		), FuncOutput(lambda *groups: defineActionListener(
 			separateGroups(groups, nameds),
@@ -1050,9 +1048,9 @@ def defineAction(
 		)))
 
 	def addSelectionDefPattern(nameds: tuple[bool, ...]):
-		pgl(".SELECTION-DEF ::= tarkoittaako pelaaja %s %s %s{-minen,+par} %s : -> does the player mean %s($*):" % (
+		pgl(".SELECTION-DEF ::= tarkoittaako pelaaja %s %s %s{+inf4,+par} %s : -> does the player mean %s($*):" % (
 			signature_pattern(nameds),
-			tokensToCode(pre), baseform(name, {"-minen"}), tokensToCode(post),
+			tokensToCode(pre), baseform(name, {"+inf4"}), tokensToCode(post),
 			name.surfaceform
 		), FuncOutput(lambda *groups: defineActionSelection(separateGroups(groups, nameds))))
 
@@ -1100,24 +1098,24 @@ def defineAction(
 		
 		# Action patterneja ovat 1) pelkkä toiminnon nimi 2) toiminnon nimi + adpositiot 3) toiminnon nimi + adpositiot + parametrien tyypit
 		action_patterns = [
-			"%s %s{-minen,CASE} %s" % (
-				tokensToCode(pre), baseform(name, {"-minen"}), tokensToCode(post),
+			"%s %s{+inf4,CASE} %s" % (
+				tokensToCode(pre), baseform(name, {"+inf4"}), tokensToCode(post),
 			)
 		]
 		if len(params) != 0:
 			action_patterns.append(
-				"%s %s %s{-minen,CASE} %s" % (
+				"%s %s %s{+inf4,CASE} %s" % (
 					" ".join([
 						tokensToCode(a_pre) + " " + a_class.nameToCode({a_case, "+sg"})
 					for a_pre, a_class, a_case in params]),
-					tokensToCode(pre), baseform(name, {"-minen"}), tokensToCode(post)
+					tokensToCode(pre), baseform(name, {"+inf4"}), tokensToCode(post)
 				)
 			)
 			if sum([len(a_pre) for a_pre, _, _ in params]) + len(pre) + len(post) != 0:
 				action_patterns.append(
-					"%s %s %s{-minen,CASE} %s" % (
+					"%s %s %s{+inf4,CASE} %s" % (
 						" ".join([tokensToCode(a_pre) for a_pre, _, _ in params]),
-						tokensToCode(pre), baseform(name, {"-minen"}), tokensToCode(post),
+						tokensToCode(pre), baseform(name, {"+inf4"}), tokensToCode(post),
 					)
 				)
 		for action_pattern in action_patterns:
@@ -1160,7 +1158,7 @@ def addActionDefPattern(num_params: int):
 			ans.append((args[i], *args[i+1]))
 		#      NAME       PARAMS PRE        POST
 		return args[i+3], ans,   args[i+2], args[i+4]
-	pgl(".ACTION-DEF ::= %s .** ..{-minen,+nom} .** on toiminto . -> action $%d(%d)" % (
+	pgl(".ACTION-DEF ::= %s .** ..{+inf4,+nom} .** on toiminto . -> action $%d(%d)" % (
 		" ".join([".** [ .CLASS-CASE ]"]*num_params),
 		num_params*2+2,
 		num_params
@@ -1282,7 +1280,7 @@ class ForParser:
 		self.args = args
 		self.group = group
 		self.global_set = global_set
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False):
 		grammar = grammar.copy()
 		
 		param_pattern = self.args[0]
@@ -1327,7 +1325,7 @@ class RepeatParser:
 		self.end = end
 		self.start = start
 		self.var = var
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False):
 		grammar = grammar.copy()
 		
 		counter = nextCounter("RepeatParser")
@@ -1364,7 +1362,7 @@ class IfParser:
 		self.condition = condition
 		self.category = category
 		self.force_else = force_else
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False):
 		block = parseBlock(file, grammar, category=self.category, report=report)
 		block_str = joinCodes(block)
 		if self.force_else or (file.peekline() and file.peekline().lower() in ["muulloin:", "muuten:"]):
@@ -1382,7 +1380,7 @@ pgl(".CMD ::= jos .COND : -> if $1:", FuncOutput(IfParser))
 class OnceParser:
 	def __init__(self, loop=False):
 		self.loop = loop
-	def parse(self, file, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, file, grammar: g.Grammar[RetkiOutput], report=False):
 		block = parseBlock(file, grammar, category="CMD", report=report)
 		block_str = joinCodes(block)
 		
@@ -1449,7 +1447,7 @@ addRuleNameForStackTop("SELECTION-CMD", "todennäköisyyslause")
 class SelectionParser:
 	def __init__(self, obj: RClass | RObject):
 		self.obj = obj
-	def parse(self, reader, grammar: g.Grammar[OutputT], report=False):
+	def parse(self, reader, grammar: g.Grammar[RetkiOutput], report=False):
 		grammar = grammar.copy()
 		addParamPhrases(grammar, None, self.obj if isinstance(self.obj, RClass) else self.obj.rclass, None, varname="_arg")
 		block = parseBlock(reader, grammar, category="SELECTION-CMD", report=report)
@@ -1474,7 +1472,7 @@ addRuleNameForStackTop("SELECTION-DEF", "todennäköisyysmääritys")
 
 # Komentojen jäsentäminen
 
-def parseBlock(reader: "FileReader", grammar: g.Grammar[OutputT], category="CMD", report=False):
+def parseBlock(reader: "FileReader", grammar: g.Grammar[RetkiOutput], category="CMD", report=False):
 	line = reader.nextline()
 	if line != "<indent>\0":
 		sys.stderr.write("\nOdotettiin sisennystä rivillä %d.\n" % (reader.linenum))
@@ -1490,15 +1488,16 @@ def parseBlock(reader: "FileReader", grammar: g.Grammar[OutputT], category="CMD"
 		if len(alternatives) != 1:
 			sys.stderr.write("\nVirhe jäsennettäessä riviä %d: `%s' (%s, %d vaihtoehtoa).\n" % (reader.linenum, line, category, len(alternatives)))
 			reader.skipToDedent()
-			for _, i in alternatives:
-				print(i)
+			for alt in alternatives:
+				print(alt.str_output)
 			#for error in groupCauses(ERROR_STACK[-1]):
 			#	error.print(finnish=True)
+			repl(grammar)
 			break
-		if alternatives[0][1][-1] == ":":
-			ans.append(alternatives[0][0]().parse(reader, grammar, report=report))
+		if alternatives[0].str_output[-1] == ":":
+			ans.append(alternatives[0].func().parse(reader, grammar, report=report))
 		else:
-			val = alternatives[0][0]()
+			val = alternatives[0].func()
 			if val is not None:
 				ans.append(val)
 	return ans
@@ -1606,10 +1605,11 @@ def loadFile(file: TextIO, report=True):
 				t.parse(reader, getCombinedGrammar(), report=True)
 		else:
 			sys.stderr.write("\nVirhe jäsennettäessä riviä %d: `%s' (DEF, %d vaihtoehtoa).\n" % (reader.linenum, line, len(a)))
-			for _, i in a:
-				print(i)
+			for alt in a:
+				print(alt.str_output)
 			#for error in groupCauses(ERROR_STACK[-1]):
 			#	error.print(finnish=True)
+			repl()
 			
 	if report:
 		sys.stderr.write("\rLadataan tiedostoa " + file.name + " (100.00 %)\n")
@@ -1644,7 +1644,7 @@ def importFile(filename: str):
 	with open(filename, "r") as file:
 		loadFile(file)
 
-pgl(".IMPORT-DEF ::= Tuo .* . -> import $1", FuncOutput(lambda file: importFile("".join(t.token for t in file))))
+pgl(".IMPORT-DEF ::= Tuo .* . -> import $1", FuncOutput(lambda file: importFile("".join(t.surfaceform for t in file))))
 pgl(".DEF ::= .IMPORT-DEF -> $1", identity)
 addRuleNameForStackTop("IMPORT-DEF", "tuontikäsky")
 
@@ -1658,12 +1658,12 @@ def loadStandardLibrary():
 def compileAll(file: TextIO = sys.stdout):
 	compiled_classes = [cl.toPython() for cl in CLASSES_IN_ORDER]
 	compiled_objects = [ob.toPython() for ob in getObjects()]
-	print("from suomilog.patternparser import Grammar, Token", file=file)
-	print("from suomilog.finnish import addNounToDictionary", file=file)
+	print("from suomilog.grammar import Grammar, Token", file=file)
+	print("from retki.tokenutils import addNounToDictionary", file=file)
 	print("from retki.language import *", file=file)
 	for noun in NOUNS:
 		print("addNounToDictionary(%s)" % (repr(noun),), file=file)
-	print("OBJECTS = {}", file=file)
+	print("OBJECTS: dict[int, RObject] = {}", file=file)
 	print("GRAMMAR = Grammar()", file=file)
 	for decl, _ in compiled_classes+compiled_objects:
 		if decl:
@@ -1696,6 +1696,11 @@ def compileFile(infile: TextIO, outfile: TextIO):
 def interactive():
 	saveObjects()
 	loadStandardLibrary()
+	repl()
+
+def repl(grammar: g.Grammar | None = None):
+	if grammar is None:
+		grammar = GRAMMAR_STACK[-1]
 
 	def complete_file(t, s):
 		path, file = os.path.split(t)
@@ -1718,11 +1723,12 @@ def interactive():
 	readline.parse_and_bind('tab: complete')
 	
 	def printStatistics():
-		n_patterns = sum([len(category) for category in GRAMMAR_STACK[-1].rules.values()])
+		n_patterns = sum([len(category) for category in grammar.rules.values()])
 		print("Ladattu", n_patterns, "fraasia.")
 	
 	mode = ["DEF", "CMD", "PLAYER-CMD"]
 	mode_chars = ["!", "?"]
+	debug_level = 0
 	
 	printStatistics()
 	while True:
@@ -1733,7 +1739,7 @@ def interactive():
 		if not line:
 			continue
 		if line == "/kielioppi":
-			GRAMMAR_STACK[-1].print()
+			grammar.print()
 			print("Kielioppipinossa on %d kielioppi%s." % (len(GRAMMAR_STACK), "a" if len(GRAMMAR_STACK) != 1 else ""))
 			continue
 		elif line == "/käsitteet":
@@ -1743,12 +1749,14 @@ def interactive():
 					printClass(subclass, indent+1)
 			printClass(yläkäsite, 0)
 			continue
-		#elif line == "/debug 0":
-		#	setDebug(0)
-		#	continue
-		#elif line == "/debug 1":
-		#	setDebug(1)
-		#	continue
+		elif line == "/debug 0":
+			#setDebug(0)
+			debug_level = 0
+			continue
+		elif line == "/debug 1":
+			#setDebug(1)
+			debug_level = 1
+			continue
 		#elif line == "/debug 2":
 		#	setDebug(2)
 		#	continue
@@ -1770,8 +1778,8 @@ def interactive():
 			expr = args[args.index(" ")+1:]
 			print("Matching `%s' ~ .%s" % (expr, cat))
 			ints = matchAll(tokenize(expr), getCombinedGrammar(), cat, set())
-			for _, string in ints:
-				print(string)
+			for alt in ints:
+				print(alt.str_output)
 			continue
 		elif line.startswith("/eval"):
 			try:
@@ -1805,18 +1813,18 @@ def interactive():
 			phrase_type = mode[mode_chars.index(line[0])+1]
 			line = line[1:]
 		silent = mode[0] == phrase_type == "PLAYER-CMD"
-		interpretations = matchAll(tokenize(line), getCombinedGrammar(), phrase_type, set())
+		interpretations = matchAll(tokenize(line), getCombinedGrammar(), phrase_type, set(), debug_output=debug_level>=1)
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		elif len(interpretations) == 1:
 			if not silent:
 				print(interpretations[0].str_output)
 			try:
-				string = interpretations[0].func()
+				output = interpretations[0].func()
 				if not silent:
-					print(string)
-				if string:
-					eval(string)
+					print(output)
+				if isinstance(output, str) and output != "":
+					eval(output)
 			except:
 				traceback.print_exc()
 				for name in STACK_NAMES:
@@ -1824,8 +1832,8 @@ def interactive():
 				del STACK_NAMES[:]
 		else:
 			print("Löydetty", len(interpretations), "tulkintaa:")
-			for _, interpretation in interpretations:
-				print(interpretation)
+			for alt in interpretations:
+				print(alt.str_output)
 		if not mode[0] == phrase_type == "PLAYER-CMD":
 			printStatistics()
 		else:

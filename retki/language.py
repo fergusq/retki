@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from dataclasses import dataclass
 import sys, readline
 import math
 import random
-from typing import Any, Callable, Iterable, Literal, NamedTuple, Self, Sequence, TypedDict, overload
+from typing import Any, Callable, Hashable, Iterable, Literal, NamedTuple, Self, Sequence, TypedDict, overload
 from collections import defaultdict
-from suomilog.grammar import Output, Token
+from suomilog.cykparser import CYKParser
+from suomilog.grammar import Grammar, Output, Token
 from .tokenutils import *
 
 # Bittiluokka
@@ -53,11 +55,15 @@ def evalOrCall[T](f: Callable[..., T] | str, p: Any) -> T:
 
 # Ulostulo
 
-class RetkiOutput(NamedTuple):
+@dataclass(frozen=True)
+class RetkiOutput(Hashable):
 	func: Callable[[], Any]
 	str_output: str
 
-class FuncOutput(Output[RetkiOutput]):
+	def __hash__(self):
+		return id(self.func) + 2*hash(self.str_output)
+
+class FuncOutput(Output[RetkiOutput], Hashable):
 	def __init__(self, f: Callable[..., Any], str_template=""):
 		self.func = f
 		self.str_template = str_template
@@ -71,6 +77,8 @@ class FuncOutput(Output[RetkiOutput]):
 			lambda: self.func(*[f() for f in funcs]),
 			str_output,
 		)
+	def __hash__(self):
+		return id(self.func) + 2*hash(self.str_template)
 
 identity = FuncOutput(lambda x: x)
 
@@ -171,7 +179,7 @@ class RObject(Bits):
 	set_data: dict[str, set["RObject"]]
 	map_data: dict[str, dict[MapFieldKey, "RObject"]]
 
-	selection_rules: list[str]
+	selection_rules: list[str | Callable]
 
 	def __init__(
 		self,
@@ -181,7 +189,7 @@ class RObject(Bits):
 		obj_id: int | None = None,
 		extra: ExtraDict | None = None,
 		name_tokens: list[Token] | None = None,
-		srules: list[str] | None = None,
+		srules: list[str | Callable] | None = None,
 		aliases: list[list[Token]] | None = None,
 		data=None,
 		set_data=None,
@@ -244,7 +252,7 @@ class RObject(Bits):
 		
 		grammar = ""
 		for name in names:
-			grammar += ";GRAMMAR.parseGrammarLine('.EXPR-%d ::= %s', FuncOutput(lambda: (%s, %s.likeliness())))" % (
+			grammar += ";GRAMMAR.parse_grammar_line('.EXPR-%d ::= %s', FuncOutput(lambda: (%s, %s.likeliness())))" % (
 				self.rclass.id,
 				nameToCode(name, bits={"$"}, rbits={"+nom"}),
 				var, var
@@ -258,7 +266,7 @@ class RObject(Bits):
 				repr(self.rclass.name), repr(self.name),
 				repr(self.bits), repr(self.id), toPython(self.extra),
 				repr(self.name_tokens),
-				"[" + ", ".join(self.selection_rules) + "]")
+				"[" + ", ".join(map(str, self.selection_rules)) + "]")
 			+ grammar,
 			# toinen arvo:
 			";".join([
@@ -324,11 +332,11 @@ class RObject(Bits):
 		return self.map_data[field_name][key]
 	def setMap(self, field_name: str, key_val: "RObject", val: "RObject"):
 		key = key_val.toKey()
-		if field_name not in self.data:
+		if field_name not in self.map_data:
 			self.map_data[field_name] = {}
 		self.map_data[field_name][key] = val
 	def appendSet(self, field_name: str, val: "RObject | RPattern"):
-		if field_name not in self.data:
+		if field_name not in self.set_data:
 			self.set_data[field_name] = set()
 		field: set[RObject] = self.set_data[field_name]
 		if isinstance(val, RPattern):
@@ -376,7 +384,7 @@ class RObject(Bits):
 			return []
 		return forSet(self.set_data[field_name], var_name, pattern, f, group, count_var_name)
 	def onceSet(self, field_name: str, var_name: str, pattern: "RPattern", f: Callable[[], bool]) -> bool:
-		if field_name not in self.data:
+		if field_name not in self.set_data:
 			return False
 		pushScope()
 		for val in self.set_data[field_name]:
@@ -392,12 +400,12 @@ class RObject(Bits):
 			if condition:
 				condition.doModify(obj)
 	@overload
-	def setExtra(self, name: Literal["int"], data: int): ...
+	def setExtra(self, name: Literal["int"], data: int) -> Self: ...
 	@overload
-	def setExtra(self, name: Literal["str"], data: str): ...
+	def setExtra(self, name: Literal["str"], data: str) -> Self: ...
 	@overload
-	def setExtra(self, name: Literal["tuple"], data: tuple["RObject", ...]): ...
-	def setExtra(self, name, data):
+	def setExtra(self, name: Literal["tuple"], data: tuple["RObject", ...]) -> Self: ...
+	def setExtra(self, name, data) -> Self:
 		self.extra[name] = data
 		return self
 	def addSelectionRule(self, rule: str):
@@ -504,7 +512,7 @@ class RClass(Bits):
 	bit_groups: list[BitGroup]
 	attributePhraseAdders: list[Callable[["RClass", "RClass"], None]]
 	selection_rules: list[str]
-	primitive: str | None
+	primitive: str | Callable | None
 
 	def __init__(
 		self,
@@ -514,7 +522,7 @@ class RClass(Bits):
 		class_id: int | None = None,
 		bit_groups: list[BitGroup] | None = None,
 		bits: set[str] | None = None,
-		primitive: str | None = None
+		primitive: str | Callable | None = None
 	):
 		Bits.__init__(self, bits)
 		
@@ -539,7 +547,7 @@ class RClass(Bits):
 			self.superclass.direct_subclasses.append(self)
 	def toPython(self):
 		sc = "None" if self.superclass is None else "CLASSES[" + repr(self.superclass.name) + "]"
-		grammar = "" if self.superclass is None else 'GRAMMAR.parseGrammarLine(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
+		grammar = "" if self.superclass is None else 'GRAMMAR.parse_grammar_line(".EXPR-%d ::= .EXPR-%d{$}", identity)' % (self.superclass.id, self.id)
 		return (
 			'RClass(%s, %s, %s, %d, %s, %s, %s);%s' % (
 				repr(self.name), sc, repr(self.name_tokens), self.id, repr(self.bit_groups), repr(self.bits), self.primitive,
@@ -547,6 +555,8 @@ class RClass(Bits):
 			),
 			";".join('CLASSES[%s].fields[%s] = %s' % (repr(self.name), repr(field), self.fields[field].toPythonExpr()) for field in self.fields)
 		)
+	def __repr__(self):
+		return f"<RClass " + repr(self.name) + ">"
 	def addField(self, name: str, field: "RField"):
 		self.fields[name] = field
 	def addSelectionRule(self, rule: str):
@@ -700,8 +710,8 @@ class RCondition:
 		else:
 			return self.modify()
 
-CHECKS: dict[str, str] = {}
-MODIFYS: dict[str, str] = {}
+CHECKS: dict[str, str | Callable] = {}
+MODIFYS: dict[str, str | Callable] = {}
 
 # Näkyvyysalueet ja muuttujat
 
@@ -767,14 +777,14 @@ def addAlias(name, alias):
 class RAction:
 	id: int
 	name: str
-	commands: list[str]
+	commands: list[str | Callable]
 	listeners: list["RListener"]
-	selection_rules: list[tuple[list[tuple[str, RPattern, Any]], str]]
+	selection_rules: list[tuple[list[tuple[str, RPattern, Any]], str | Callable]]
 	def __init__(
 		self,
 		name: str,
 		a_id: int | None = None,
-		srules: list[tuple[list[tuple[str, RPattern, Any]], str]] | None = None
+		srules: list[tuple[list[tuple[str, RPattern, Any]], str | Callable]] | None = None
 	):
 		self.id = a_id or nextCounter("RAction")
 		self.name = name
@@ -788,9 +798,9 @@ class RAction:
 	def toPython(self):
 		return ";".join([
 			"RAction(" + repr(self.name) + ", " + repr(self.id)
-			+ ", [" + ", ".join(["(" + toPython(p) + ", " + r + ")" for p, r in self.selection_rules]) + "])"
+			+ ", [" + ", ".join(["(" + toPython(p) + ", " + str(r) + ")" for p, r in self.selection_rules]) + "])"
 		] + [
-			("GRAMMAR.parseGrammarLine('.PLAYER-CMD ::= %s', "
+			("GRAMMAR.parse_grammar_line('.PLAYER-CMD ::= %s', "
 			+ "FuncOutput(lambda *x: (lambda: "
 			+ "ACTIONS[%d].run([p for p, _ in x]), "
 			+ "ACTIONS[%d].likeliness([p for p, _ in x]) + sum([p for _, p in x]), "
@@ -897,17 +907,17 @@ ACTION_LISTENERS = []
 
 # Merkkijonon luominen
 
-def createStringObj(x):
+def createStringObj(x: str):
 	return CLASSES["merkkijono"].newInstance().setExtra("str", x)
 
 # Kokonaisluvun luominen
 
-def createIntegerObj(x):
+def createIntegerObj(x: int):
 	return CLASSES["kokonaisluku"].newInstance().setExtra("int", x)
 
 # Monikon luominen
 
-def createTupleObj(c, *x):
+def createTupleObj(c, *x: RObject):
 	return CLASSES[c].newInstance().setExtra("tuple", tuple(x))
 
 # Tulostaminen
@@ -915,7 +925,7 @@ def createTupleObj(c, *x):
 prev_was_newline = True
 print_buffer = ""
 
-def say(text):
+def say(text: str):
 	global prev_was_newline, print_buffer
 	if not text:
 		return
@@ -934,7 +944,7 @@ def endGame():
 
 # Pelin komentotulkki
 
-def playGame(grammar):
+def playGame(grammar: Grammar[RetkiOutput]):
 	global prev_was_newline, game_running, print_buffer
 	game_running = True
 	ACTIONS_BY_NAME["pelin alkaminen"].run([])
@@ -943,7 +953,7 @@ def playGame(grammar):
 		print_buffer = ""
 		prev_was_newline = True
 		line = input(">> ")
-		interpretations = [i() for i in grammar.matchAll(tokenize(line), "PLAYER-CMD", set())]
+		interpretations = [i.func() for i in matchAll(tokenize(line), grammar, "PLAYER-CMD", set())]
 		if len(interpretations) == 0:
 			print("Ei tulkintaa.")
 		else:
@@ -973,3 +983,11 @@ def playGame(grammar):
 				alternatives[0][0]()
 	print(print_buffer.strip())
 
+# Jäsentäminen
+
+def matchAll[T](tokens: list[Token], grammar: Grammar[T], root: str, bits: set[str], debug_output=False) -> list[T]:
+	parser = CYKParser(grammar, root)
+	analyses = parser.parse(tokens)
+	if debug_output:
+		analyses.print()
+	return list(analyses.get_output("." + root + "{" + ",".join(bits) + "}") or frozenset())

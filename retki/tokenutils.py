@@ -17,11 +17,10 @@
 from collections import defaultdict
 from typing import AbstractSet
 import pypykko.utils as pykko
-from pypykko.tokenizer import text2tokens as pykko_tokenize
-from suomilog.finnish import inflect_nominal, baseformAndBits
+from suomilog.finnish import SINGULAR_AND_PLURAL_CASES, inflect_nominal, baseformAndBits
 from suomilog.grammar import Token, match_bits
 
-def nameToBaseform(tokens: list[Token], bits, rbits):
+def nameToBaseform(tokens: list[Token], bits: set[str] | None, rbits: set[str]):
 	ans = []
 	found = False
 	for token in reversed(tokens):
@@ -32,41 +31,93 @@ def nameToBaseform(tokens: list[Token], bits, rbits):
 					found = True
 					break
 			else:
-				if rbits <= tbits and tbits & {":adjective", "+part_ma", ":adjective", ":numeral", ":participle"}:
+				if rbits <= tbits and (tbits & {"adjectival", ":pronoun", ":numeral"}):
 					ans.append((bf, bits or {"$"}))
 					break
 		else:
 			ans.append((token.surfaceform, set()))
 	return reversed(ans)
 
-def tokensToString(tokens, rbits={"+nom", "+sg"}):
-	return " ".join([text for text, bits in nameToBaseform(tokens, {}, rbits)])
+def tokensToString(tokens: list[Token], rbits={"+nom", "+sg"}):
+	return " ".join([text for text, bits in nameToBaseform(tokens, set(), rbits)])
 
-def tokensToInflectedString(tokens, case: str, rbits={"+nom", "+sg"}):
+def tokensToInflectedString(tokens: list[Token], case: str, rbits={"+nom", "+sg"}):
 	return " ".join([
 		list(inflect_nominal(text, ("+pl" if "+pl" in rbits else "+sg"), case) or {text})[0]
 		if "$" in bit else text
-		for text, bit in nameToBaseform(tokens, {}, rbits)
+		for text, bit in nameToBaseform(tokens, set(), rbits)
 	])
 
-def nameToCode(name, bits=None, rbits={"+nom", "+sg"}):
+def nameToCode(name: list[Token], bits: set[str] | None = None, rbits={"+nom", "+sg"}):
 	return " ".join([token + ("{" + ",".join(tbits) + "}" if tbits else "") for token, tbits in nameToBaseform(name, bits, rbits)])
 
-def tokensToCode(tokens):
-	return " ".join([token.toCode() for token in tokens])
+def tokensToCode(tokens: list[Token]):
+	return " ".join([token.surfaceform for token in tokens])
 
-DICTIONARY: defaultdict[str, list[Token]] = defaultdict(list)
+DICTIONARY: defaultdict[str, list[tuple[str, set[str]]]] = defaultdict(list)
+
+def addNounToDictionary(noun: str):
+	for plural in ["+sg", "+pl"]:
+		for case in SINGULAR_AND_PLURAL_CASES:
+			DICTIONARY[list(inflect_nominal(noun, plural, case))[0].lower()].append((noun, {case, plural}))
+
+def split2tokens(text: str) -> list[str]:
+	tokens = [""]
+	for char, next_char in zip(text, text[1:]+" "):
+		if char.isalnum() or char == "-" or char == ":" and next_char.isalpha():
+			tokens[-1] = tokens[-1] + char
+		
+		else:
+			tokens.append(char)
+			tokens.append("")
+
+	return [t for t in tokens if t]
+
+def get_pykko_analyses(token: str) -> list[pykko.PykkoAnalysis]:
+	if token == token.capitalize():
+		analyses = pykko.analyze(token.lower(), only_best=False)
+		analyses += pykko.analyze(token)
+	else:
+		analyses = pykko.analyze(token)
+
+	# Poistetaan arvaimen tulokset paitsi jos kaikki on arvattua
+	if not all("Guesser" in a.source for a in analyses):
+		analyses = [a for a in analyses if "Guesser" not in a.source]
+
+	# Nämä sanat on kielletty elleivät ne ole ainoita tulkintoja
+	# Muuten esim. "lasi" -> la + omistusliite
+	banned_words = {"do", "re", "mi", "fa", "so", "la", "si"}
+	if not all((set(a.lemma.split("|")) & banned_words) for a in analyses):
+		analyses = [a for a in analyses if not (set(a.lemma.split("|")) & banned_words)]
+
+	# Kielletään myös omistusliitteet
+	for poss in ["+poss1sg", "+poss2sg", "+poss1pl", "+poss2pl"]:
+		if not all(poss in a.morphtags for a in analyses):
+			analyses = [a for a in analyses if poss not in a.morphtags]
+
+	# Pykko antaa joskus hyvin harvinaisia tulkintoja
+	# Esim. "avoin" on sen mielestä sana "avo" ⟨rare⟩
+	for info in ["rare", "poet", "dial", "coll"]:
+		if not all(info in a.info for a in analyses):
+			analyses = [a for a in analyses if info not in a.info]
+	
+	return analyses
 
 def tokenize(text: str) -> list[Token]:
 	tokens: list[Token] = []
 	token: str
-	for token in pykko_tokenize(text):
+	for token in split2tokens(text):
 		if token.strip() == "":
 			continue
 
-		alternatives = []
-		for word in pykko.analyze(token):
+		alternatives: list[tuple[str, set[str]]] = []
+		analyses = get_pykko_analyses(token)
+
+		for word in analyses:
 			baseform, bits = baseformAndBits(word)
+			if bits & {":adjective", "+part_ma", ":adjective", ":participle"}:
+				bits |= {"adjectival"}
+			baseform = baseform.replace("|", "")
 			if not (bits & {":proper", ":proper-pl"}) and baseform == baseform.capitalize():
 				baseform = baseform.lower()
 			alternatives.append((baseform, bits))
@@ -85,3 +136,10 @@ def baseform(token: Token, bits: AbstractSet[str]) -> str | None:
 			return baseform
 
 	return None
+
+def tokenBits(token: Token) -> set[str]:
+	bits = set()
+	for _, tbits in token.alternatives:
+		bits |= tbits
+
+	return bits
