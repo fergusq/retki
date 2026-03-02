@@ -171,35 +171,18 @@ Mukana on myös kappale kääntäjän asentamista ja peruskäyttöä varten.
 Riippuvuudet
 ============
 
-Voikko
-------
-
-Retki tarvitsee libvoikko-kirjaston suomenkielen morfologiaa varten.
-Se löytyy useimmista Linux-jakeluista nimellä ``libvoikko``.
-
-Jotta Voikko toimisi oikein, on asennettava myös suomen kielen morfologinen sanakirja.
-
-* Voikon versiota 3.8 varten lataa `tämä <sanakirja1_>`_ versio sanakirjasta.
-
-* Voikon versiota 4 varten lataa `tämä <sanakirja2_>`_ versio sanakirjasta.
-
-.. _sanakirja1: http://www.puimula.org/htp/testing/voikko-snapshot/dict-morpho.zip
-.. _sanakirja2: https://www.puimula.org/htp/testing/voikko-snapshot-v5/dict-morpho.zip
-
-Pura zip-paketti ``~/.voikko/``-kansioon.
-
 Python 3
 --------
 
-Retki tarvitse Python 3.5:n.
+Retki tarvitse Python 3.14:n.
 
 Paketit
 -------
 
 Asentaminen on helpointa pip-ohjelman avulla, mutta jos sitä ei ole,
-on asennettava Python-kirjastot voikko_ ja suomilog_.
+on asennettava Python-kirjastot pypykko_ ja suomilog_.
 
-.. _voikko: https://github.com/fergusq/voikko
+.. _pypykko: https://github.com/fergusq/fst-python
 .. _suomilog: https://github.com/fergusq/suomilog
 
 Asentaminen
@@ -628,11 +611,11 @@ Eräs säännöistä on luokan määrittelyyn käytetty sääntö:
 .. code:: python
    :number-lines:
 
-	pgl(".CLASS-DEF ::= .* on .CLASS{omanto} alakäsite . -> class $1 : $2", FuncOutput(defineClass))
+	pgl(".CLASS-DEF ::= .* on .CLASS{+gen} alakäsite . -> class $1 : $2", FuncOutput(defineClass))
 
 ``pgl`` (parseGrammarLine) lisää uuden säännön kielioppiin.
 Tässä tapauksessa se lisää ``.CLASS-DEF``-nimisen säännön.
-``.*`` täsmää mihin tahansa ei-tyhjään merkkijonoon ja ``.CLASS{omanto}`` genetiivimuotoiseen luokan nimeen.
+``.*`` täsmää mihin tahansa ei-tyhjään merkkijonoon ja ``.CLASS{+gen}`` genetiivimuotoiseen luokan nimeen.
 Nuolen ``->`` jälkeen säännössä on merkkijonoesitys, joka luodaan jäsennetystä tekstistä debug-tarkoituksia varten.
 Viimeiseksi määritellään, että jäsentämisen jälkeen kutsutaan ``defineClass``-funktiota.
 
